@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsNotEmpty } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateParticipantDto {
@@ -12,4 +12,12 @@ export class CreateParticipantDto {
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
   email: string;
+
+  // Optional referral code passed via ?ref= query param
+  @IsString()
+  @IsOptional()
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.trim() : value,
+  )
+  referralCode?: string;
 }

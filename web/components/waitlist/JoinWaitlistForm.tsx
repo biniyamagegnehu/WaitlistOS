@@ -14,6 +14,7 @@ const joinSchema = z.object({
     .email("Please enter a valid email address")
     .trim()
     .toLowerCase(),
+  referralCode: z.string().trim().optional(),
 });
 
 type JoinFormValues = z.infer<typeof joinSchema>;
@@ -21,16 +22,20 @@ type JoinFormValues = z.infer<typeof joinSchema>;
 const ERROR_MESSAGES: Record<JoinErrorCode, string> = {
   WAITLIST_NOT_FOUND: "This waitlist does not exist.",
   EMAIL_ALREADY_JOINED: "You have already joined this waitlist.",
+  INVALID_REFERRAL: "The referral link is invalid.",
+  SELF_REFERRAL: "You cannot use your own referral link.",
   SERVER_ERROR: "Something went wrong. Please try again.",
 };
 
 interface JoinWaitlistFormProps {
   waitlistSlug: string;
+  referralCode?: string;
   onSuccess: (data: JoinResponse) => void;
 }
 
 export default function JoinWaitlistForm({
   waitlistSlug,
+  referralCode: initialReferralCode,
   onSuccess,
 }: JoinWaitlistFormProps) {
   const [serverError, setServerError] = useState<string>("");
@@ -42,6 +47,9 @@ export default function JoinWaitlistForm({
   } = useForm<JoinFormValues>({
     resolver: zodResolver(joinSchema),
     mode: "onChange",
+    defaultValues: {
+      referralCode: initialReferralCode || "",
+    }
   });
 
   const onSubmit = async (data: JoinFormValues) => {
@@ -50,6 +58,7 @@ export default function JoinWaitlistForm({
       const result = await joinWaitlist({
         waitlistSlug,
         email: data.email,
+        ...(data.referralCode ? { referralCode: data.referralCode } : {}),
       });
       onSuccess(result);
     } catch (err) {
@@ -73,6 +82,19 @@ export default function JoinWaitlistForm({
         />
         {errors.email && (
           <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
+        )}
+      </div>
+
+      <div>
+        <input
+          {...register("referralCode")}
+          type="text"
+          placeholder="Referral Code (Optional)"
+          disabled={isSubmitting}
+          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-50"
+        />
+        {errors.referralCode && (
+          <p className="text-red-500 text-xs mt-1">{errors.referralCode.message}</p>
         )}
       </div>
 

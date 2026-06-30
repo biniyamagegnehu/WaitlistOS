@@ -47,9 +47,12 @@ model Participant {
   email        String
   position     Int
   referralCode String   @unique
+  referredById String?
   createdAt    DateTime @default(now())
 
-  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  waitlist     Waitlist      @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  referredBy   Participant?  @relation("Referrals", fields: [referredById], references: [id])
+  referrals    Participant[] @relation("Referrals")
 
   @@unique([waitlistId, email])
   @@map("participants")
