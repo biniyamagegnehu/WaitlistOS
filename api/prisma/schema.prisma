@@ -1,0 +1,56 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// Founder — The person who creates a waitlist
+// ─────────────────────────────────────────────
+model Founder {
+  id        String     @id @default(uuid())
+  email     String     @unique
+  createdAt DateTime   @default(now())
+
+  waitlists Waitlist[]
+
+  @@map("founders")
+}
+
+// ─────────────────────────────────────────────
+// Waitlist — A single waitlist owned by a founder
+// ─────────────────────────────────────────────
+model Waitlist {
+  id        String   @id @default(uuid())
+  founderId String
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+
+  founder      Founder       @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  participants Participant[]
+
+  @@map("waitlists")
+}
+
+// ─────────────────────────────────────────────
+// Participant — A user who joined a waitlist
+// ─────────────────────────────────────────────
+model Participant {
+  id           String   @id @default(uuid())
+  waitlistId   String
+  email        String
+  position     Int
+  referralCode String   @unique
+  createdAt    DateTime @default(now())
+
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
+  @@unique([waitlistId, email])
+  @@map("participants")
+}
