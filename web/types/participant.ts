@@ -4,6 +4,7 @@ export interface JoinResponse {
   position: number;
   referralCode: string;
   referralLink: string;
+  referralCount: number;
 }
 
 export type JoinErrorCode =

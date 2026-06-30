@@ -47,9 +47,9 @@ export class ParticipantsService {
     }
 
     // 3. Resolve referrer (if code provided)
-    let referredById: string | null = null;
+    let referrer: any = null;
     if (incomingRef) {
-      const referrer = await this.prisma.participant.findUnique({
+      referrer = await this.prisma.participant.findUnique({
         where: { referralCode: incomingRef },
       });
 
@@ -66,31 +66,67 @@ export class ParticipantsService {
       if (referrer.email === email) {
         throw new BadRequestException('SELF_REFERRAL');
       }
-
-      referredById = referrer.id;
     }
 
-    // 4. Position = current count + 1
-    const count = await this.prisma.participant.count({
-      where: { waitlistId: waitlist.id },
-    });
-    const position = count + 1;
-
-    // 5. Generate unique referral code for this new participant
+    // Generate unique referral code for this new participant
     const newReferralCode = await this.generateUniqueCode();
 
-    // 6. Create participant
-    const participant = await this.prisma.participant.create({
-      data: {
-        waitlistId: waitlist.id,
-        email,
-        position,
-        referralCode: newReferralCode,
-        ...(referredById ? { referredById } : {}),
-      },
+    // 4. Transaction to create participant and swap positions
+    const participant = await this.prisma.$transaction(async (tx) => {
+      const count = await tx.participant.count({
+        where: { waitlistId: waitlist.id },
+      });
+      const position = count + 1;
+
+      const p = await tx.participant.create({
+        data: {
+          waitlistId: waitlist.id,
+          email,
+          position,
+          referralCode: newReferralCode,
+          ...(referrer ? { referredById: referrer.id } : {}),
+        },
+      });
+
+      if (referrer) {
+        // Increment referral count
+        const updatedReferrer = await tx.participant.update({
+          where: { id: referrer.id },
+          data: { referralCount: { increment: 1 } },
+        });
+
+        // Swap positions if referrer can move up
+        if (updatedReferrer.position > 1) {
+          const targetPosition = updatedReferrer.position - 1;
+
+          // Find the person currently at the target position
+          const personToDemote = await tx.participant.findFirst({
+            where: {
+              waitlistId: waitlist.id,
+              position: targetPosition,
+            },
+          });
+
+          if (personToDemote) {
+            // Move the person ahead down by 1
+            await tx.participant.update({
+              where: { id: personToDemote.id },
+              data: { position: updatedReferrer.position },
+            });
+
+            // Move the referrer up by 1
+            await tx.participant.update({
+              where: { id: referrer.id },
+              data: { position: targetPosition },
+            });
+          }
+        }
+      }
+
+      return p;
     });
 
-    // 7. Build referral link
+    // 5. Build referral link
     const referralLink = `/w/${waitlistSlug}?ref=${participant.referralCode}`;
 
     return {
@@ -98,6 +134,7 @@ export class ParticipantsService {
       email: participant.email,
       position: participant.position,
       referralCode: participant.referralCode,
+      referralCount: participant.referralCount,
       referralLink,
     };
   }

@@ -87,11 +87,20 @@ export default function PublicWaitlistPage() {
           </div>
 
           {/* Position */}
-          <div className="border border-gray-200 rounded-xl py-6 px-8 inline-block">
-            <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">
-              Your Position
-            </p>
-            <p className="text-5xl font-extrabold text-black">#{joined.position}</p>
+          {/* Position & Referrals */}
+          <div className="flex gap-4 justify-center">
+            <div className="border border-gray-200 rounded-xl py-6 px-8 flex-1">
+              <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">
+                Your Position
+              </p>
+              <p className="text-5xl font-extrabold text-black">#{joined.position}</p>
+            </div>
+            <div className="border border-gray-200 rounded-xl py-6 px-8 flex-1">
+              <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">
+                Referrals
+              </p>
+              <p className="text-5xl font-extrabold text-black">{joined.referralCount}</p>
+            </div>
           </div>
 
           {/* Referral link */}

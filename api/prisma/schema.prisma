@@ -48,6 +48,7 @@ model Participant {
   position     Int
   referralCode String   @unique
   referredById String?
+  referralCount Int     @default(0)
   createdAt    DateTime @default(now())
 
   waitlist     Waitlist      @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
