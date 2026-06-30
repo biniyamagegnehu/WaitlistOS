@@ -1,4 +1,8 @@
-import { Injectable, ConflictException } from '@nestjs/common';
+import {
+  Injectable,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
@@ -7,37 +11,54 @@ import { randomBytes } from 'crypto';
 export class ParticipantsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createParticipantDto: CreateParticipantDto) {
-    const { waitlistId, email } = createParticipantDto;
-    
-    // Check if participant already exists to prevent unique constraint error
+  async create(dto: CreateParticipantDto) {
+    const { waitlistSlug, email } = dto;
+
+    // 1. Resolve waitlist by slug — 404 if not found
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { slug: waitlistSlug },
+    });
+
+    if (!waitlist) {
+      throw new NotFoundException('WAITLIST_NOT_FOUND');
+    }
+
+    // 2. Check for duplicate email inside this waitlist — 409 if duplicate
     const existing = await this.prisma.participant.findUnique({
       where: {
-        waitlistId_email: { waitlistId, email }
-      }
+        waitlistId_email: { waitlistId: waitlist.id, email },
+      },
     });
 
     if (existing) {
-      throw new ConflictException('Participant already exists on this waitlist');
+      throw new ConflictException('EMAIL_ALREADY_JOINED');
     }
 
-    // Temporary position calculation
+    // 3. Assign position: current count + 1
     const count = await this.prisma.participant.count({
-      where: { waitlistId }
+      where: { waitlistId: waitlist.id },
     });
-    
-    const position = count + 1;
-    
-    // Temporary referral code to satisfy schema
-    const referralCode = randomBytes(4).toString('hex');
 
-    return this.prisma.participant.create({
+    const position = count + 1;
+
+    // 4. Temporary referral code to satisfy schema NOT NULL constraint
+    const referralCode = randomBytes(8).toString('hex');
+
+    // 5. Create participant
+    const participant = await this.prisma.participant.create({
       data: {
-        waitlistId,
+        waitlistId: waitlist.id,
         email,
         position,
         referralCode,
       },
     });
+
+    // 6. Return clean response
+    return {
+      success: true,
+      email: participant.email,
+      position: participant.position,
+    };
   }
 }

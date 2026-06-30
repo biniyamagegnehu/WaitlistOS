@@ -1,4 +1,10 @@
-import { Controller, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  HttpCode,
+  HttpStatus,
+} from '@nestjs/common';
 import { ParticipantsService } from './participants.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 
@@ -7,6 +13,7 @@ export class ParticipantsController {
   constructor(private readonly participantsService: ParticipantsService) {}
 
   @Post()
+  @HttpCode(HttpStatus.CREATED)
   create(@Body() createParticipantDto: CreateParticipantDto) {
     return this.participantsService.create(createParticipantDto);
   }
