@@ -4,13 +4,18 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { InjectQueue } from '@nestjs/bull';
+import type { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
 
 @Injectable()
 export class ParticipantsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    @InjectQueue('emails') private readonly emailsQueue: Queue,
+  ) {}
 
   // ── Referral code generator ──────────────────────────────
   // Produces a 6-char URL-safe code, retries on collision
@@ -127,7 +132,23 @@ export class ParticipantsService {
     });
 
     // 5. Build referral link
-    const referralLink = `/w/${waitlistSlug}?ref=${participant.referralCode}`;
+    const referralLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/w/${waitlistSlug}?ref=${participant.referralCode}`;
+
+    // 6. Queue Welcome Email
+    await this.emailsQueue.add(
+      'send-welcome-email',
+      {
+        email: participant.email,
+        waitlist: waitlist.name,
+        position: participant.position,
+        referralLink,
+      },
+      {
+        attempts: 1,
+        removeOnComplete: true,
+        removeOnFail: true,
+      },
+    );
 
     return {
       success: true,
