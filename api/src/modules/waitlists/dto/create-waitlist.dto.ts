@@ -1,9 +1,9 @@
-import { IsString, IsNotEmpty } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
 
 export class CreateWaitlistDto {
   @IsString()
-  @IsNotEmpty()
-  founderId: string;
+  @IsOptional()
+  founderId?: string;
 
   @IsString()
   @IsNotEmpty()

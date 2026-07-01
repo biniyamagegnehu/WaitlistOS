@@ -1,34 +1,33 @@
-import { Controller, Get, Param, Query, Res } from '@nestjs/common';
-import type { Response } from 'express';
+import { Controller, Get, Param, Req, Res, UseGuards } from '@nestjs/common';
+import type { Response, Request } from 'express';
+import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { DashboardService } from './dashboard.service';
 
+@UseGuards(JwtAuthGuard)
 @Controller('dashboard')
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
   // ── GET /dashboard/waitlists ─────────────────────────────────────────────
   @Get('waitlists')
-  getWaitlists(@Query('founderId') founderId?: string) {
-    return this.dashboardService.getWaitlists(founderId);
+  getWaitlists(@Req() req: any) {
+    return this.dashboardService.getWaitlists(req.user.userId);
   }
 
   // ── GET /dashboard/waitlists/:id ─────────────────────────────────────────
   @Get('waitlists/:id')
-  getWaitlistDetail(
-    @Param('id') id: string,
-    @Query('founderId') founderId?: string,
-  ) {
-    return this.dashboardService.getWaitlistDetail(id, founderId);
+  getWaitlistDetail(@Param('id') id: string, @Req() req: any) {
+    return this.dashboardService.getWaitlistDetail(id, req.user.userId);
   }
 
   // ── GET /dashboard/waitlists/:id/export ──────────────────────────────────
   @Get('waitlists/:id/export')
   async exportCsv(
     @Param('id') id: string,
-    @Query('founderId') founderId: string | undefined,
+    @Req() req: any,
     @Res() res: Response,
   ) {
-    const { csv, slug } = await this.dashboardService.exportCsv(id, founderId);
+    const { csv, slug } = await this.dashboardService.exportCsv(id, req.user.userId);
 
     res.setHeader('Content-Type', 'text/csv');
     res.setHeader(

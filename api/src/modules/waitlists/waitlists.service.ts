@@ -8,7 +8,10 @@ export class WaitlistsService {
 
   async create(createWaitlistDto: CreateWaitlistDto) {
     return this.prisma.waitlist.create({
-      data: createWaitlistDto,
+      data: {
+        ...createWaitlistDto,
+        founderId: createWaitlistDto.founderId as string,
+      },
     });
   }
 

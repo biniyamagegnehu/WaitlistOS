@@ -8,6 +8,7 @@ import { WaitlistsModule } from './modules/waitlists/waitlists.module';
 import { ParticipantsModule } from './modules/participants/participants.module';
 import { EmailsModule } from './modules/emails/emails.module';
 import { DashboardModule } from './modules/founders/dashboard/dashboard.module';
+import { AuthModule } from './modules/auth/auth.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { DashboardModule } from './modules/founders/dashboard/dashboard.module';
     ParticipantsModule,
     EmailsModule,
     DashboardModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],

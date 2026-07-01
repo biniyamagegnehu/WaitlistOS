@@ -9,13 +9,21 @@ datasource db {
   provider = "postgresql"
 }
 
+enum Provider {
+  EMAIL
+  GOOGLE
+}
+
 // ─────────────────────────────────────────────
 // Founder — The person who creates a waitlist
 // ─────────────────────────────────────────────
 model Founder {
-  id        String     @id @default(uuid())
-  email     String     @unique
-  createdAt DateTime   @default(now())
+  id           String     @id @default(uuid())
+  email        String     @unique
+  passwordHash String?
+  name         String?
+  provider     Provider   @default(EMAIL)
+  createdAt    DateTime   @default(now())
 
   waitlists Waitlist[]
 
