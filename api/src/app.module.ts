@@ -7,6 +7,7 @@ import { PrismaModule } from './prisma/prisma.module';
 import { WaitlistsModule } from './modules/waitlists/waitlists.module';
 import { ParticipantsModule } from './modules/participants/participants.module';
 import { EmailsModule } from './modules/emails/emails.module';
+import { DashboardModule } from './modules/founders/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -18,6 +19,7 @@ import { EmailsModule } from './modules/emails/emails.module';
     WaitlistsModule,
     ParticipantsModule,
     EmailsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],
