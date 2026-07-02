@@ -7,7 +7,7 @@ export interface Waitlist {
 }
 
 export interface CreateWaitlistInput {
-  founderId: string;
+  founderId?: string;
   name: string;
   slug: string;
 }

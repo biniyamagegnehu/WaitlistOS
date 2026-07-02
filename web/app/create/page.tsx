@@ -12,7 +12,6 @@ const createWaitlistSchema = z.object({
   slug: z.string()
     .min(1, "Slug is required")
     .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
-  founderId: z.string().uuid("Must be a valid UUID").min(1, "Founder ID is required"),
 });
 
 type CreateWaitlistFormValues = z.infer<typeof createWaitlistSchema>;
@@ -64,15 +63,7 @@ export default function CreateWaitlistPage() {
           {errors.slug && <p className="text-red-500 text-sm mt-1">{errors.slug.message}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Founder UUID (Temp)</label>
-          <input
-            {...register("founderId")}
-            className="w-full border rounded p-2"
-            placeholder="Paste UUID from Prisma Studio"
-          />
-          {errors.founderId && <p className="text-red-500 text-sm mt-1">{errors.founderId.message}</p>}
-        </div>
+
 
         {serverError && <p className="text-red-500 text-sm">{serverError}</p>}
 

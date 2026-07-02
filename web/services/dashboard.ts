@@ -15,10 +15,17 @@ function founderParam(founderId?: string): string {
 // ── Fetch all waitlists for a founder ────────────────────────────────────
 export async function getDashboardWaitlists(
   founderId?: string,
+  jwt?: string,
 ): Promise<DashboardWaitlist[]> {
+
   const res = await fetch(
     `${API_URL}/dashboard/waitlists?${founderParam(founderId)}`,
-    { cache: 'no-store' },
+    { 
+      cache: 'no-store',
+      headers: {
+        ...(jwt ? { Cookie: `jwt=${jwt}` } : {}),
+      }
+    },
   );
   if (!res.ok) {
     throw new Error('Failed to fetch dashboard waitlists');
@@ -30,10 +37,17 @@ export async function getDashboardWaitlists(
 export async function getDashboardWaitlistDetail(
   waitlistId: string,
   founderId?: string,
+  jwt?: string,
 ): Promise<DashboardWaitlistDetail> {
+
   const res = await fetch(
     `${API_URL}/dashboard/waitlists/${waitlistId}?${founderParam(founderId)}`,
-    { cache: 'no-store' },
+    { 
+      cache: 'no-store',
+      headers: {
+        ...(jwt ? { Cookie: `jwt=${jwt}` } : {}),
+      }
+    },
   );
   if (!res.ok) {
     if (res.status === 404) throw new Error('WAITLIST_NOT_FOUND');
@@ -49,6 +63,7 @@ export async function exportWaitlistCsv(
 ): Promise<void> {
   const res = await fetch(
     `${API_URL}/dashboard/waitlists/${waitlistId}/export?${founderParam(founderId)}`,
+    { credentials: 'include' }
   );
   if (!res.ok) throw new Error('Failed to export CSV');
 

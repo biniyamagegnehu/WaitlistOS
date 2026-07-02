@@ -5,6 +5,7 @@ export async function createWaitlist(data: CreateWaitlistInput): Promise<Waitlis
   const res = await fetch(`${API_URL}/waitlists`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    credentials: 'include',
     body: JSON.stringify(data),
   });
   
