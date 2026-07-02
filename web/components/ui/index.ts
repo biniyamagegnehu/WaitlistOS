@@ -1,0 +1,28 @@
+// UI Design System — barrel exports
+export { Button } from "./button";
+export type { ButtonProps } from "./button";
+
+export { Input } from "./input";
+export type { InputProps } from "./input";
+
+export { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "./card";
+
+export { Badge } from "./badge";
+export type { BadgeProps } from "./badge";
+
+export { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "./dialog";
+
+export { ToastProvider, useToast } from "./toast";
+export type { ToastData, ToastVariant } from "./toast";
+
+export { Tabs, TabsList, TabsTrigger, TabsContent } from "./tabs";
+
+export { Table, TableHead, TableBody, TableRow, TableHeadCell, TableCell, TableFooter } from "./table";
+
+export { Avatar } from "./avatar";
+export type { AvatarProps } from "./avatar";
+
+export { EmptyState } from "./empty-state";
+export type { EmptyStateProps } from "./empty-state";
+
+export { Spinner, PageLoader, Skeleton } from "./loader";
