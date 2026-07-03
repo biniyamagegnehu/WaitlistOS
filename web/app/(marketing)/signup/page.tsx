@@ -38,7 +38,7 @@ export default function SignupPage() {
           setError('Failed to sign up. Please try again.');
         }
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred.');
     } finally {
       setLoading(false);

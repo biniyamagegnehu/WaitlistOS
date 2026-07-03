@@ -15,11 +15,6 @@ export function MarketingNavbar() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const pathname = usePathname();
 
-  // Close mobile menu on route change
-  React.useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
-
   return (
     <header className="sticky top-0 z-40 w-full border-b border-white/8 bg-[#0d0d14]/80 backdrop-blur-xl">
       <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
@@ -43,6 +38,7 @@ export function MarketingNavbar() {
             <Link
               key={link.href}
               href={link.href}
+              onClick={() => setMobileOpen(false)}
               className={cn(
                 "text-sm font-medium transition-colors duration-150",
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded",
@@ -107,12 +103,14 @@ export function MarketingNavbar() {
           <div className="pt-3 flex flex-col gap-2 border-t border-white/8 mt-2">
             <Link
               href="/login"
+              onClick={() => setMobileOpen(false)}
               className="block rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-white transition-colors"
             >
               Login
             </Link>
             <Link
               href="/signup"
+              onClick={() => setMobileOpen(false)}
               className="block rounded-xl bg-indigo-600 px-3 py-2.5 text-sm font-semibold text-white text-center hover:bg-indigo-500 transition-colors"
             >
               Start Free

@@ -33,8 +33,8 @@ export default function CreateWaitlistPage() {
     try {
       await createWaitlist(data);
       router.push(`/w/${data.slug}`);
-    } catch (err: any) {
-      setServerError(err.message || "Something went wrong");
+    } catch (err: unknown) {
+      setServerError(err instanceof Error ? err.message : "Something went wrong");
     }
   };
 

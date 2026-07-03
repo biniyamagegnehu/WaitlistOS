@@ -3,8 +3,9 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { X, LayoutDashboard, List, Settings, LogOut, Zap } from "lucide-react";
+import { X, LayoutDashboard, List, Settings, Zap } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 interface MobileMenuProps {
   open: boolean;
@@ -105,13 +106,10 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
         {/* Logout */}
         <div className="border-t border-white/8 p-3 shrink-0">
-          <Link
-            href="/api/auth/logout"
-            className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-red-400 transition-all"
-          >
-            <LogOut className="h-4 w-4 shrink-0" />
-            Logout
-          </Link>
+          <LogoutButton
+            onLogout={onClose}
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-red-400 transition-all disabled:cursor-wait disabled:opacity-70"
+          />
         </div>
       </div>
     </>

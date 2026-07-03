@@ -7,12 +7,12 @@ import {
   LayoutDashboard,
   List,
   Settings,
-  LogOut,
   Zap,
   ChevronLeft,
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { LogoutButton } from "@/components/auth/logout-button";
 
 interface SidebarLink {
   label: string;
@@ -97,18 +97,14 @@ export function DashboardSidebar({
       {/* Collapse button + Logout */}
       <div className="border-t border-white/8 p-2 space-y-0.5 shrink-0">
         {/* Logout */}
-        <Link
-          href="/api/auth/logout"
-          title={collapsed ? "Logout" : undefined}
+        <LogoutButton
+          collapsed={collapsed}
           className={cn(
-            "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-red-400 transition-all duration-150",
+            "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-red-400 transition-all duration-150 disabled:cursor-wait disabled:opacity-70",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
             collapsed && "justify-center px-0"
           )}
-        >
-          <LogOut className="h-4 w-4 shrink-0" />
-          {!collapsed && <span>Logout</span>}
-        </Link>
+        />
 
         {/* Collapse toggle (hidden on mobile — handled by sheet) */}
         {onCollapse && (
