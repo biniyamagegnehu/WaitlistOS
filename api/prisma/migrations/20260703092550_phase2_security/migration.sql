@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "users" ADD COLUMN     "emailVerificationExpiresAt" TIMESTAMP(3),
+ADD COLUMN     "emailVerificationToken" TEXT,
+ADD COLUMN     "emailVerifiedAt" TIMESTAMP(3),
+ADD COLUMN     "failedLoginAttempts" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "lockedUntil" TIMESTAMP(3),
+ADD COLUMN     "passwordChangedAt" TIMESTAMP(3),
+ADD COLUMN     "passwordResetExpiresAt" TIMESTAMP(3),
+ADD COLUMN     "passwordResetToken" TEXT,
+ADD COLUMN     "pendingEmail" TEXT,
+ADD COLUMN     "pendingEmailVerificationExpiresAt" TIMESTAMP(3),
+ADD COLUMN     "pendingEmailVerificationToken" TEXT,
+ADD COLUMN     "twoFactorEnabled" BOOLEAN NOT NULL DEFAULT false,
+ADD COLUMN     "twoFactorSecret" TEXT,
+ALTER COLUMN "status" SET DEFAULT 'PENDING_VERIFICATION';

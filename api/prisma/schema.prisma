@@ -41,10 +41,33 @@ model User {
   avatar       String?
   role         Role       @default(USER)
   provider     Provider   @default(EMAIL)
-  status       UserStatus @default(ACTIVE)
+  status       UserStatus @default(PENDING_VERIFICATION)
   lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
+
+  // ── Email Verification ──────────────────────────
+  emailVerifiedAt           DateTime?
+  emailVerificationToken    String?   // stores bcrypt hash of the raw token
+  emailVerificationExpiresAt DateTime?
+
+  // ── Password Reset ──────────────────────────────
+  passwordResetToken        String?   // stores bcrypt hash of the raw token
+  passwordResetExpiresAt    DateTime?
+  passwordChangedAt         DateTime?
+
+  // ── Email Change ────────────────────────────────
+  pendingEmail                       String?
+  pendingEmailVerificationToken      String?   // stores bcrypt hash of the raw token
+  pendingEmailVerificationExpiresAt  DateTime?
+
+  // ── Two-Factor Authentication (TOTP) ────────────
+  twoFactorEnabled Boolean @default(false)
+  twoFactorSecret  String? // encrypted base32 secret
+
+  // ── Account Lockout ─────────────────────────────
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
 
   sessions Session[]
   founder  Founder?
