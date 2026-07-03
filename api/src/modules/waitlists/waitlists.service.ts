@@ -6,11 +6,19 @@ import { CreateWaitlistDto } from './dto/create-waitlist.dto';
 export class WaitlistsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async create(createWaitlistDto: CreateWaitlistDto) {
+  async create(createWaitlistDto: CreateWaitlistDto, userId: string) {
+    const founder = await this.prisma.founder.findUnique({
+      where: { userId },
+    });
+
+    if (!founder) {
+      throw new NotFoundException('Founder profile not found');
+    }
+
     return this.prisma.waitlist.create({
       data: {
         ...createWaitlistDto,
-        founderId: createWaitlistDto.founderId as string,
+        founderId: founder.id,
       },
     });
   }

@@ -1,10 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
 
-/** Temporary founder ID used when no auth session exists yet.
- *  Replace this with a real JWT claim in Phase 9. */
-export const TEMP_FOUNDER_ID = process.env.TEMP_FOUNDER_ID ?? 'temp-founder-id';
-
 export interface DashboardWaitlist {
   id: string;
   name: string;
@@ -28,17 +24,25 @@ export interface DashboardWaitlistDetail {
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  /** Resolve the effective founderId — prefers the supplied value, falls back to TEMP_FOUNDER_ID */
-  private resolveFounderId(founderId?: string): string {
-    return founderId?.trim() || TEMP_FOUNDER_ID;
+  /** Get the Founder ID from a User ID */
+  private async getFounderId(userId: string): Promise<string> {
+    const founder = await this.prisma.founder.findUnique({
+      where: { userId },
+    });
+
+    if (!founder) {
+      throw new NotFoundException('Founder profile not found');
+    }
+
+    return founder.id;
   }
 
   // ── List all waitlists owned by the founder ──────────────────────────────
-  async getWaitlists(founderId?: string): Promise<DashboardWaitlist[]> {
-    const fid = this.resolveFounderId(founderId);
+  async getWaitlists(userId: string): Promise<DashboardWaitlist[]> {
+    const founderId = await this.getFounderId(userId);
 
     const waitlists = await this.prisma.waitlist.findMany({
-      where: { founderId: fid },
+      where: { founderId },
       orderBy: { createdAt: 'desc' },
       include: {
         _count: {
@@ -58,12 +62,12 @@ export class DashboardService {
   // ── Get a single waitlist with its participants ──────────────────────────
   async getWaitlistDetail(
     waitlistId: string,
-    founderId?: string,
+    userId: string,
   ): Promise<DashboardWaitlistDetail> {
-    const fid = this.resolveFounderId(founderId);
+    const founderId = await this.getFounderId(userId);
 
     const waitlist = await this.prisma.waitlist.findFirst({
-      where: { id: waitlistId, founderId: fid },
+      where: { id: waitlistId, founderId },
       include: {
         _count: { select: { participants: true } },
         participants: {
@@ -96,11 +100,11 @@ export class DashboardService {
   }
 
   // ── Generate a CSV string for a waitlist ────────────────────────────────
-  async exportCsv(waitlistId: string, founderId?: string): Promise<{ csv: string; slug: string }> {
-    const fid = this.resolveFounderId(founderId);
+  async exportCsv(waitlistId: string, userId: string): Promise<{ csv: string; slug: string }> {
+    const founderId = await this.getFounderId(userId);
 
     const waitlist = await this.prisma.waitlist.findFirst({
-      where: { id: waitlistId, founderId: fid },
+      where: { id: waitlistId, founderId },
       include: {
         participants: {
           orderBy: { position: 'asc' },

@@ -1,11 +1,20 @@
 import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
-import { AppModule } from './app.module';
+import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
+import { AppModule } from './app.module';
+import { HttpExceptionFilter, AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // Security Headers
+  app.use(helmet());
+
+  // Global Prefix
+  app.setGlobalPrefix('api');
+
+  // CORS
   app.enableCors({
     origin: ['http://localhost:3001', 'http://localhost:3000'],
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
@@ -13,12 +22,21 @@ async function bootstrap() {
     credentials: true,
   });
 
+  // Cookies (still needed for some backward compatibility or edge cases, 
+  // though auth now uses Authorization headers)
   app.use(cookieParser());
 
-  app.useGlobalPipes(new ValidationPipe({
-    whitelist: true,
-    transform: true,
-  }));
+  // Global Exception Filters
+  app.useGlobalFilters(new AllExceptionsFilter(), new HttpExceptionFilter());
+
+  // Global Validation Pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
 
   await app.listen(process.env.PORT ?? 3000);
 }

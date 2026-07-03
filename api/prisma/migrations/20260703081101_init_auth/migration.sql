@@ -1,13 +1,51 @@
 -- CreateEnum
+CREATE TYPE "Role" AS ENUM ('USER', 'ADMIN');
+
+-- CreateEnum
 CREATE TYPE "Provider" AS ENUM ('EMAIL', 'GOOGLE');
+
+-- CreateEnum
+CREATE TYPE "UserStatus" AS ENUM ('PENDING_VERIFICATION', 'ACTIVE', 'SUSPENDED');
+
+-- CreateTable
+CREATE TABLE "users" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "passwordHash" TEXT,
+    "firstName" TEXT,
+    "lastName" TEXT,
+    "avatar" TEXT,
+    "role" "Role" NOT NULL DEFAULT 'USER',
+    "provider" "Provider" NOT NULL DEFAULT 'EMAIL',
+    "status" "UserStatus" NOT NULL DEFAULT 'ACTIVE',
+    "lastLoginAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "users_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "sessions" (
+    "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
+    "refreshTokenHash" TEXT NOT NULL,
+    "ipAddress" TEXT,
+    "userAgent" TEXT,
+    "expiresAt" TIMESTAMP(3) NOT NULL,
+    "lastUsedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "revokedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+
+    CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
+);
 
 -- CreateTable
 CREATE TABLE "founders" (
     "id" TEXT NOT NULL,
+    "userId" TEXT NOT NULL,
     "email" TEXT NOT NULL,
-    "passwordHash" TEXT,
     "name" TEXT,
-    "provider" "Provider" NOT NULL DEFAULT 'EMAIL',
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "founders_pkey" PRIMARY KEY ("id")
@@ -39,6 +77,12 @@ CREATE TABLE "participants" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "founders_userId_key" ON "founders"("userId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "founders_email_key" ON "founders"("email");
 
 -- CreateIndex
@@ -49,6 +93,12 @@ CREATE UNIQUE INDEX "participants_referralCode_key" ON "participants"("referralC
 
 -- CreateIndex
 CREATE UNIQUE INDEX "participants_waitlistId_email_key" ON "participants"("waitlistId", "email");
+
+-- AddForeignKey
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "founders" ADD CONSTRAINT "founders_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "waitlists" ADD CONSTRAINT "waitlists_founderId_fkey" FOREIGN KEY ("founderId") REFERENCES "founders"("id") ON DELETE CASCADE ON UPDATE CASCADE;

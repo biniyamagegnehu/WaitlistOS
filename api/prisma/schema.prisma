@@ -9,29 +9,86 @@ datasource db {
   provider = "postgresql"
 }
 
+// ─────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
 enum Provider {
   EMAIL
   GOOGLE
 }
 
+enum UserStatus {
+  PENDING_VERIFICATION
+  ACTIVE
+  SUSPENDED
+}
+
 // ─────────────────────────────────────────────
-// Founder — The person who creates a waitlist
+// User — Authentication identity
 // ─────────────────────────────────────────────
-model Founder {
+model User {
   id           String     @id @default(uuid())
   email        String     @unique
   passwordHash String?
-  name         String?
+  firstName    String?
+  lastName     String?
+  avatar       String?
+  role         Role       @default(USER)
   provider     Provider   @default(EMAIL)
+  status       UserStatus @default(ACTIVE)
+  lastLoginAt  DateTime?
   createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
 
+  sessions Session[]
+  founder  Founder?
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// Session — Refresh token tracking per device
+// ─────────────────────────────────────────────
+model Session {
+  id               String    @id @default(uuid())
+  userId           String
+  refreshTokenHash String
+  ipAddress        String?
+  userAgent        String?
+  expiresAt        DateTime
+  lastUsedAt       DateTime  @default(now())
+  revokedAt        DateTime?
+  createdAt        DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+// ─────────────────────────────────────────────
+// Founder — Business entity, owns Waitlists
+// ─────────────────────────────────────────────
+model Founder {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
   waitlists Waitlist[]
 
   @@map("founders")
 }
 
 // ─────────────────────────────────────────────
-// Waitlist — A single waitlist owned by a founder
+// Waitlist — A single waitlist owned by a Founder
 // ─────────────────────────────────────────────
 model Waitlist {
   id        String   @id @default(uuid())
@@ -50,18 +107,18 @@ model Waitlist {
 // Participant — A user who joined a waitlist
 // ─────────────────────────────────────────────
 model Participant {
-  id           String   @id @default(uuid())
-  waitlistId   String
-  email        String
-  position     Int
-  referralCode String   @unique
-  referredById String?
-  referralCount Int     @default(0)
-  createdAt    DateTime @default(now())
+  id            String   @id @default(uuid())
+  waitlistId    String
+  email         String
+  position      Int
+  referralCode  String   @unique
+  referredById  String?
+  referralCount Int      @default(0)
+  createdAt     DateTime @default(now())
 
-  waitlist     Waitlist      @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
-  referredBy   Participant?  @relation("Referrals", fields: [referredById], references: [id])
-  referrals    Participant[] @relation("Referrals")
+  waitlist   Waitlist      @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  referredBy Participant?  @relation("Referrals", fields: [referredById], references: [id])
+  referrals  Participant[] @relation("Referrals")
 
   @@unique([waitlistId, email])
   @@map("participants")
