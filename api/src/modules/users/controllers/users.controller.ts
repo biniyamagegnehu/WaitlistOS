@@ -3,14 +3,21 @@ import {
   Get,
   Patch,
   Body,
+  Query,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
 import { UsersService } from '../services/users.service';
 import { UpdateProfileDto } from '../dto/update-profile.dto';
+import { ChangePasswordDto } from '../dto/change-password.dto';
+import { ChangeEmailDto } from '../dto/change-email.dto';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
+import { Public } from '../../../common/decorators/public.decorator';
+import { VerifiedEmailGuard } from '../../auth/guards/verified-email.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { Throttle } from '@nestjs/throttler';
 
 @Controller('users')
 export class UsersController {
@@ -68,6 +75,59 @@ export class UsersController {
       success: true,
       message: 'Profile updated successfully',
       data: { user: updatedUser },
+    };
+  }
+
+  /**
+   * PATCH /users/change-password
+   */
+  @Patch('change-password')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async changePassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ChangePasswordDto,
+  ) {
+    await this.usersService.changePassword(user.userId, dto, user.sessionId);
+    return {
+      success: true,
+      message: 'Password changed successfully. All other active sessions have been logged out.',
+      data: {},
+    };
+  }
+
+  /**
+   * PATCH /users/change-email
+   */
+  @Patch('change-email')
+  @HttpCode(HttpStatus.OK)
+  @UseGuards(VerifiedEmailGuard)
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+  async changeEmail(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: ChangeEmailDto,
+  ) {
+    await this.usersService.changeEmail(user.userId, dto);
+    return {
+      success: true,
+      message: 'A verification link has been sent to your new email address.',
+      data: {},
+    };
+  }
+
+  /**
+   * GET /users/change-email/verify
+   * Verify an email change via token.
+   */
+  @Public()
+  @Get('change-email/verify')
+  @HttpCode(HttpStatus.OK)
+  async verifyEmailChange(@Query('token') token: string) {
+    await this.usersService.verifyEmailChange(token);
+    return {
+      success: true,
+      message: 'Email address updated successfully.',
+      data: {},
     };
   }
 }
