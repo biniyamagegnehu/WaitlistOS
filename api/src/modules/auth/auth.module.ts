@@ -3,27 +3,27 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthService } from './services/auth.service';
+import { TwoFactorService } from './services/two-factor.service';
 import { AuthController } from './controllers/auth.controller';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
+import { VerifiedEmailGuard } from './guards/verified-email.guard';
 import { SessionsModule } from '../sessions/sessions.module';
 import { UsersModule } from '../users/users.module';
 import { PrismaModule } from '../../prisma/prisma.module';
+import { EmailsModule } from '../emails/emails.module';
 
 @Module({
   imports: [
     ConfigModule,
     PassportModule.register({ defaultStrategy: 'jwt' }),
-    // JwtModule registered async so ConfigService is available
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
-        // Default config used for signing access tokens
-        // Individual sign() calls override this with their own secret+expiry
         secret: configService.get<string>('app.jwtAccessSecret'),
         signOptions: { expiresIn: '15m' },
       }),
@@ -31,16 +31,19 @@ import { PrismaModule } from '../../prisma/prisma.module';
     SessionsModule,
     UsersModule,
     PrismaModule,
+    EmailsModule,
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
+    TwoFactorService,
     AccessTokenStrategy,
     RefreshTokenStrategy,
     GoogleStrategy,
     AccessTokenGuard,
     RefreshTokenGuard,
+    VerifiedEmailGuard,
   ],
-  exports: [AuthService, JwtModule, AccessTokenGuard],
+  exports: [AuthService, TwoFactorService, JwtModule, AccessTokenGuard, VerifiedEmailGuard],
 })
 export class AuthModule {}
