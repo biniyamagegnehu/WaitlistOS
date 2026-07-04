@@ -1,3 +1,5 @@
+export * from "./auth";
+
 export interface Waitlist {
   id: string;
   founderId: string;
@@ -7,7 +9,6 @@ export interface Waitlist {
 }
 
 export interface CreateWaitlistInput {
-  founderId?: string;
   name: string;
   slug: string;
 }

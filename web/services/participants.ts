@@ -1,44 +1,36 @@
-import { API_URL } from '../lib/constants';
-import { JoinResponse, JoinErrorCode } from '../types/participant';
+import axios from "axios";
+import { api } from "@/lib/axios";
+import type { JoinErrorCode, JoinResponse, JoinWaitlistInput } from "@/types/participant";
 
 export class JoinWaitlistError extends Error {
-  constructor(public code: JoinErrorCode, message: string) {
-    super(message);
-    this.name = 'JoinWaitlistError';
+  constructor(public readonly code: JoinErrorCode) {
+    super(code);
+    this.name = "JoinWaitlistError";
   }
 }
 
-export async function joinWaitlist(data: {
-  waitlistSlug: string;
-  email: string;
-  referralCode?: string;
-}): Promise<JoinResponse> {
-  const res = await fetch(`${API_URL}/participants`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
-  });
+export async function joinWaitlist(data: JoinWaitlistInput): Promise<JoinResponse> {
+  try {
+    const response = await api.post<JoinResponse>("/participants", data);
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      const message = error.response?.data?.message;
+      if (isJoinErrorCode(message)) {
+        throw new JoinWaitlistError(message);
+      }
+    }
 
-  if (res.ok) {
-    return res.json();
+    throw new JoinWaitlistError("SERVER_ERROR");
   }
+}
 
-  // Try to parse error body for specific code
-  const body = await res.json().catch(() => ({}));
-  const serverMessage: string = body?.message ?? '';
-
-  if (res.status === 404 || serverMessage === 'WAITLIST_NOT_FOUND') {
-    throw new JoinWaitlistError('WAITLIST_NOT_FOUND', 'Waitlist not found');
-  }
-  if (res.status === 409 || serverMessage === 'EMAIL_ALREADY_JOINED') {
-    throw new JoinWaitlistError('EMAIL_ALREADY_JOINED', 'You have already joined this waitlist');
-  }
-  if (serverMessage === 'INVALID_REFERRAL') {
-    throw new JoinWaitlistError('INVALID_REFERRAL', 'The referral link is invalid');
-  }
-  if (serverMessage === 'SELF_REFERRAL') {
-    throw new JoinWaitlistError('SELF_REFERRAL', 'You cannot use your own referral link');
-  }
-
-  throw new JoinWaitlistError('SERVER_ERROR', 'Something went wrong. Please try again.');
+function isJoinErrorCode(value: unknown): value is JoinErrorCode {
+  return (
+    value === "WAITLIST_NOT_FOUND" ||
+    value === "EMAIL_ALREADY_JOINED" ||
+    value === "INVALID_REFERRAL" ||
+    value === "SELF_REFERRAL" ||
+    value === "SERVER_ERROR"
+  );
 }

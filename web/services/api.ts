@@ -1,31 +1,25 @@
-import { API_URL } from '../lib/constants';
-import { CreateWaitlistInput, Waitlist } from '../types';
+import { api } from "@/lib/axios";
+import type { CreateWaitlistInput, Waitlist } from "@/types";
 
 export async function createWaitlist(data: CreateWaitlistInput): Promise<Waitlist> {
-  const res = await fetch(`${API_URL}/waitlists`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    credentials: 'include',
-    body: JSON.stringify(data),
-  });
-  
-  if (!res.ok) {
-    const errorData = await res.json().catch(() => ({}));
-    throw new Error(errorData.message || 'Failed to create waitlist');
-  }
-  
-  return res.json();
+  const response = await api.post<Waitlist>("/waitlists", data);
+  return response.data;
 }
 
 export async function getWaitlistBySlug(slug: string): Promise<Waitlist | null> {
-  const res = await fetch(`${API_URL}/waitlists/${slug}`, {
-    cache: 'no-store'
-  });
-  
-  if (!res.ok) {
-    if (res.status === 404) return null;
-    throw new Error('Failed to fetch waitlist');
+  try {
+    const response = await api.get<Waitlist>(`/waitlists/${slug}`);
+    return response.data;
+  } catch (error: unknown) {
+    if (
+      typeof error === "object" &&
+      error !== null &&
+      "response" in error &&
+      (error as { response?: { status?: number } }).response?.status === 404
+    ) {
+      return null;
+    }
+
+    throw error;
   }
-  
-  return res.json();
 }
