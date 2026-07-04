@@ -42,7 +42,7 @@ export default function PricingPage() {
               )}
             </ul>
             <Link
-              href="/signup"
+              href="/register"
               className="block text-center w-full rounded-xl bg-white/10 border border-white/15 py-3 text-sm font-semibold text-white hover:bg-white/15 transition-colors mt-auto"
             >
               Get Started Free
@@ -64,7 +64,7 @@ export default function PricingPage() {
               ))}
             </ul>
             <Link
-              href="/signup"
+              href="/register"
               className="block text-center w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 text-sm font-semibold text-white transition-colors mt-auto shadow-xl shadow-indigo-600/30"
             >
               Get Starter
@@ -86,7 +86,7 @@ export default function PricingPage() {
               ))}
             </ul>
             <Link
-              href="/signup"
+              href="/register"
               className="block text-center w-full rounded-xl bg-white/10 border border-white/15 py-3 text-sm font-semibold text-white hover:bg-white/15 transition-colors mt-auto"
             >
               Get Pro

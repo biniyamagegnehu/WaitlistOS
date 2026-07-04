@@ -12,7 +12,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
-import { LogoutButton } from "@/components/auth/logout-button";
+import { LogoutButton } from "@/components/features/auth/logout-button";
 
 interface SidebarLink {
   label: string;
@@ -21,9 +21,9 @@ interface SidebarLink {
 }
 
 const links: SidebarLink[] = [
-  { label: "Overview", href: "/dashboard", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Waitlists", href: "/dashboard/waitlists", icon: <List className="h-4 w-4" /> },
-  { label: "Settings", href: "/dashboard/settings", icon: <Settings className="h-4 w-4" /> },
+  { label: "Profile", href: "/dashboard/profile", icon: <LayoutDashboard className="h-4 w-4" /> },
+  { label: "Security", href: "/dashboard/security", icon: <Settings className="h-4 w-4" /> },
+  { label: "Sessions", href: "/dashboard/sessions", icon: <List className="h-4 w-4" /> },
 ];
 
 interface DashboardSidebarProps {
