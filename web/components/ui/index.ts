@@ -26,3 +26,11 @@ export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";
 
 export { Spinner, PageLoader, Skeleton } from "./loader";
+export { PasswordInput } from "./password-input";
+export type { PasswordInputProps } from "./password-input";
+
+export { OTPInput } from "./otp-input";
+export type { OTPInputProps } from "./otp-input";
+
+export { Alert } from "./alert";
+export type { AlertProps, AlertVariant } from "./alert";
