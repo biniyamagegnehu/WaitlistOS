@@ -1,80 +1,264 @@
 "use client";
 
+import * as React from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useRouter } from "next/navigation";
-import { createWaitlist } from "../../services/api";
-import { useState } from "react";
-
-const createWaitlistSchema = z.object({
-  name: z.string().min(1, "Product name is required"),
-  slug: z.string()
-    .min(1, "Slug is required")
-    .regex(/^[a-z0-9-]+$/, "Slug must be lowercase alphanumeric with hyphens"),
-});
-
-type CreateWaitlistFormValues = z.infer<typeof createWaitlistSchema>;
+import { Upload, Copy, Check, ExternalLink } from "lucide-react";
+import { useAuth } from "@/contexts/auth-context";
+import { createWaitlist } from "@/services/api";
+import { uploadFile } from "@/services/files";
+import { getApiErrorMessage } from "@/lib/errors";
+import { routes } from "@/lib/routes";
+import {
+  createWaitlistSchema,
+  validateLogoFile,
+  type CreateWaitlistFormData,
+} from "@/lib/validations/waitlist";
+import type { CreateWaitlistResponse } from "@/types/waitlist";
+import { Card, CardContent } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
 
 export default function CreateWaitlistPage() {
   const router = useRouter();
-  const [serverError, setServerError] = useState("");
+  const { isAuthenticated, isLoading } = useAuth();
+  const [logoFile, setLogoFile] = React.useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
+  const [logoError, setLogoError] = React.useState<string | null>(null);
+  const [serverError, setServerError] = React.useState("");
+  const [result, setResult] = React.useState<CreateWaitlistResponse | null>(null);
+  const [copiedField, setCopiedField] = React.useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-  } = useForm<CreateWaitlistFormValues>({
+  } = useForm<CreateWaitlistFormData>({
     resolver: zodResolver(createWaitlistSchema),
   });
 
-  const onSubmit = async (data: CreateWaitlistFormValues) => {
+  React.useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.replace(routes.login);
+    }
+  }, [isAuthenticated, isLoading, router]);
+
+  React.useEffect(() => {
+    return () => {
+      if (logoPreview) {
+        URL.revokeObjectURL(logoPreview);
+      }
+    };
+  }, [logoPreview]);
+
+  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0] ?? null;
+    setLogoError(validateLogoFile(file));
+
+    if (logoPreview) {
+      URL.revokeObjectURL(logoPreview);
+    }
+
+    setLogoFile(file);
+    setLogoPreview(file ? URL.createObjectURL(file) : null);
+  };
+
+  const handleCopy = async (value: string, field: string) => {
+    await navigator.clipboard.writeText(value);
+    setCopiedField(field);
+    window.setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const onSubmit = async (data: CreateWaitlistFormData) => {
     setServerError("");
+
+    const validationError = validateLogoFile(logoFile);
+    if (validationError) {
+      setLogoError(validationError);
+      return;
+    }
+
     try {
-      await createWaitlist(data);
-      router.push(`/w/${data.slug}`);
-    } catch (err: unknown) {
-      setServerError(err instanceof Error ? err.message : "Something went wrong");
+      const uploaded = await uploadFile(logoFile as File);
+      const response = await createWaitlist({
+        name: data.name,
+        tagline: data.tagline,
+        description: data.description,
+        logoId: uploaded.id,
+      });
+
+      setResult(response);
+    } catch (error: unknown) {
+      setServerError(getApiErrorMessage(error, "Failed to create waitlist"));
     }
   };
 
+  if (isLoading || !isAuthenticated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#0d0d14] text-white">
+        Loading...
+      </div>
+    );
+  }
+
+  if (result) {
+    return (
+      <div className="min-h-screen bg-[#0d0d14] px-4 py-12">
+        <div className="mx-auto max-w-2xl space-y-6">
+          <Alert variant="success" title="Waitlist created">
+            Your hosted page and widget embed code are ready.
+          </Alert>
+
+          <Card>
+            <CardContent className="p-6 space-y-6">
+              <div>
+                <h1 className="text-2xl font-semibold text-white">{result.waitlist.name}</h1>
+                <p className="text-zinc-400 mt-1">{result.waitlist.tagline}</p>
+                <p className="text-sm text-zinc-500 mt-2">
+                  Slug: <span className="font-mono text-zinc-300">{result.waitlist.slug}</span>
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium text-zinc-300">Hosted page</p>
+                <div className="flex gap-2">
+                  <code className="flex-1 rounded-xl bg-black/40 px-4 py-3 text-sm text-zinc-200 break-all">
+                    {result.hostedPage}
+                  </code>
+                  <Button
+                    variant="secondary"
+                    onClick={() => void handleCopy(result.hostedPage, "hosted")}
+                  >
+                    {copiedField === "hosted" ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+
+              {result.widget?.embedCode && (
+                <div className="space-y-2">
+                  <p className="text-sm font-medium text-zinc-300">Widget embed code</p>
+                  <code className="block rounded-xl bg-black/40 px-4 py-3 text-sm text-zinc-200 break-all">
+                    {result.widget.embedCode}
+                  </code>
+                  <Button
+                    variant="secondary"
+                    className="w-full"
+                    onClick={() => void handleCopy(result.widget?.embedCode ?? "", "embed")}
+                  >
+                    {copiedField === "embed" ? "Copied!" : "Copy embed code"}
+                  </Button>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-3 sm:flex-row">
+                <Link href={routes.waitlist(result.waitlist.slug)} className="flex-1">
+                  <Button className="w-full">
+                    <ExternalLink className="h-4 w-4 mr-2" />
+                    View waitlist page
+                  </Button>
+                </Link>
+                <Link href={routes.dashboard} className="flex-1">
+                  <Button variant="secondary" className="w-full">
+                    Go to dashboard
+                  </Button>
+                </Link>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 bg-white rounded-lg shadow-md border">
-      <h1 className="text-2xl font-bold mb-6 text-center">Create Waitlist</h1>
-      
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium mb-1">Product Name</label>
-          <input
-            {...register("name")}
-            className="w-full border rounded p-2"
-            placeholder="My Awesome Startup"
-          />
-          {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name.message}</p>}
+    <div className="min-h-screen bg-[#0d0d14] px-4 py-12">
+      <div className="mx-auto max-w-xl">
+        <div className="mb-8 text-center">
+          <h1 className="text-3xl font-bold text-white">Create your waitlist</h1>
+          <p className="text-zinc-400 mt-2">
+            Upload your logo and launch a hosted page in seconds.
+          </p>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1">Slug</label>
-          <input
-            {...register("slug")}
-            className="w-full border rounded p-2"
-            placeholder="my-awesome-startup"
-          />
-          {errors.slug && <p className="text-red-500 text-sm mt-1">{errors.slug.message}</p>}
-        </div>
+        <Card>
+          <CardContent className="p-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+              <Input
+                label="Product name"
+                placeholder="My Awesome Product"
+                error={errors.name?.message}
+                {...register("name")}
+              />
 
+              <Input
+                label="Tagline"
+                placeholder="Join the waitlist for early access"
+                error={errors.tagline?.message}
+                {...register("tagline")}
+              />
 
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-zinc-300">
+                  Description <span className="text-zinc-500">(optional)</span>
+                </label>
+                <textarea
+                  rows={4}
+                  placeholder="Tell visitors what your product is about"
+                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  {...register("description")}
+                />
+                {errors.description?.message && (
+                  <p className="text-sm text-red-400">{errors.description.message}</p>
+                )}
+              </div>
 
-        {serverError && <p className="text-red-500 text-sm">{serverError}</p>}
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-zinc-300">Logo</label>
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/5 px-6 py-8 hover:bg-white/8 transition-colors">
+                  {logoPreview ? (
+                    <Image
+                      src={logoPreview}
+                      alt="Logo preview"
+                      width={96}
+                      height={96}
+                      unoptimized
+                      className="h-24 w-24 rounded-xl object-cover"
+                    />
+                  ) : (
+                    <>
+                      <Upload className="h-8 w-8 text-zinc-500 mb-2" />
+                      <span className="text-sm text-zinc-400">
+                        PNG, JPEG, JPG, or WEBP up to 5MB
+                      </span>
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg,image/webp"
+                    className="hidden"
+                    onChange={handleLogoChange}
+                  />
+                </label>
+                {logoError && <p className="text-sm text-red-400">{logoError}</p>}
+              </div>
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full bg-black text-white rounded p-2 disabled:opacity-50"
-        >
-          {isSubmitting ? "Creating..." : "Create Waitlist"}
-        </button>
-      </form>
+              {serverError && (
+                <Alert variant="error" title="Error">
+                  {serverError}
+                </Alert>
+              )}
+
+              <Button type="submit" className="w-full" loading={isSubmitting}>
+                Create waitlist
+              </Button>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
