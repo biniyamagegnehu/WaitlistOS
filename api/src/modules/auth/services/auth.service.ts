@@ -548,6 +548,29 @@ export class AuthService {
     await this.sessionsService.revokeAll(userId);
   }
 
+  async getActiveSessions(userId: string, currentSessionId: string) {
+    const sessions = await this.sessionsService.findActiveByUserId(userId);
+
+    return sessions.map((session) => ({
+      id: session.id,
+      userId: session.userId,
+      ipAddress: session.ipAddress ?? undefined,
+      userAgent: session.userAgent ?? undefined,
+      createdAt: session.createdAt.toISOString(),
+      expiresAt: session.expiresAt.toISOString(),
+      isCurrent: session.id === currentSessionId,
+    }));
+  }
+
+  async revokeSession(userId: string, sessionId: string, currentSessionId: string): Promise<void> {
+    if (sessionId === currentSessionId) {
+      throw new BadRequestException('Cannot revoke the current session');
+    }
+
+    await this.sessionsService.findValidSession(sessionId, userId);
+    await this.sessionsService.revoke(sessionId);
+  }
+
   // ──────────────────────────────────────────────────────────────
   // Private Helpers
   // ──────────────────────────────────────────────────────────────

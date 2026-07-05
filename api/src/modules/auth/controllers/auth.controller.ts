@@ -2,6 +2,8 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
+  Param,
   Query,
   Body,
   HttpCode,
@@ -269,6 +271,42 @@ export class AuthController {
     return {
       success: true,
       message: 'Logged out from all devices successfully',
+    };
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // GET /auth/sessions — List active sessions
+  // ──────────────────────────────────────────────────────────────
+
+  @Get('sessions')
+  @HttpCode(HttpStatus.OK)
+  async getSessions(@CurrentUser() user: AuthenticatedUser) {
+    const sessions = await this.authService.getActiveSessions(
+      user.userId,
+      user.sessionId,
+    );
+
+    return {
+      success: true,
+      data: { sessions },
+    };
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // DELETE /auth/sessions/:id — Revoke a session
+  // ──────────────────────────────────────────────────────────────
+
+  @Delete('sessions/:id')
+  @HttpCode(HttpStatus.OK)
+  async revokeSession(
+    @CurrentUser() user: AuthenticatedUser,
+    @Param('id') sessionId: string,
+  ) {
+    await this.authService.revokeSession(user.userId, sessionId, user.sessionId);
+
+    return {
+      success: true,
+      message: 'Session revoked successfully',
     };
   }
 }

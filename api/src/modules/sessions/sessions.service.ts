@@ -116,4 +116,18 @@ export class SessionsService {
 
     this.logger.log(`All sessions revoked for user: ${userId}`);
   }
+
+  /**
+   * Returns all active sessions for a user.
+   */
+  async findActiveByUserId(userId: string): Promise<Session[]> {
+    return this.prisma.session.findMany({
+      where: {
+        userId,
+        revokedAt: null,
+        expiresAt: { gt: new Date() },
+      },
+      orderBy: { lastUsedAt: 'desc' },
+    });
+  }
 }

@@ -33,18 +33,8 @@ export class UsersController {
   @Get('me')
   @HttpCode(HttpStatus.OK)
   async getMe(@CurrentUser() user: AuthenticatedUser) {
-    const safeUser = {
-      id: user.userId,
-      email: user.email,
-      role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
-      avatar: user.avatar,
-      status: user.status,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt,
-      lastLoginAt: user.lastLoginAt,
-    };
+    const dbUser = await this.usersService.findById(user.userId);
+    const safeUser = this.usersService.sanitize(dbUser);
 
     const founder = await this.prisma.founder.findUnique({
       where: { userId: user.userId },
@@ -53,7 +43,21 @@ export class UsersController {
     return {
       success: true,
       data: {
-        user: safeUser,
+        user: {
+          id: safeUser.id,
+          email: safeUser.email,
+          role: safeUser.role,
+          provider: safeUser.provider,
+          firstName: safeUser.firstName,
+          lastName: safeUser.lastName,
+          avatar: safeUser.avatar,
+          status: safeUser.status,
+          emailVerifiedAt: safeUser.emailVerifiedAt,
+          twoFactorEnabled: safeUser.twoFactorEnabled,
+          lastLoginAt: safeUser.lastLoginAt,
+          createdAt: safeUser.createdAt,
+          updatedAt: safeUser.updatedAt,
+        },
         founder: founder ?? null,
       },
     };
