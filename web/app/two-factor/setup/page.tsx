@@ -12,10 +12,13 @@ import { setupTwoFactor, enableTwoFactor } from "@/services/auth";
 import { useToast } from "@/components/ui/toast";
 import { Alert } from "@/components/ui/alert";
 import { getApiErrorMessage } from "@/lib/errors";
+import { useAuth } from "@/contexts/auth-context";
+import { routes } from "@/lib/routes";
 
 export default function TwoFactorSetupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { refreshUser, patchUser } = useAuth();
   const [qrCode, setQrCode] = React.useState<string>("");
   const [secret, setSecret] = React.useState<string>("");
   const [backupCodes, setBackupCodes] = React.useState<string[]>([]);
@@ -54,11 +57,13 @@ export default function TwoFactorSetupPage() {
   const handleEnable = async (data: TwoFactorFormData) => {
     try {
       await enableTwoFactor(data);
+      patchUser({ isTwoFactorEnabled: true });
+      await refreshUser();
       toast({
         title: "Two-factor authentication enabled successfully",
         variant: "success",
       });
-      router.replace("/dashboard/security");
+      router.replace(routes.security);
     } catch (error: unknown) {
       toast({
         title: getApiErrorMessage(error, "Failed to enable 2FA"),
@@ -71,7 +76,7 @@ export default function TwoFactorSetupPage() {
     <AuthLayout
       title="Setup two-factor authentication"
       description="Add an extra layer of security to your account"
-      backLinkHref="/dashboard/security"
+      backLinkHref={routes.security}
       backLinkText="Back to security"
     >
       {step === "setup" && (

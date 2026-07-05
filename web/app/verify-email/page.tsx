@@ -9,11 +9,15 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { verifyEmail } from "@/services/auth";
 import { getApiErrorMessage } from "@/lib/errors";
+import { useAuth } from "@/contexts/auth-context";
+import { tokenStorage } from "@/lib/axios";
+import { routes } from "@/lib/routes";
 
 export default function VerifyEmailPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get("token");
+  const { refreshUser, patchUser } = useAuth();
 
   const [status, setStatus] = React.useState<"idle" | "loading" | "success" | "error">(
     token ? "idle" : "error"
@@ -21,6 +25,7 @@ export default function VerifyEmailPage() {
   const [message, setMessage] = React.useState(
     token ? "" : "Invalid or missing verification token"
   );
+  const [redirectTarget, setRedirectTarget] = React.useState(routes.login);
 
   const handleVerify = React.useCallback(async () => {
     if (!token) return;
@@ -30,8 +35,18 @@ export default function VerifyEmailPage() {
       await verifyEmail({ token });
       setStatus("success");
       setMessage("Email verified successfully");
+
+      const hasSession = !!tokenStorage.getAccessToken();
+      if (hasSession) {
+        patchUser({ isEmailVerified: true });
+        await refreshUser();
+      }
+
+      const nextRoute = hasSession ? routes.profile : routes.login;
+      setRedirectTarget(nextRoute);
+
       setTimeout(() => {
-        router.replace("/login");
+        router.replace(nextRoute);
       }, 2000);
     } catch (error: unknown) {
       setStatus("error");
@@ -39,7 +54,7 @@ export default function VerifyEmailPage() {
         getApiErrorMessage(error, "Failed to verify email. The link may be expired or invalid.")
       );
     }
-  }, [router, token]);
+  }, [router, token, refreshUser, patchUser]);
 
   React.useEffect(() => {
     if (token) {
@@ -52,8 +67,10 @@ export default function VerifyEmailPage() {
   }, [handleVerify, token]);
 
   const handleResend = () => {
-    router.replace("/resend-verification");
+    router.replace(routes.resendVerification);
   };
+
+  const isLoggedIn = redirectTarget === routes.profile;
 
   return (
     <AuthLayout
@@ -76,7 +93,7 @@ export default function VerifyEmailPage() {
               {message}
             </Alert>
             <p className="text-sm text-zinc-400">
-              Redirecting to login...
+              Redirecting{isLoggedIn ? " to your profile" : " to login"}...
             </p>
           </div>
         )}
@@ -91,7 +108,7 @@ export default function VerifyEmailPage() {
               <Button onClick={handleResend} variant="secondary">
                 Request new verification email
               </Button>
-              <Link href="/login" className="w-full">
+              <Link href={routes.login} className="w-full">
                 <Button variant="ghost" className="w-full">
                   Back to login
                 </Button>

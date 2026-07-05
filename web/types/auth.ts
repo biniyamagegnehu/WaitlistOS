@@ -10,6 +10,8 @@ export interface User {
   provider: 'local' | 'google';
   isEmailVerified: boolean;
   isTwoFactorEnabled: boolean;
+  status?: string;
+  lastLoginAt?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -80,7 +82,7 @@ export interface ForgotPasswordData {
 
 export interface ResetPasswordData {
   token: string;
-  password: string;
+  newPassword: string;
 }
 
 export interface ChangePasswordData {

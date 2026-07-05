@@ -79,7 +79,7 @@ export default function RegisterPage() {
               type="email"
               placeholder="you@example.com"
               leftIcon={<Mail className="h-4 w-4" />}
-              error={errors.email?.message}
+              error={errors.email?.message as string | undefined}
               {...register("email")}
             />
 
@@ -87,15 +87,15 @@ export default function RegisterPage() {
               label="Password"
               placeholder="••••••••"
               showStrength
-              error={errors.password?.message}
-              helper="Must be at least 8 characters with uppercase, lowercase, number, and special character"
+              error={errors.password?.message as string | undefined}
+              helper="Must be at least 8 characters"
               {...register("password")}
             />
 
             <PasswordInput
               label="Confirm password"
               placeholder="••••••••"
-              error={errors.confirmPassword?.message}
+              error={errors.confirmPassword?.message as string | undefined}
               {...register("confirmPassword")}
             />
           </>

@@ -20,20 +20,19 @@ export const registerSchema = z
     email: z
       .string()
       .min(1, "Email is required")
-      .email("Invalid email address"),
+      .email("Invalid email address")
+      .max(255, "Email is too long")
+      .transform((val) => val.toLowerCase().trim()),
     password: z
       .string()
       .min(1, "Password is required")
       .min(8, "Password must be at least 8 characters")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number")
-      .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
+      .max(128, "Password must not exceed 128 characters"),
     confirmPassword: z
       .string()
       .min(1, "Please confirm your password"),
-    firstName: z.string().optional(),
-    lastName: z.string().optional(),
+    firstName: z.string().max(50, "First name must not exceed 50 characters").optional(),
+    lastName: z.string().max(50, "Last name must not exceed 50 characters").optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -56,19 +55,15 @@ export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 export const resetPasswordSchema = z
   .object({
     token: z.string().min(1, "Token is required"),
-    password: z
+    newPassword: z
       .string()
       .min(1, "Password is required")
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number")
-      .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
+      .min(8, "Password must be at least 8 characters"),
     confirmPassword: z
       .string()
       .min(1, "Please confirm your password"),
   })
-  .refine((data) => data.password === data.confirmPassword, {
+  .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords do not match",
     path: ["confirmPassword"],
   });
@@ -84,11 +79,7 @@ export const changePasswordSchema = z
     newPassword: z
       .string()
       .min(1, "New password is required")
-      .min(8, "Password must be at least 8 characters")
-      .regex(/[a-z]/, "Password must contain at least one lowercase letter")
-      .regex(/[A-Z]/, "Password must contain at least one uppercase letter")
-      .regex(/[0-9]/, "Password must contain at least one number")
-      .regex(/[^a-zA-Z0-9]/, "Password must contain at least one special character"),
+      .min(8, "Password must be at least 8 characters"),
     confirmPassword: z
       .string()
       .min(1, "Please confirm your password"),
@@ -112,6 +103,15 @@ export const changeEmailSchema = z.object({
 });
 
 export type ChangeEmailFormData = z.infer<typeof changeEmailSchema>;
+
+// ── Update Profile Schema ───────────────────────────────────────────────────────────
+export const updateProfileSchema = z.object({
+  firstName: z.string().max(50, "First name must not exceed 50 characters").optional(),
+  lastName: z.string().max(50, "Last name must not exceed 50 characters").optional(),
+  avatar: z.string().url("Avatar must be a valid URL").optional().or(z.literal("")),
+});
+
+export type UpdateProfileFormData = z.infer<typeof updateProfileSchema>;
 
 // ── Two Factor Schema ──────────────────────────────────────────────────────────────
 export const twoFactorSchema = z.object({

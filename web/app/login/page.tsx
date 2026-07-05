@@ -64,14 +64,14 @@ export default function LoginPage() {
               type="email"
               placeholder="you@example.com"
               leftIcon={<Mail className="h-4 w-4" />}
-              error={errors.email?.message}
+              error={errors.email?.message as string | undefined}
               {...register("email")}
             />
 
             <PasswordInput
               label="Password"
               placeholder="••••••••"
-              error={errors.password?.message}
+              error={errors.password?.message as string | undefined}
               {...register("password")}
             />
 

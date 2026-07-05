@@ -9,10 +9,12 @@ import { AuthForm } from "@/components/features/auth/forms/auth-form";
 import { OTPInput } from "@/components/ui/otp-input";
 import { twoFactorSchema, type TwoFactorFormData } from "@/lib/validations/auth";
 import { verifyTwoFactor } from "@/services/auth";
-import { tokenStorage } from "@/lib/axios";
+import { useAuth } from "@/contexts/auth-context";
+import { routes } from "@/lib/routes";
 
 export default function TwoFactorVerifyPage() {
   const router = useRouter();
+  const { applyAuthResponse, refreshUser } = useAuth();
   const [userId] = React.useState(() => {
     if (typeof window === "undefined") return "";
     return sessionStorage.getItem("pending_2fa_user_id") ?? "";
@@ -20,22 +22,20 @@ export default function TwoFactorVerifyPage() {
 
   React.useEffect(() => {
     if (!userId) {
-      router.replace("/login");
+      router.replace(routes.login);
     }
   }, [router, userId]);
 
   const handleVerify = async (data: TwoFactorFormData) => {
     try {
       const response = await verifyTwoFactor({ ...data, userId });
-      const { accessToken, refreshToken } = response.data;
+      applyAuthResponse(response.data);
 
-      if (accessToken && refreshToken) {
-        tokenStorage.setTokens(accessToken, refreshToken);
-      }
-      
       sessionStorage.removeItem("pending_2fa_user_id");
-      
-      router.replace("/dashboard");
+
+      await refreshUser();
+
+      router.replace(routes.dashboard);
     } catch (error: unknown) {
       throw error;
     }
@@ -45,7 +45,7 @@ export default function TwoFactorVerifyPage() {
     <AuthLayout
       title="Two-factor authentication"
       description="Enter the 6-digit code from your authenticator app"
-      backLinkHref="/login"
+      backLinkHref={routes.login}
       backLinkText="Back to login"
     >
       <div className="space-y-6">
@@ -66,7 +66,7 @@ export default function TwoFactorVerifyPage() {
                 length={6}
                 value={watch("code") || ""}
                 onChange={(value) => setValue("code", value, { shouldValidate: true })}
-                error={errors.code?.message}
+                error={errors.code?.message as string | undefined}
                 autoFocus
               />
             </div>

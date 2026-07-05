@@ -5,6 +5,7 @@ import axios from "axios";
 import { User, Founder, AuthResponse } from "@/types/auth";
 import { tokenStorage } from "@/lib/axios";
 import { api } from "@/lib/axios";
+import { normalizeUser } from "@/lib/user";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface AuthContextValue {
@@ -21,6 +22,8 @@ interface AuthContextValue {
   }) => Promise<AuthResponse["data"]>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  patchUser: (updates: Partial<User>) => void;
+  applyAuthResponse: (data: AuthResponse["data"]) => void;
   googleLogin: () => void;
 }
 
@@ -34,21 +37,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [founder, setFounder] = React.useState<Founder | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const hasInitialized = React.useRef(false);
+  const fetchIdRef = React.useRef(0);
 
   const isAuthenticated = !!user;
 
+  const applyAuthResponse = React.useCallback((data: AuthResponse["data"]) => {
+    if (data.accessToken && data.refreshToken) {
+      tokenStorage.setTokens(data.accessToken, data.refreshToken);
+    }
+
+    if (data.user) {
+      setUser(normalizeUser(data.user));
+      setFounder(data.founder || null);
+    }
+  }, []);
+
+  const patchUser = React.useCallback((updates: Partial<User>) => {
+    setUser((current) => (current ? { ...current, ...updates } : current));
+  }, []);
+
   // Fetch current user
   const fetchCurrentUser = React.useCallback(async () => {
+    const fetchId = ++fetchIdRef.current;
+
     try {
       const response = await api.get<{
         success: boolean;
         data: { user: User; founder?: Founder | null };
-      }>(
-        "/users/me"
-      );
-      setUser(response.data.data.user);
+      }>("/users/me");
+
+      if (fetchId !== fetchIdRef.current) {
+        return;
+      }
+
+      setUser(normalizeUser(response.data.data.user));
       setFounder(response.data.data.founder || null);
     } catch (error) {
+      if (fetchId !== fetchIdRef.current) {
+        return;
+      }
+
       // If 401, user is not authenticated - clear tokens
       if (axios.isAxiosError(error) && error.response?.status === 401) {
         tokenStorage.clearTokens();
@@ -56,7 +84,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setFounder(null);
       }
     } finally {
-      setIsLoading(false);
+      if (fetchId === fetchIdRef.current) {
+        setIsLoading(false);
+      }
     }
   }, []);
 
@@ -90,18 +120,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return data;
       }
 
-      if (data.accessToken && data.refreshToken) {
-        tokenStorage.setTokens(data.accessToken, data.refreshToken);
-      }
-
-      if (data.user) {
-        setUser(data.user);
-        setFounder(data.founder || null);
-      }
-
+      applyAuthResponse(data);
       return data;
     },
-    []
+    [applyAuthResponse]
   );
 
   const register = React.useCallback(
@@ -115,18 +137,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       const responseData = response.data.data;
 
-      if (responseData.accessToken && responseData.refreshToken) {
-        tokenStorage.setTokens(responseData.accessToken, responseData.refreshToken);
-      }
-
       if (responseData.user && responseData.accessToken) {
-        setUser(responseData.user);
-        setFounder(responseData.founder || null);
+        applyAuthResponse(responseData);
       }
 
       return responseData;
     },
-    []
+    [applyAuthResponse]
   );
 
   const logout = React.useCallback(async () => {
@@ -160,6 +177,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     register,
     logout,
     refreshUser,
+    patchUser,
+    applyAuthResponse,
     googleLogin,
   };
 
@@ -178,6 +197,6 @@ export function useAuth() {
 }
 
 export function useCurrentUser() {
-  const { user, founder, isAuthenticated, isLoading } = useAuth();
-  return { user, founder, isAuthenticated, isLoading };
+  const { user, founder, isAuthenticated, isLoading, refreshUser } = useAuth();
+  return { user, founder, isAuthenticated, isLoading, refreshUser };
 }

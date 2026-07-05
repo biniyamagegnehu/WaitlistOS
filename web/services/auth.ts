@@ -13,7 +13,9 @@ import {
   TwoFactorSetup,
   TwoFactorVerify,
   Session,
+  User,
 } from "@/types/auth";
+import { normalizeUser } from "@/lib/user";
 
 // ── Authentication ───────────────────────────────────────────────────────────────
 export async function login(credentials: LoginCredentials): Promise<AuthResponse> {
@@ -31,10 +33,29 @@ export async function logout(): Promise<void> {
 }
 
 export async function getCurrentUser(): Promise<{
-  user: NonNullable<AuthResponse["data"]["user"]>;
+  user: User;
   founder?: AuthResponse["data"]["founder"];
 }> {
-  const response = await api.get("/users/me");
+  const response = await api.get<{
+    success: boolean;
+    data: { user: User; founder?: AuthResponse["data"]["founder"] };
+  }>("/users/me");
+
+  return {
+    user: normalizeUser(response.data.data.user),
+    founder: response.data.data.founder,
+  };
+}
+
+export async function updateProfile(data: {
+  firstName?: string;
+  lastName?: string;
+  avatar?: string;
+}): Promise<{ user: User }> {
+  const response = await api.patch<{ success: boolean; data: { user: User } }>(
+    "/users/profile",
+    data
+  );
   return response.data.data;
 }
 
@@ -50,10 +71,7 @@ export async function forgotPassword(data: ForgotPasswordData): Promise<void> {
 }
 
 export async function resetPassword(data: ResetPasswordData): Promise<void> {
-  await api.post("/auth/reset-password", {
-    token: data.token,
-    newPassword: data.password,
-  });
+  await api.post("/auth/reset-password", data);
 }
 
 export async function changePassword(data: ChangePasswordData): Promise<void> {
@@ -111,17 +129,16 @@ export async function verifyTwoFactor(data: TwoFactorVerify): Promise<AuthRespon
 }
 
 // ── Sessions ─────────────────────────────────────────────────────────────────────
-// Note: Sessions endpoints are not yet implemented in the backend
-// These functions are placeholders for future implementation
 export async function getSessions(): Promise<Session[]> {
-  // TODO: Implement when backend adds sessions endpoint
-  throw new Error("Sessions endpoint not yet implemented in backend");
+  const response = await api.get<{
+    success: boolean;
+    data: { sessions: Session[] };
+  }>("/auth/sessions");
+  return response.data.data.sessions;
 }
 
-export async function revokeSession(_sessionId: string): Promise<void> {
-  void _sessionId;
-  // TODO: Implement when backend adds sessions endpoint
-  throw new Error("Sessions endpoint not yet implemented in backend");
+export async function revokeSession(sessionId: string): Promise<void> {
+  await api.delete(`/auth/sessions/${sessionId}`);
 }
 
 export async function revokeAllSessions(): Promise<void> {

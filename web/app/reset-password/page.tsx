@@ -23,7 +23,7 @@ export default function ResetPasswordPage() {
     if (!token) {
       throw new Error("Invalid reset token");
     }
-    await resetPassword({ ...data, token });
+    await resetPassword({ token, newPassword: data.newPassword });
     router.replace("/login");
   };
 
@@ -52,10 +52,9 @@ export default function ResetPasswordPage() {
             <PasswordInput
               label="New password"
               placeholder="••••••••"
-              showStrength
-              error={errors.password?.message}
-              helper="Must be at least 8 characters with uppercase, lowercase, number, and special character"
-              {...register("password")}
+              error={errors.newPassword?.message}
+              helper="Must be at least 8 characters"
+              {...register("newPassword")}
             />
 
             <PasswordInput

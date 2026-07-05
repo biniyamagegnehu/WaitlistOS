@@ -6,6 +6,8 @@ import { AuthLayout } from "@/components/features/auth/layout/auth-layout";
 import { AuthForm } from "@/components/features/auth/forms/auth-form";
 import { PasswordInput } from "@/components/ui/password-input";
 import { disableTwoFactor } from "@/services/auth";
+import { useAuth } from "@/contexts/auth-context";
+import { routes } from "@/lib/routes";
 
 const disableTwoFactorSchema = z.object({
   password: z.string().min(1, "Password is required"),
@@ -15,17 +17,20 @@ type DisableTwoFactorFormData = z.infer<typeof disableTwoFactorSchema>;
 
 export default function DisableTwoFactorPage() {
   const router = useRouter();
+  const { refreshUser, patchUser } = useAuth();
 
   const handleDisable = async (data: DisableTwoFactorFormData) => {
     await disableTwoFactor(data);
-    router.replace("/dashboard/security");
+    patchUser({ isTwoFactorEnabled: false });
+    await refreshUser();
+    router.replace(routes.security);
   };
 
   return (
     <AuthLayout
       title="Disable two-factor authentication"
       description="Confirm your password to disable 2FA"
-      backLinkHref="/dashboard/security"
+      backLinkHref={routes.security}
       backLinkText="Back to security"
     >
       <AuthForm
