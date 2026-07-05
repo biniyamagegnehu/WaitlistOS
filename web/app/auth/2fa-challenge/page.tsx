@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+import { LoadingScreen } from "@/components/layouts/loading-screen";
 
 export default function AuthTwoFactorChallengePage() {
   const router = useRouter();
@@ -19,9 +20,5 @@ export default function AuthTwoFactorChallengePage() {
     router.replace("/login");
   }, [router, searchParams]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0d0d14] text-white">
-      Opening two-factor verification...
-    </div>
-  );
+  return <LoadingScreen message="Opening two-factor verification…" />;
 }

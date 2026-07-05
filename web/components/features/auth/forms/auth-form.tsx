@@ -1,25 +1,25 @@
 "use client";
 
 import * as React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, type DefaultValues, type FieldValues, type Resolver } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/toast";
 import { getApiErrorMessage } from "@/lib/errors";
 
-interface AuthFormProps<T extends z.ZodSchema> {
-  schema: T;
-  defaultValues?: z.infer<T>;
-  onSubmit: (data: z.infer<T>) => Promise<void>;
+interface AuthFormProps<T extends FieldValues> {
+  schema: z.ZodType<T>;
+  defaultValues?: DefaultValues<T>;
+  onSubmit: (data: T) => Promise<void>;
   submitText: string;
   isSubmitting?: boolean;
-  children: (methods: ReturnType<typeof useForm<z.infer<T>>>) => React.ReactNode;
+  children: (methods: ReturnType<typeof useForm<T>>) => React.ReactNode;
   onSuccess?: () => void;
   onSuccessMessage?: string;
 }
 
-export function AuthForm<T extends z.ZodSchema>({
+export function AuthForm<T extends FieldValues>({
   schema,
   defaultValues,
   onSubmit,
@@ -32,12 +32,12 @@ export function AuthForm<T extends z.ZodSchema>({
   const { toast } = useToast();
   const [internalSubmitting, setInternalSubmitting] = React.useState(false);
 
-  const methods = useForm<z.infer<T>>({
-    resolver: zodResolver(schema),
+  const methods = useForm<T>({
+    resolver: zodResolver(schema as never) as Resolver<T>,
     defaultValues,
   });
 
-  const handleSubmit = async (data: z.infer<T>) => {
+  const handleSubmit = async (data: T) => {
     try {
       setInternalSubmitting(true);
       await onSubmit(data);

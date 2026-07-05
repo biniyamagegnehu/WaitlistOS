@@ -50,8 +50,8 @@ export default function TwoFactorVerifyPage() {
     >
       <div className="space-y-6">
         <div className="flex justify-center">
-          <div className="bg-white/5 p-4 rounded-full">
-            <Shield className="h-8 w-8 text-indigo-400" />
+          <div className="rounded-full bg-primary/10 p-4">
+            <Shield className="h-8 w-8 text-primary" />
           </div>
         </div>
 
@@ -76,7 +76,7 @@ export default function TwoFactorVerifyPage() {
         <div className="text-center">
           <Link
             href="/login"
-            className="text-sm text-zinc-400 hover:text-white transition-colors"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
           >
             Use a different method
           </Link>

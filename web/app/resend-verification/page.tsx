@@ -51,11 +51,11 @@ export default function ResendVerificationPage() {
         )}
       </AuthForm>
 
-      <p className="mt-6 text-center text-sm text-zinc-400">
+      <p className="mt-6 text-center text-sm text-muted-foreground">
         Already verified?{" "}
         <Link
           href="/login"
-          className="text-indigo-400 hover:text-indigo-300 font-medium transition-colors"
+          className="font-medium text-primary transition-colors hover:text-primary-hover"
         >
           Sign in
         </Link>

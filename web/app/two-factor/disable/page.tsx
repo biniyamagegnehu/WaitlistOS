@@ -23,14 +23,14 @@ export default function DisableTwoFactorPage() {
     await disableTwoFactor(data);
     patchUser({ isTwoFactorEnabled: false });
     await refreshUser();
-    router.replace(routes.security);
+    router.replace(routes.settingsTab("security"));
   };
 
   return (
     <AuthLayout
       title="Disable two-factor authentication"
       description="Confirm your password to disable 2FA"
-      backLinkHref={routes.security}
+      backLinkHref={routes.settingsTab("security")}
       backLinkText="Back to security"
     >
       <AuthForm

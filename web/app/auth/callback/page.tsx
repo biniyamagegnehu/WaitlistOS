@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { tokenStorage } from "@/lib/axios";
 import { useAuth } from "@/contexts/auth-context";
 import { routes } from "@/lib/routes";
+import { LoadingScreen } from "@/components/layouts/loading-screen";
 
 export default function AuthCallbackPage() {
   const router = useRouter();
@@ -26,9 +27,5 @@ export default function AuthCallbackPage() {
     router.replace(routes.login);
   }, [router, searchParams, refreshUser]);
 
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0d0d14] text-white">
-      Signing you in...
-    </div>
-  );
+  return <LoadingScreen message="Signing you in…" />;
 }

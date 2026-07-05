@@ -25,7 +25,7 @@ export default function VerifyEmailPage() {
   const [message, setMessage] = React.useState(
     token ? "" : "Invalid or missing verification token"
   );
-  const [redirectTarget, setRedirectTarget] = React.useState(routes.login);
+  const [redirectTarget, setRedirectTarget] = React.useState<string>(routes.login);
 
   const handleVerify = React.useCallback(async () => {
     if (!token) return;
@@ -42,7 +42,7 @@ export default function VerifyEmailPage() {
         await refreshUser();
       }
 
-      const nextRoute = hasSession ? routes.profile : routes.login;
+      const nextRoute = hasSession ? routes.dashboard : routes.login;
       setRedirectTarget(nextRoute);
 
       setTimeout(() => {
@@ -70,7 +70,7 @@ export default function VerifyEmailPage() {
     router.replace(routes.resendVerification);
   };
 
-  const isLoggedIn = redirectTarget === routes.profile;
+  const isLoggedIn = redirectTarget === routes.dashboard;
 
   return (
     <AuthLayout
@@ -81,26 +81,26 @@ export default function VerifyEmailPage() {
       <div className="text-center py-8">
         {status === "loading" && (
           <div className="flex flex-col items-center gap-4">
-            <RefreshCw className="h-12 w-12 text-indigo-400 animate-spin" />
-            <p className="text-zinc-400">Verifying your email...</p>
+            <RefreshCw className="h-12 w-12 animate-spin text-primary" />
+            <p className="text-muted-foreground">Verifying your email...</p>
           </div>
         )}
 
         {status === "success" && (
           <div className="flex flex-col items-center gap-4">
-            <CheckCircle className="h-12 w-12 text-emerald-400" />
+            <CheckCircle className="h-12 w-12 text-success" />
             <Alert variant="success" title="Success" className="w-full">
               {message}
             </Alert>
-            <p className="text-sm text-zinc-400">
-              Redirecting{isLoggedIn ? " to your profile" : " to login"}...
+            <p className="text-sm text-muted-foreground">
+              Redirecting{isLoggedIn ? " to your dashboard" : " to login"}...
             </p>
           </div>
         )}
 
         {status === "error" && (
           <div className="flex flex-col items-center gap-4">
-            <XCircle className="h-12 w-12 text-red-400" />
+            <XCircle className="h-12 w-12 text-destructive" />
             <Alert variant="error" title="Verification failed" className="w-full">
               {message}
             </Alert>

@@ -63,7 +63,7 @@ export default function TwoFactorSetupPage() {
         title: "Two-factor authentication enabled successfully",
         variant: "success",
       });
-      router.replace(routes.security);
+      router.replace(routes.settingsTab("security"));
     } catch (error: unknown) {
       toast({
         title: getApiErrorMessage(error, "Failed to enable 2FA"),
@@ -76,7 +76,7 @@ export default function TwoFactorSetupPage() {
     <AuthLayout
       title="Setup two-factor authentication"
       description="Add an extra layer of security to your account"
-      backLinkHref={routes.security}
+      backLinkHref={routes.settingsTab("security")}
       backLinkText="Back to security"
     >
       {step === "setup" && (
@@ -92,7 +92,7 @@ export default function TwoFactorSetupPage() {
                 <img src={qrCode} alt="QR Code" className="w-48 h-48" />
               ) : (
                 <div className="w-48 h-48 flex items-center justify-center">
-                  <div className="text-gray-400">Loading...</div>
+                  <div className="text-muted-foreground">Loading...</div>
                 </div>
               )}
             </div>
@@ -100,23 +100,23 @@ export default function TwoFactorSetupPage() {
 
           {/* Secret Key */}
           <div>
-            <label className="block text-sm font-medium text-zinc-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-foreground">
               Secret Key
             </label>
             <div className="flex items-center gap-2">
-              <code className="flex-1 bg-black/40 px-4 py-3 rounded-xl text-sm text-white font-mono">
+              <code className="flex-1 rounded-md border border-border bg-surface-muted px-4 py-3 font-mono text-sm text-foreground">
                 {secret}
               </code>
               <button
                 type="button"
                 onClick={handleCopySecret}
-                className="p-3 bg-white/10 rounded-xl hover:bg-white/15 transition-colors"
+                className="rounded-md border border-border bg-surface p-3 transition-colors hover:bg-surface-muted"
                 title="Copy secret"
               >
                 {copied ? (
-                  <Check className="h-4 w-4 text-emerald-400" />
+                  <Check className="h-4 w-4 text-primary" />
                 ) : (
-                  <Copy className="h-4 w-4" />
+                  <Copy className="h-4 w-4 text-muted-foreground" />
                 )}
               </button>
             </div>
@@ -127,7 +127,7 @@ export default function TwoFactorSetupPage() {
             <button
               type="button"
               onClick={() => setShowBackupCodes(!showBackupCodes)}
-              className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors"
+              className="text-sm text-primary transition-colors hover:text-primary-hover"
             >
               {showBackupCodes ? "Hide" : "Show"} backup codes
             </button>
@@ -140,7 +140,7 @@ export default function TwoFactorSetupPage() {
                   {backupCodes.map((code, index) => (
                     <code
                       key={index}
-                      className="bg-black/40 px-3 py-2 rounded text-sm text-white font-mono"
+                      className="rounded-md border border-border bg-surface-muted px-3 py-2 font-mono text-sm text-foreground"
                     >
                       {code}
                     </code>
