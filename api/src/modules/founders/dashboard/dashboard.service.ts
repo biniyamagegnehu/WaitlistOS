@@ -20,6 +20,17 @@ export interface DashboardWaitlistDetail {
   participants: DashboardParticipant[];
 }
 
+export interface DashboardOverview {
+  totalSignups: number;
+  referralConversionRate: number;
+  topReferrers: Array<{
+    email: string;
+    referralCount: number;
+    waitlistName: string;
+  }>;
+  waitlistCount: number;
+}
+
 @Injectable()
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
@@ -35,6 +46,54 @@ export class DashboardService {
     }
 
     return founder.id;
+  }
+
+  // ── Overview stats for the founder dashboard ─────────────────────────────
+  async getOverview(userId: string): Promise<DashboardOverview> {
+    const founderId = await this.getFounderId(userId);
+
+    const waitlists = await this.prisma.waitlist.findMany({
+      where: { founderId },
+      select: {
+        name: true,
+        participants: {
+          select: {
+            email: true,
+            referralCount: true,
+            referredById: true,
+          },
+        },
+      },
+    });
+
+    const participants = waitlists.flatMap((waitlist) =>
+      waitlist.participants.map((participant) => ({
+        ...participant,
+        waitlistName: waitlist.name,
+      })),
+    );
+
+    const totalSignups = participants.length;
+    const referredSignups = participants.filter((p) => p.referredById).length;
+    const referralConversionRate =
+      totalSignups > 0 ? Math.round((referredSignups / totalSignups) * 1000) / 10 : 0;
+
+    const topReferrers = participants
+      .filter((p) => p.referralCount > 0)
+      .sort((a, b) => b.referralCount - a.referralCount)
+      .slice(0, 5)
+      .map((p) => ({
+        email: p.email,
+        referralCount: p.referralCount,
+        waitlistName: p.waitlistName,
+      }));
+
+    return {
+      totalSignups,
+      referralConversionRate,
+      topReferrers,
+      waitlistCount: waitlists.length,
+    };
   }
 
   // ── List all waitlists owned by the founder ──────────────────────────────

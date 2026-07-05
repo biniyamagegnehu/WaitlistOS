@@ -8,6 +8,12 @@ import type { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interf
 export class DashboardController {
   constructor(private readonly dashboardService: DashboardService) {}
 
+  // ── GET /dashboard/overview ──────────────────────────────────────────────
+  @Get('overview')
+  getOverview(@CurrentUser() user: AuthenticatedUser) {
+    return this.dashboardService.getOverview(user.userId);
+  }
+
   // ── GET /dashboard/waitlists ─────────────────────────────────────────────
   @Get('waitlists')
   getWaitlists(@CurrentUser() user: AuthenticatedUser) {
