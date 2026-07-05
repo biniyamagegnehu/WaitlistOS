@@ -3,7 +3,6 @@
 import * as React from "react";
 import { cn } from "@/lib/cn";
 
-// ── Context ───────────────────────────────────────────────────────────────────
 interface TabsContextValue {
   value: string;
   onChange: (value: string) => void;
@@ -14,7 +13,6 @@ const TabsContext = React.createContext<TabsContextValue>({
   onChange: () => {},
 });
 
-// ── Root ──────────────────────────────────────────────────────────────────────
 interface TabsProps {
   value?: string;
   defaultValue?: string;
@@ -49,7 +47,6 @@ export function Tabs({
   );
 }
 
-// ── List ──────────────────────────────────────────────────────────────────────
 export function TabsList({
   className,
   ...props
@@ -58,7 +55,7 @@ export function TabsList({
     <div
       role="tablist"
       className={cn(
-        "flex gap-1 rounded-xl border border-white/10 bg-white/5 p-1",
+        "flex gap-1 rounded-md border border-border bg-surface-muted p-1",
         className
       )}
       {...props}
@@ -66,12 +63,16 @@ export function TabsList({
   );
 }
 
-// ── Trigger ───────────────────────────────────────────────────────────────────
 interface TabsTriggerProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
   value: string;
 }
 
-export function TabsTrigger({ value, className, children, ...props }: TabsTriggerProps) {
+export function TabsTrigger({
+  value,
+  className,
+  children,
+  ...props
+}: TabsTriggerProps) {
   const { value: active, onChange } = React.useContext(TabsContext);
   const isActive = active === value;
 
@@ -81,11 +82,11 @@ export function TabsTrigger({ value, className, children, ...props }: TabsTrigge
       aria-selected={isActive}
       onClick={() => onChange(value)}
       className={cn(
-        "flex-1 rounded-lg px-3 py-2 text-sm font-medium transition-all duration-150",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-1",
+        "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
         isActive
-          ? "bg-indigo-600 text-white shadow-sm"
-          : "text-zinc-400 hover:text-zinc-200 hover:bg-white/5",
+          ? "bg-surface text-foreground shadow-sm"
+          : "text-muted-foreground hover:bg-surface hover:text-foreground",
         className
       )}
       {...props}
@@ -95,7 +96,6 @@ export function TabsTrigger({ value, className, children, ...props }: TabsTrigge
   );
 }
 
-// ── Content ───────────────────────────────────────────────────────────────────
 interface TabsContentProps extends React.HTMLAttributes<HTMLDivElement> {
   value: string;
 }

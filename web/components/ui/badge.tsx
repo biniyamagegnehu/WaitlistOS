@@ -2,17 +2,18 @@ import * as React from "react";
 import { cn } from "@/lib/cn";
 
 export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
-  variant?: "default" | "success" | "warning" | "danger" | "info" | "outline";
+  variant?: "default" | "success" | "warning" | "danger" | "info" | "accent" | "outline";
   size?: "sm" | "md";
 }
 
 const variantClasses: Record<NonNullable<BadgeProps["variant"]>, string> = {
-  default: "bg-zinc-800 text-zinc-300 border-zinc-700",
-  success: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30",
-  warning: "bg-amber-500/15 text-amber-400 border-amber-500/30",
-  danger: "bg-red-500/15 text-red-400 border-red-500/30",
-  info: "bg-indigo-500/15 text-indigo-400 border-indigo-500/30",
-  outline: "bg-transparent text-zinc-400 border-white/20",
+  default: "bg-surface-muted text-foreground border-border",
+  success: "bg-success/10 text-success border-success/25",
+  warning: "bg-warning/10 text-warning border-warning/25",
+  danger: "bg-destructive/10 text-destructive border-destructive/25",
+  info: "bg-info/10 text-info border-info/25",
+  accent: "bg-accent/15 text-accent border-accent/30",
+  outline: "bg-transparent text-muted-foreground border-border",
 };
 
 const sizeClasses: Record<NonNullable<BadgeProps["size"]>, string> = {
@@ -29,7 +30,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border font-medium leading-none tracking-wide",
+        "inline-flex items-center gap-1 rounded-md border font-medium leading-none",
         variantClasses[variant],
         sizeClasses[size],
         className

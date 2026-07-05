@@ -1,53 +1,56 @@
 import * as React from "react";
 import { cn } from "@/lib/cn";
 
-// ── Root ──────────────────────────────────────────────────────────────────────
 export function Table({
   className,
   ...props
 }: React.HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto rounded-2xl border border-white/10">
+    <div className="w-full overflow-x-auto rounded-md border border-border bg-surface shadow-sm">
       <table
-        className={cn("w-full text-sm border-collapse", className)}
+        className={cn("w-full border-collapse text-sm", className)}
         {...props}
       />
     </div>
   );
 }
 
-// ── Head ──────────────────────────────────────────────────────────────────────
 export function TableHead({
   className,
   ...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
-      className={cn("border-b border-white/10 bg-white/5", className)}
+      className={cn("border-b border-divider bg-surface-muted", className)}
       {...props}
     />
   );
 }
 
-// ── Body ──────────────────────────────────────────────────────────────────────
 export function TableBody({
   className,
   ...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn("divide-y divide-white/8", className)} {...props} />;
+  return <tbody className={cn("divide-y divide-divider", className)} {...props} />;
 }
 
-// ── Row ───────────────────────────────────────────────────────────────────────
 interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
   clickable?: boolean;
+  selected?: boolean;
 }
 
-export function TableRow({ className, clickable, ...props }: TableRowProps) {
+export function TableRow({
+  className,
+  clickable,
+  selected,
+  ...props
+}: TableRowProps) {
   return (
     <tr
       className={cn(
         "transition-colors duration-100",
-        clickable && "cursor-pointer hover:bg-white/5",
+        clickable && "cursor-pointer hover:bg-surface-muted",
+        selected && "bg-primary/5",
         className
       )}
       {...props}
@@ -55,7 +58,6 @@ export function TableRow({ className, clickable, ...props }: TableRowProps) {
   );
 }
 
-// ── Header Cell ───────────────────────────────────────────────────────────────
 export function TableHeadCell({
   className,
   ...props
@@ -63,7 +65,7 @@ export function TableHeadCell({
   return (
     <th
       className={cn(
-        "px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-zinc-500",
+        "px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground",
         className
       )}
       {...props}
@@ -71,27 +73,22 @@ export function TableHeadCell({
   );
 }
 
-// ── Data Cell ─────────────────────────────────────────────────────────────────
 export function TableCell({
   className,
   ...props
 }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td
-      className={cn("px-4 py-3.5 text-zinc-300", className)}
-      {...props}
-    />
+    <td className={cn("px-4 py-3.5 text-foreground", className)} {...props} />
   );
 }
 
-// ── Footer ────────────────────────────────────────────────────────────────────
 export function TableFooter({
   className,
   ...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <tfoot
-      className={cn("border-t border-white/10 bg-white/5", className)}
+      className={cn("border-t border-divider bg-surface-muted", className)}
       {...props}
     />
   );

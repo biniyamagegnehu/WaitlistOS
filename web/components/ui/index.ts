@@ -25,7 +25,8 @@ export type { AvatarProps } from "./avatar";
 export { EmptyState } from "./empty-state";
 export type { EmptyStateProps } from "./empty-state";
 
-export { Spinner, PageLoader, Skeleton } from "./loader";
+export { Spinner, PageLoader } from "./loader";
+export { Skeleton } from "./skeleton";
 export { PasswordInput } from "./password-input";
 export type { PasswordInputProps } from "./password-input";
 
@@ -34,3 +35,6 @@ export type { OTPInputProps } from "./otp-input";
 
 export { Alert } from "./alert";
 export type { AlertProps, AlertVariant } from "./alert";
+
+export { SectionHeader } from "./section-header";
+export { Textarea } from "./textarea";

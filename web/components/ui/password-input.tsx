@@ -46,9 +46,9 @@ export function PasswordInput({
   };
 
   const getStrengthColor = () => {
-    if (strength < 33) return "bg-red-500";
-    if (strength < 66) return "bg-yellow-500";
-    return "bg-green-500";
+    if (strength < 33) return "bg-destructive";
+    if (strength < 66) return "bg-accent";
+    return "bg-primary";
   };
 
   const getStrengthLabel = () => {
@@ -58,9 +58,9 @@ export function PasswordInput({
   };
 
   return (
-    <div className="flex flex-col gap-1.5 w-full">
+    <div className="flex w-full flex-col gap-1.5">
       {label && (
-        <label className="block text-sm font-medium text-zinc-300">
+        <label className="block text-sm font-medium text-foreground">
           {label}
         </label>
       )}
@@ -74,7 +74,7 @@ export function PasswordInput({
             <button
               type="button"
               onClick={togglePassword}
-              className="text-zinc-500 hover:text-white transition-colors"
+              className="text-muted-foreground transition-colors hover:text-foreground"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (
@@ -89,23 +89,23 @@ export function PasswordInput({
         />
       </div>
       {showStrength && props.value && (
-        <div className="flex items-center gap-2 mt-1">
-          <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+        <div className="mt-1 flex items-center gap-2">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
             <div
               className={cn("h-full transition-all duration-300", getStrengthColor())}
               style={{ width: `${strength}%` }}
             />
           </div>
-          <span className="text-xs text-zinc-500">{getStrengthLabel()}</span>
+          <span className="text-xs text-muted-foreground">{getStrengthLabel()}</span>
         </div>
       )}
       {error && (
-        <p className="text-xs text-red-400" role="alert">
+        <p className="text-xs text-destructive" role="alert">
           {error}
         </p>
       )}
       {helper && !error && (
-        <p className="text-xs text-zinc-500">{helper}</p>
+        <p className="text-xs text-muted-foreground">{helper}</p>
       )}
     </div>
   );

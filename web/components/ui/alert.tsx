@@ -22,17 +22,17 @@ export interface AlertProps {
 }
 
 const icons: Record<AlertVariant, React.ReactNode> = {
-  success: <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />,
-  error: <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />,
-  warning: <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />,
-  info: <Info className="h-4 w-4 text-indigo-400 shrink-0" />,
+  success: <CheckCircle className="h-4 w-4 shrink-0 text-success" />,
+  error: <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />,
+  warning: <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />,
+  info: <Info className="h-4 w-4 shrink-0 text-info" />,
 };
 
 const variantStyles: Record<AlertVariant, string> = {
-  success: "border-emerald-500/25 bg-emerald-500/5",
-  error: "border-red-500/25 bg-red-500/5",
-  warning: "border-amber-500/25 bg-amber-500/5",
-  info: "border-indigo-500/25 bg-indigo-500/5",
+  success: "border-success/25 bg-success/5",
+  error: "border-destructive/25 bg-destructive/5",
+  warning: "border-warning/25 bg-warning/5",
+  info: "border-info/25 bg-info/5",
 };
 
 export function Alert({
@@ -47,22 +47,22 @@ export function Alert({
     <div
       role="alert"
       className={cn(
-        "flex items-start gap-3 rounded-xl border px-4 py-3",
+        "flex items-start gap-3 rounded-md border px-4 py-3",
         variantStyles[variant],
         className
       )}
     >
       {icons[variant]}
-      <div className="flex-1 min-w-0">
+      <div className="min-w-0 flex-1">
         {title && (
-          <p className="text-sm font-semibold text-white mb-1">{title}</p>
+          <p className="mb-1 text-sm font-semibold text-foreground">{title}</p>
         )}
-        <div className="text-sm text-zinc-300">{children}</div>
+        <div className="text-sm text-muted-foreground">{children}</div>
       </div>
       {dismissible && onDismiss && (
         <button
           onClick={onDismiss}
-          className="rounded-md p-1 text-zinc-500 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
           aria-label="Dismiss"
         >
           <X className="h-4 w-4" />

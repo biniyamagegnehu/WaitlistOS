@@ -1,39 +1,126 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ─── Light theme (default) ─── */
 :root {
-  --background: #fafafa;
-  --foreground: #171717;
+  --background: #faf8f2;
+  --foreground: #1f2937;
+  --muted-foreground: #6b7280;
+
   --surface: #ffffff;
-  --surface-foreground: #171717;
-  --surface-muted: #f4f4f5;
-  --border: #e4e4e7;
-  --primary: #171717;
-  --primary-foreground: #fafafa;
-  --radius-sm: 0.25rem;
+  --surface-muted: #f3f4f6;
+
+  --border: #e5e7eb;
+  --divider: #f3f4f6;
+
+  --primary: #1f5c42;
+  --primary-hover: #174b36;
+  --primary-foreground: #ffffff;
+
+  --accent: #d8a75b;
+  --accent-foreground: #1f2937;
+
+  --success: #16a34a;
+  --success-foreground: #ffffff;
+
+  --warning: #f59e0b;
+  --warning-foreground: #1f2937;
+
+  --destructive: #dc2626;
+  --destructive-hover: #b91c1c;
+  --destructive-foreground: #ffffff;
+
+  --info: #2563eb;
+  --info-foreground: #ffffff;
+
+  --radius-sm: 0.375rem;
   --radius-md: 0.5rem;
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
+  --radius-lg: 0.625rem;
+  --radius-xl: 0.75rem;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
+  --shadow-md: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+}
+
+/* ─── Dark theme ─── */
+.dark {
+  --background: #101816;
+  --foreground: #f5f4ef;
+  --muted-foreground: #a3aea8;
+
+  --surface: #182420;
+  --surface-muted: #24312d;
+
+  --border: #2d3b36;
+  --divider: #24312d;
+
+  --primary: #5fa57f;
+  --primary-hover: #74b892;
+  --primary-foreground: #101816;
+
+  --accent: #d8a75b;
+  --accent-foreground: #101816;
+
+  --success: #34d399;
+  --success-foreground: #101816;
+
+  --warning: #fbbf24;
+  --warning-foreground: #101816;
+
+  --destructive: #f87171;
+  --destructive-hover: #ef4444;
+  --destructive-foreground: #101816;
+
+  --info: #60a5fa;
+  --info-foreground: #101816;
+
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.25), 0 2px 4px -2px rgb(0 0 0 / 0.2);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted-foreground: var(--muted-foreground);
   --color-surface: var(--surface);
-  --color-surface-foreground: var(--surface-foreground);
   --color-surface-muted: var(--surface-muted);
   --color-border: var(--border);
+  --color-divider: var(--divider);
   --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
   --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-info: var(--info);
+  --color-info-foreground: var(--info-foreground);
   --radius-sm: var(--radius-sm);
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
-  --font-sans: Arial, Helvetica, sans-serif;
-  --font-mono: "Courier New", Courier, monospace;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 
 body {
   background-color: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--primary) 20%, transparent);
+}
+
+:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }

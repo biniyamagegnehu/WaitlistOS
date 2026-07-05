@@ -4,7 +4,6 @@ import * as React from "react";
 import { X, CheckCircle, AlertCircle, Info, AlertTriangle } from "lucide-react";
 import { cn } from "@/lib/cn";
 
-// ── Types ─────────────────────────────────────────────────────────────────────
 export type ToastVariant = "success" | "error" | "warning" | "info";
 
 export interface ToastData {
@@ -15,7 +14,6 @@ export interface ToastData {
   duration?: number;
 }
 
-// ── Context ───────────────────────────────────────────────────────────────────
 interface ToastContextValue {
   toasts: ToastData[];
   toast: (data: Omit<ToastData, "id">) => void;
@@ -28,7 +26,6 @@ const ToastContext = React.createContext<ToastContextValue>({
   dismiss: () => {},
 });
 
-// ── Provider ──────────────────────────────────────────────────────────────────
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = React.useState<ToastData[]>([]);
 
@@ -52,24 +49,22 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// ── Hook ──────────────────────────────────────────────────────────────────────
 export function useToast() {
   return React.useContext(ToastContext);
 }
 
-// ── Viewport ──────────────────────────────────────────────────────────────────
 const icons: Record<ToastVariant, React.ReactNode> = {
-  success: <CheckCircle className="h-4 w-4 text-emerald-400 shrink-0" />,
-  error: <AlertCircle className="h-4 w-4 text-red-400 shrink-0" />,
-  warning: <AlertTriangle className="h-4 w-4 text-amber-400 shrink-0" />,
-  info: <Info className="h-4 w-4 text-indigo-400 shrink-0" />,
+  success: <CheckCircle className="h-4 w-4 shrink-0 text-success" />,
+  error: <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />,
+  warning: <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />,
+  info: <Info className="h-4 w-4 shrink-0 text-info" />,
 };
 
-const variantBorder: Record<ToastVariant, string> = {
-  success: "border-emerald-500/25",
-  error: "border-red-500/25",
-  warning: "border-amber-500/25",
-  info: "border-indigo-500/25",
+const variantStyles: Record<ToastVariant, string> = {
+  success: "border-success/25 bg-surface",
+  error: "border-destructive/25 bg-surface",
+  warning: "border-warning/25 bg-surface",
+  info: "border-info/25 bg-surface",
 };
 
 function ToastViewport({
@@ -83,28 +78,29 @@ function ToastViewport({
     <div
       aria-live="polite"
       aria-atomic="false"
-      className="fixed bottom-4 right-4 z-[100] flex flex-col gap-2 max-w-sm w-full pointer-events-none"
+      className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-full max-w-sm flex-col gap-2"
     >
       {toasts.map((t) => (
         <div
           key={t.id}
           role="status"
           className={cn(
-            "pointer-events-auto flex items-start gap-3 rounded-2xl border bg-[#1a1a26]/95 backdrop-blur-xl px-4 py-3.5 shadow-xl",
-            "animate-in slide-in-from-bottom-2 fade-in-0 duration-300",
-            variantBorder[t.variant ?? "info"]
+            "pointer-events-auto flex items-start gap-3 rounded-md border px-4 py-3.5 shadow-md",
+            variantStyles[t.variant ?? "info"]
           )}
         >
           {icons[t.variant ?? "info"]}
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-white">{t.title}</p>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium text-foreground">{t.title}</p>
             {t.description && (
-              <p className="mt-0.5 text-xs text-zinc-400">{t.description}</p>
+              <p className="mt-0.5 text-xs text-muted-foreground">
+                {t.description}
+              </p>
             )}
           </div>
           <button
             onClick={() => dismiss(t.id)}
-            className="ml-1 rounded-md p-1 text-zinc-500 hover:text-white hover:bg-white/10 transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-indigo-500"
+            className="ml-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
             aria-label="Dismiss"
           >
             <X className="h-3.5 w-3.5" />

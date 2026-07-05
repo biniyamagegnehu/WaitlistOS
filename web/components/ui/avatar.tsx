@@ -42,7 +42,7 @@ export function Avatar({
       aria-label={alt || fallback}
       role={alt ? "img" : undefined}
       className={cn(
-        "relative inline-flex items-center justify-center overflow-hidden rounded-full bg-zinc-800 shrink-0",
+        "relative inline-flex shrink-0 items-center justify-center overflow-hidden rounded-full bg-primary/10",
         sizeClasses[size],
         className
       )}
@@ -57,7 +57,7 @@ export function Avatar({
           onError={() => setImageError(true)}
         />
       ) : (
-        <span className="font-semibold text-zinc-400 select-none leading-none">
+        <span className="select-none font-semibold leading-none text-primary">
           {initials}
         </span>
       )}

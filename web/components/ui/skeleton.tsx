@@ -15,13 +15,13 @@ export function Skeleton({
   const variantClasses: Record<NonNullable<typeof variant>, string> = {
     text: "h-4 w-full rounded",
     circular: "rounded-full",
-    rectangular: "rounded-xl",
+    rectangular: "rounded-md",
   };
 
   return (
     <div
       className={cn(
-        "animate-pulse bg-white/10",
+        "animate-pulse bg-surface-muted",
         variantClasses[variant],
         className
       )}

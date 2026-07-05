@@ -3,27 +3,35 @@ import { cn } from "@/lib/cn";
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: "primary" | "secondary" | "ghost" | "danger";
+  variant?: "primary" | "secondary" | "outline" | "ghost" | "accent" | "destructive" | "danger";
   size?: "sm" | "md" | "lg";
   loading?: boolean;
-  asChild?: boolean;
+  leftIcon?: React.ReactNode;
+  rightIcon?: React.ReactNode;
 }
 
-const variantClasses: Record<NonNullable<ButtonProps["variant"]>, string> = {
+const variantClasses: Record<
+  "primary" | "secondary" | "outline" | "ghost" | "accent" | "destructive",
+  string
+> = {
   primary:
-    "bg-indigo-600 text-white shadow-lg shadow-indigo-600/30 hover:bg-indigo-500 focus-visible:ring-indigo-500 border border-transparent",
+    "bg-primary text-primary-foreground border border-transparent hover:bg-primary-hover shadow-sm",
   secondary:
-    "bg-white/10 text-white border border-white/20 hover:bg-white/15 focus-visible:ring-white/50",
+    "bg-surface text-foreground border border-border hover:bg-surface-muted shadow-sm",
+  outline:
+    "bg-transparent text-foreground border border-border hover:bg-surface-muted",
   ghost:
-    "bg-transparent text-zinc-300 border border-transparent hover:bg-white/8 hover:text-white focus-visible:ring-white/30",
-  danger:
-    "bg-red-600 text-white border border-transparent shadow-lg shadow-red-600/20 hover:bg-red-500 focus-visible:ring-red-500",
+    "bg-transparent text-muted-foreground border border-transparent hover:bg-surface-muted hover:text-foreground",
+  accent:
+    "bg-accent text-accent-foreground border border-transparent hover:opacity-90 shadow-sm",
+  destructive:
+    "bg-destructive text-destructive-foreground border border-transparent hover:bg-destructive-hover shadow-sm",
 };
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "h-8 px-3 text-xs rounded-lg gap-1.5",
-  md: "h-10 px-4 text-sm rounded-xl gap-2",
-  lg: "h-12 px-6 text-base rounded-xl gap-2.5",
+  sm: "h-8 px-3 text-xs rounded-md gap-1.5",
+  md: "h-10 px-4 text-sm rounded-md gap-2",
+  lg: "h-11 px-5 text-sm rounded-md gap-2",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
@@ -34,29 +42,33 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       size = "md",
       loading = false,
       disabled,
+      leftIcon,
+      rightIcon,
       children,
       ...props
     },
     ref
   ) => {
+    const resolvedVariant = variant === "danger" ? "destructive" : variant;
+
     return (
       <button
         ref={ref}
         disabled={disabled || loading}
         className={cn(
-          "inline-flex items-center justify-center font-medium transition-all duration-150",
-          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0d0d14]",
-          "disabled:opacity-50 disabled:cursor-not-allowed",
+          "inline-flex items-center justify-center font-medium transition-colors duration-150",
+          "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "disabled:cursor-not-allowed disabled:opacity-50",
           "select-none",
-          variantClasses[variant],
+          variantClasses[resolvedVariant],
           sizeClasses[size],
           className
         )}
         {...props}
       >
-        {loading && (
+        {loading ? (
           <svg
-            className="animate-spin -ml-0.5 h-4 w-4 shrink-0"
+            className="h-4 w-4 shrink-0 animate-spin"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -76,8 +88,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
               d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"
             />
           </svg>
+        ) : (
+          leftIcon
         )}
         {children}
+        {!loading && rightIcon}
       </button>
     );
   }
