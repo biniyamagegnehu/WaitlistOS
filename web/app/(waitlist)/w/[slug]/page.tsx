@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { useParams, useSearchParams } from "next/navigation";
 import JoinWaitlistForm from "@/components/waitlist/JoinWaitlistForm";
-import { getWaitlistBySlug } from "@/services/api";
+import { getPublicWaitlistBySlug } from "@/services/api";
 import { JoinResponse } from "@/types/participant";
-import { Waitlist } from "@/types";
+import type { PublicWaitlistResponse } from "@/types/waitlist";
 
 export default function PublicWaitlistPage() {
   const params = useParams();
@@ -13,7 +14,7 @@ export default function PublicWaitlistPage() {
   const slug = params?.slug as string;
   const refCode = searchParams?.get("ref") ?? undefined;
 
-  const [waitlist, setWaitlist] = useState<Waitlist | null>(null);
+  const [waitlistData, setWaitlistData] = useState<PublicWaitlistResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [joined, setJoined] = useState<JoinResponse | null>(null);
@@ -21,10 +22,10 @@ export default function PublicWaitlistPage() {
 
   useEffect(() => {
     if (!slug) return;
-    getWaitlistBySlug(slug)
+    getPublicWaitlistBySlug(slug)
       .then((data) => {
         if (!data) setNotFound(true);
-        else setWaitlist(data);
+        else setWaitlistData(data);
       })
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
@@ -46,7 +47,7 @@ export default function PublicWaitlistPage() {
     );
   }
 
-  if (notFound || !waitlist) {
+  if (notFound || !waitlistData) {
     return (
       <div className="text-center py-20">
         <h1 className="text-2xl font-bold mb-2 text-white">Waitlist not found</h1>
@@ -56,6 +57,9 @@ export default function PublicWaitlistPage() {
       </div>
     );
   }
+
+  const { waitlist, branding } = waitlistData;
+  const primaryColor = branding?.primaryColor ?? "#6366F1";
 
   if (joined) {
     const fullReferralLink = `${typeof window !== "undefined" ? window.location.origin : ""}${joined.referralLink}`;
@@ -89,7 +93,8 @@ export default function PublicWaitlistPage() {
           <p className="text-sm text-zinc-300 break-all font-mono">{fullReferralLink}</p>
           <button
             onClick={() => handleCopy(joined.referralLink)}
-            className="w-full mt-1 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors"
+            className="w-full mt-1 text-white rounded-xl px-4 py-2.5 text-sm font-semibold transition-colors"
+            style={{ backgroundColor: primaryColor }}
           >
             {copied ? "✓ Copied!" : "Copy Referral Link"}
           </button>
@@ -100,10 +105,30 @@ export default function PublicWaitlistPage() {
 
   return (
     <div className="text-center w-full">
+      {branding?.logoUrl && (
+        <div className="flex justify-center mb-6">
+          <Image
+            src={branding.logoUrl}
+            alt={`${waitlist.name} logo`}
+            width={80}
+            height={80}
+            unoptimized
+            className="h-20 w-20 rounded-2xl object-cover"
+          />
+        </div>
+      )}
+
       <h1 className="text-3xl font-bold mb-2 text-white">{waitlist.name}</h1>
-      <p className="text-zinc-400 mb-8">
+      <p className="text-zinc-400 mb-2">{waitlist.tagline}</p>
+      {waitlist.description && (
+        <p className="text-zinc-500 text-sm mb-8 max-w-md mx-auto">{waitlist.description}</p>
+      )}
+      {!waitlist.description && <div className="mb-8" />}
+
+      <p className="text-zinc-500 text-sm mb-6">
         {refCode ? "You were referred! Join now to secure your spot." : "Join the waitlist and secure your spot."}
       </p>
+
       <JoinWaitlistForm
         waitlistSlug={slug}
         referralCode={refCode}
