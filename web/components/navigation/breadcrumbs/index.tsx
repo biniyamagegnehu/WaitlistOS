@@ -17,12 +17,21 @@ interface BreadcrumbsProps {
 }
 
 function buildSegments(pathname: string): BreadcrumbSegment[] {
-  const parts = pathname.split("/").filter(Boolean);
+  const normalizedPath = pathname.replace(/^\/dashboard\/dashboard(?=\/|$)/, "/dashboard");
+  const parts = normalizedPath.split("/").filter(Boolean);
+
+  const labels: Record<string, string> = {
+    dashboard: "Account",
+    profile: "Profile",
+    security: "Security",
+    sessions: "Sessions",
+  };
+
   return parts.map((part, index) => {
     const href = "/" + parts.slice(0, index + 1).join("/");
-    const label = part
-      .replace(/-/g, " ")
-      .replace(/\b\w/g, (c) => c.toUpperCase());
+    const label =
+      labels[part] ??
+      part.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
     return { label, href };
   });
 }

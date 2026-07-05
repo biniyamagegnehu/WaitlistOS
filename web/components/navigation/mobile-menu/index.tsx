@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { X, LayoutDashboard, List, Settings, Zap } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { LogoutButton } from "@/components/features/auth/logout-button";
+import { routes } from "@/lib/routes";
 
 interface MobileMenuProps {
   open: boolean;
@@ -13,9 +14,9 @@ interface MobileMenuProps {
 }
 
 const links = [
-  { label: "Profile", href: "/dashboard/profile", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Security", href: "/dashboard/security", icon: <Settings className="h-4 w-4" /> },
-  { label: "Sessions", href: "/dashboard/sessions", icon: <List className="h-4 w-4" /> },
+  { label: "Profile", href: routes.profile, icon: <LayoutDashboard className="h-4 w-4" /> },
+  { label: "Security", href: routes.security, icon: <Settings className="h-4 w-4" /> },
+  { label: "Sessions", href: routes.sessions, icon: <List className="h-4 w-4" /> },
 ];
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
@@ -62,7 +63,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
       >
         {/* Header */}
         <div className="flex h-16 items-center justify-between border-b border-white/8 px-4 shrink-0">
-          <Link href="/dashboard" className="flex items-center gap-2.5 font-bold text-white">
+          <Link href={routes.dashboard} className="flex items-center gap-2.5 font-bold text-white">
             <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600">
               <Zap className="h-4 w-4 text-white" />
             </div>
@@ -81,8 +82,8 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {links.map((link) => {
             const isActive =
-              link.href === "/dashboard"
-                ? pathname === "/dashboard"
+              link.href === routes.dashboard
+                ? pathname === routes.dashboard
                 : pathname.startsWith(link.href);
 
             return (

@@ -12,10 +12,13 @@ import { getSessions, revokeSession, revokeAllSessions } from "@/services/auth";
 import { Session } from "@/types/auth";
 import { useToast } from "@/components/ui/toast";
 import { getApiErrorMessage } from "@/lib/errors";
+import { useAuth } from "@/contexts/auth-context";
+import { routes } from "@/lib/routes";
 
 export default function SessionsPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { logout } = useAuth();
   const [sessions, setSessions] = React.useState<Session[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRevoking, setIsRevoking] = React.useState(false);
@@ -235,9 +238,11 @@ export default function SessionsPage() {
               <Button
                 variant="danger"
                 className="mt-4"
-                onClick={() => {
+                onClick={async () => {
                   if (confirm("Are you sure you want to sign out from all devices?")) {
-                    router.push("/login");
+                    await revokeAllSessions();
+                    await logout();
+                    router.replace(routes.login);
                   }
                 }}
               >

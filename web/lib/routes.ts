@@ -1,0 +1,15 @@
+export const routes = {
+  home: "/",
+  login: "/login",
+  register: "/register",
+  dashboard: "/dashboard",
+  profile: "/dashboard/profile",
+  security: "/dashboard/security",
+  sessions: "/dashboard/sessions",
+  twoFactorSetup: "/two-factor/setup",
+  twoFactorDisable: "/two-factor/disable",
+  twoFactorVerify: "/two-factor/verify",
+  verifyEmail: "/verify-email",
+  resendVerification: "/resend-verification",
+  create: "/create",
+} as const;

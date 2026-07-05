@@ -16,13 +16,20 @@ import { changePasswordSchema, changeEmailSchema } from "@/lib/validations/auth"
 import type { ChangePasswordFormData, ChangeEmailFormData } from "@/lib/validations/auth";
 import { useToast } from "@/components/ui/toast";
 import { Skeleton } from "@/components/ui/skeleton";
+import { routes } from "@/lib/routes";
 
 export default function SecurityPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, isLoading } = useCurrentUser();
+  const { user, isLoading, refreshUser } = useCurrentUser();
   const [showChangePassword, setShowChangePassword] = React.useState(false);
   const [showChangeEmail, setShowChangeEmail] = React.useState(false);
+
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace(routes.login);
+    }
+  }, [isLoading, user, router]);
 
   if (isLoading) {
     return (
@@ -37,7 +44,6 @@ export default function SecurityPage() {
   }
 
   if (!user) {
-    router.replace("/login");
     return null;
   }
 
@@ -53,6 +59,7 @@ export default function SecurityPage() {
   const handleChangeEmail = async (data: ChangeEmailFormData) => {
     await changeEmail(data);
     setShowChangeEmail(false);
+    await refreshUser();
     toast({
       title: "Verification email sent to your new email address",
       variant: "success",
@@ -60,9 +67,7 @@ export default function SecurityPage() {
   };
 
   const handleDisable2FA = async () => {
-    // This would require a modal with 2FA verification
-    // For now, redirect to disable page
-    router.push("/two-factor/disable");
+    router.push(routes.twoFactorDisable);
   };
 
   return (
@@ -222,7 +227,7 @@ export default function SecurityPage() {
               </Button>
             ) : (
               <Button
-                onClick={() => router.push("/two-factor/setup")}
+                onClick={() => router.push(routes.twoFactorSetup)}
                 className="w-full"
               >
                 Enable 2FA
@@ -247,7 +252,7 @@ export default function SecurityPage() {
             </div>
             <Button
               variant="secondary"
-              onClick={() => router.push("/dashboard/sessions")}
+              onClick={() => router.push(routes.sessions)}
               leftIcon={<Monitor className="h-4 w-4" />}
             >
               View Sessions

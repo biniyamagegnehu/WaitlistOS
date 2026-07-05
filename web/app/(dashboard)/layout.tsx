@@ -6,6 +6,7 @@ import { DashboardSidebar } from "@/components/navigation/sidebar";
 import { DashboardHeader } from "@/components/layouts/dashboard-header";
 import { MobileMenu } from "@/components/navigation/mobile-menu";
 import { useAuth } from "@/contexts/auth-context";
+import { routes } from "@/lib/routes";
 
 export default function DashboardLayout({
   children,
@@ -19,7 +20,7 @@ export default function DashboardLayout({
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.replace("/login");
+      router.replace(routes.login);
     }
   }, [isAuthenticated, isLoading, router]);
 

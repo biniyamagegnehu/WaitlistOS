@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
+import { routes } from "@/lib/routes";
 
 export default function DashboardPage() {
-  redirect("/dashboard/profile");
+  redirect(routes.profile);
 }

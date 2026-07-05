@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { LogoutButton } from "@/components/features/auth/logout-button";
+import { routes } from "@/lib/routes";
 
 interface SidebarLink {
   label: string;
@@ -21,9 +22,9 @@ interface SidebarLink {
 }
 
 const links: SidebarLink[] = [
-  { label: "Profile", href: "/dashboard/profile", icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Security", href: "/dashboard/security", icon: <Settings className="h-4 w-4" /> },
-  { label: "Sessions", href: "/dashboard/sessions", icon: <List className="h-4 w-4" /> },
+  { label: "Profile", href: routes.profile, icon: <LayoutDashboard className="h-4 w-4" /> },
+  { label: "Security", href: routes.security, icon: <Settings className="h-4 w-4" /> },
+  { label: "Sessions", href: routes.sessions, icon: <List className="h-4 w-4" /> },
 ];
 
 interface DashboardSidebarProps {
@@ -48,7 +49,7 @@ export function DashboardSidebar({
       {/* Logo */}
       <div className="flex h-16 items-center border-b border-white/8 px-4 shrink-0">
         <Link
-          href="/dashboard"
+          href={routes.dashboard}
           className={cn(
             "flex items-center gap-2.5 font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg overflow-hidden",
             collapsed && "justify-center w-full"
@@ -69,8 +70,8 @@ export function DashboardSidebar({
       <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
         {links.map((link) => {
           const isActive =
-            link.href === "/dashboard"
-              ? pathname === "/dashboard"
+            link.href === routes.dashboard
+              ? pathname === routes.dashboard
               : pathname.startsWith(link.href);
 
           return (

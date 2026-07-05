@@ -10,10 +10,17 @@ import { Badge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
 import { useCurrentUser } from "@/contexts/auth-context";
 import { Skeleton } from "@/components/ui/skeleton";
+import { routes } from "@/lib/routes";
 
 export default function ProfilePage() {
   const router = useRouter();
   const { user, founder, isLoading } = useCurrentUser();
+
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace(routes.login);
+    }
+  }, [isLoading, user, router]);
 
   if (isLoading) {
     return (
@@ -28,7 +35,6 @@ export default function ProfilePage() {
   }
 
   if (!user) {
-    router.replace("/login");
     return null;
   }
 
@@ -92,8 +98,8 @@ export default function ProfilePage() {
                 <Badge variant="outline">{user.provider}</Badge>
               </div>
             </div>
-            <Button variant="secondary" onClick={() => router.push("/dashboard/security")}>
-              Edit Profile
+            <Button variant="secondary" onClick={() => router.push(routes.security)}>
+              Security Settings
             </Button>
           </div>
         </CardContent>
@@ -172,7 +178,7 @@ export default function ProfilePage() {
                 </p>
                 <Button
                   className="mt-3"
-                  onClick={() => router.push("/create")}
+                  onClick={() => router.push(routes.create)}
                 >
                   Create Waitlist
                 </Button>
@@ -218,7 +224,7 @@ export default function ProfilePage() {
             <Button
               variant="secondary"
               className="w-full"
-              onClick={() => router.push("/resend-verification")}
+              onClick={() => router.push(routes.resendVerification)}
             >
               Verify Email
             </Button>
