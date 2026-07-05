@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { routes } from "@/lib/routes";
 
 interface BreadcrumbSegment {
   label: string;
@@ -11,29 +12,58 @@ interface BreadcrumbSegment {
 }
 
 interface BreadcrumbsProps {
-  /** Provide manual segments, or leave undefined to auto-generate from path */
   segments?: BreadcrumbSegment[];
   className?: string;
 }
 
 function buildSegments(pathname: string): BreadcrumbSegment[] {
-  const normalizedPath = pathname.replace(/^\/dashboard\/dashboard(?=\/|$)/, "/dashboard");
+  const normalizedPath = pathname.replace(
+    /^\/dashboard\/dashboard(?=\/|$)/,
+    "/dashboard"
+  );
   const parts = normalizedPath.split("/").filter(Boolean);
 
   const labels: Record<string, string> = {
-    dashboard: "Account",
-    profile: "Profile",
-    security: "Security",
-    sessions: "Sessions",
+    dashboard: "Dashboard",
+    waitlists: "Waitlists",
+    settings: "Settings",
+    profile: "Settings",
+    security: "Settings",
+    sessions: "Settings",
+    create: "Create",
   };
 
-  return parts.map((part, index) => {
+  const crumbs: BreadcrumbSegment[] = [];
+
+  parts.forEach((part, index) => {
+    if (part === "dashboard" && index === 0) return;
+
     const href = "/" + parts.slice(0, index + 1).join("/");
-    const label =
-      labels[part] ??
-      part.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());
-    return { label, href };
+
+    if (part === "profile" || part === "security" || part === "sessions") {
+      if (!crumbs.some((crumb) => crumb.label === "Settings")) {
+        crumbs.push({ label: "Settings", href: routes.settings });
+      }
+      return;
+    }
+
+    if (labels[part]) {
+      crumbs.push({ label: labels[part], href: index < parts.length - 1 ? href : undefined });
+      return;
+    }
+
+    if (parts[index - 1] === "waitlists") {
+      crumbs.push({ label: "Participants" });
+      return;
+    }
+
+    crumbs.push({
+      label: part.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()),
+      href: index < parts.length - 1 ? href : undefined,
+    });
   });
+
+  return crumbs;
 }
 
 export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
@@ -48,9 +78,9 @@ export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
       className={cn("flex items-center gap-1 text-sm", className)}
     >
       <Link
-        href="/"
-        className="flex items-center text-zinc-500 hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
-        aria-label="Home"
+        href={routes.dashboard}
+        className="flex items-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        aria-label="Dashboard home"
       >
         <Home className="h-3.5 w-3.5" />
       </Link>
@@ -58,12 +88,15 @@ export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
       {crumbs.map((crumb, index) => {
         const isLast = index === crumbs.length - 1;
         return (
-          <span key={crumb.href ?? crumb.label} className="flex items-center gap-1">
-            <ChevronRight className="h-3.5 w-3.5 text-zinc-600" aria-hidden="true" />
+          <span
+            key={`${crumb.label}-${crumb.href ?? "current"}`}
+            className="flex items-center gap-1"
+          >
+            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
             {isLast || !crumb.href ? (
               <span
                 className={cn(
-                  isLast ? "text-zinc-200 font-medium" : "text-zinc-500"
+                  isLast ? "font-medium text-foreground" : "text-muted-foreground"
                 )}
                 aria-current={isLast ? "page" : undefined}
               >
@@ -72,7 +105,7 @@ export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
             ) : (
               <Link
                 href={crumb.href}
-                className="text-zinc-500 hover:text-zinc-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded"
+                className="rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 {crumb.label}
               </Link>

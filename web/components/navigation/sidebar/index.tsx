@@ -3,29 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import {
-  LayoutDashboard,
-  List,
-  Settings,
-  Zap,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { BrandLogo } from "@/components/brand/logo";
 import { LogoutButton } from "@/components/features/auth/logout-button";
 import { routes } from "@/lib/routes";
-
-interface SidebarLink {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-}
-
-const links: SidebarLink[] = [
-  { label: "Profile", href: routes.profile, icon: <LayoutDashboard className="h-4 w-4" /> },
-  { label: "Security", href: routes.security, icon: <Settings className="h-4 w-4" /> },
-  { label: "Sessions", href: routes.sessions, icon: <List className="h-4 w-4" /> },
-];
+import {
+  dashboardNavLinks,
+  isDashboardNavActive,
+} from "@/components/navigation/dashboard-nav";
 
 interface DashboardSidebarProps {
   collapsed?: boolean;
@@ -42,49 +28,33 @@ export function DashboardSidebar({
     <aside
       aria-label="Dashboard sidebar"
       className={cn(
-        "flex flex-col h-full bg-[#0a0a11] border-r border-white/8 transition-all duration-300",
-        collapsed ? "w-[64px]" : "w-[220px]"
+        "flex h-full flex-col border-r border-border bg-surface transition-all duration-300",
+        collapsed ? "w-[64px]" : "w-[240px]"
       )}
     >
-      {/* Logo */}
-      <div className="flex h-16 items-center border-b border-white/8 px-4 shrink-0">
-        <Link
+      <div className="flex h-16 shrink-0 items-center border-b border-border px-4">
+        <BrandLogo
           href={routes.dashboard}
-          className={cn(
-            "flex items-center gap-2.5 font-bold text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 rounded-lg overflow-hidden",
-            collapsed && "justify-center w-full"
-          )}
-        >
-          <div className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg bg-indigo-600 shadow-md shadow-indigo-600/40">
-            <Zap className="h-4 w-4 text-white" />
-          </div>
-          {!collapsed && (
-            <span className="text-[14px] tracking-tight whitespace-nowrap">
-              WaitlistOS
-            </span>
-          )}
-        </Link>
+          showText={!collapsed}
+          className={cn(collapsed && "justify-center w-full")}
+        />
       </div>
 
-      {/* Nav links */}
-      <nav className="flex-1 px-2 py-4 space-y-0.5 overflow-y-auto">
-        {links.map((link) => {
-          const isActive =
-            link.href === routes.dashboard
-              ? pathname === routes.dashboard
-              : pathname.startsWith(link.href);
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">
+        {dashboardNavLinks.map((link) => {
+          const isActive = isDashboardNavActive(pathname, link.href);
 
           return (
             <Link
-              key={link.href}
+              key={`${link.label}-${link.href}`}
               href={link.href}
               title={collapsed ? link.label : undefined}
               className={cn(
-                "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-150",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+                "flex items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium transition-colors",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                 isActive
-                  ? "bg-indigo-600/20 text-indigo-300 border border-indigo-600/30"
-                  : "text-zinc-400 hover:bg-white/5 hover:text-zinc-200 border border-transparent",
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
                 collapsed && "justify-center px-0"
               )}
             >
@@ -95,26 +65,23 @@ export function DashboardSidebar({
         })}
       </nav>
 
-      {/* Collapse button + Logout */}
-      <div className="border-t border-white/8 p-2 space-y-0.5 shrink-0">
-        {/* Logout */}
+      <div className="shrink-0 space-y-0.5 border-t border-border p-2">
         <LogoutButton
           collapsed={collapsed}
           className={cn(
-            "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-400 hover:bg-white/5 hover:text-red-400 transition-all duration-150 disabled:cursor-wait disabled:opacity-70",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+            "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/5 hover:text-destructive disabled:cursor-wait disabled:opacity-70",
+            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
             collapsed && "justify-center px-0"
           )}
         />
 
-        {/* Collapse toggle (hidden on mobile — handled by sheet) */}
         {onCollapse && (
           <button
             onClick={() => onCollapse(!collapsed)}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className={cn(
-              "flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-zinc-500 hover:bg-white/5 hover:text-zinc-300 transition-all",
-              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500",
+              "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground",
+              "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
               collapsed && "justify-center px-0"
             )}
           >
