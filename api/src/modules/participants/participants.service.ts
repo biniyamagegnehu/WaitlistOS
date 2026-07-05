@@ -132,7 +132,7 @@ export class ParticipantsService {
     });
 
     // 5. Build referral link
-    const referralLink = `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3001'}/w/${waitlistSlug}?ref=${participant.referralCode}`;
+    const referralLink = `/w/${waitlistSlug}?ref=${participant.referralCode}`;
 
     // 6. Queue Welcome Email
     await this.emailsQueue.add(
