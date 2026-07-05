@@ -1,8 +1,14 @@
+import type { SettingsTab } from "@/types/dashboard";
+
 export const routes = {
   home: "/",
   login: "/login",
   register: "/register",
   dashboard: "/dashboard",
+  waitlists: "/dashboard/waitlists",
+  waitlist: (id: string) => `/dashboard/waitlists/${id}`,
+  settings: "/dashboard/settings",
+  settingsTab: (tab: SettingsTab) => `/dashboard/settings?tab=${tab}`,
   profile: "/dashboard/profile",
   security: "/dashboard/security",
   sessions: "/dashboard/sessions",
@@ -12,5 +18,5 @@ export const routes = {
   verifyEmail: "/verify-email",
   resendVerification: "/resend-verification",
   create: "/create",
-  waitlist: (slug: string) => `/w/${slug}`,
+  waitlistPublic: (slug: string) => `/w/${slug}`,
 } as const;
