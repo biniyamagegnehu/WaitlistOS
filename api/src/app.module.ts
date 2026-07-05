@@ -15,6 +15,11 @@ import { ParticipantsModule } from './modules/participants/participants.module';
 import { EmailsModule } from './modules/emails/emails.module';
 import { DashboardModule } from './modules/founders/dashboard/dashboard.module';
 import { AuthModule } from './modules/auth/auth.module';
+import { FilesModule } from './modules/files/files.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { BrandingModule } from './modules/branding/branding.module';
+import { WidgetsModule } from './modules/widgets/widgets.module';
+import { PublicWaitlistsModule } from './modules/public-waitlists/public-waitlists.module';
 import { AccessTokenGuard } from './modules/auth/guards/access-token.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -42,6 +47,11 @@ import { RolesGuard } from './common/guards/roles.guard';
     ParticipantsModule,
     EmailsModule,
     DashboardModule,
+    CloudinaryModule,
+    FilesModule,
+    BrandingModule,
+    WidgetsModule,
+    PublicWaitlistsModule,
   ],
   controllers: [AppController],
   providers: [
