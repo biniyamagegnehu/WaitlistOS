@@ -29,6 +29,10 @@ enum UserStatus {
   SUSPENDED
 }
 
+enum FileProvider {
+  CLOUDINARY
+}
+
 // ─────────────────────────────────────────────
 // User — Authentication identity
 // ─────────────────────────────────────────────
@@ -47,23 +51,23 @@ model User {
   updatedAt    DateTime   @updatedAt
 
   // ── Email Verification ──────────────────────────
-  emailVerifiedAt           DateTime?
-  emailVerificationToken    String?   // stores bcrypt hash of the raw token
+  emailVerifiedAt            DateTime?
+  emailVerificationToken     String?
   emailVerificationExpiresAt DateTime?
 
   // ── Password Reset ──────────────────────────────
-  passwordResetToken        String?   // stores bcrypt hash of the raw token
-  passwordResetExpiresAt    DateTime?
-  passwordChangedAt         DateTime?
+  passwordResetToken     String?
+  passwordResetExpiresAt DateTime?
+  passwordChangedAt      DateTime?
 
   // ── Email Change ────────────────────────────────
-  pendingEmail                       String?
-  pendingEmailVerificationToken      String?   // stores bcrypt hash of the raw token
-  pendingEmailVerificationExpiresAt  DateTime?
+  pendingEmail                      String?
+  pendingEmailVerificationToken     String?
+  pendingEmailVerificationExpiresAt DateTime?
 
   // ── Two-Factor Authentication (TOTP) ────────────
   twoFactorEnabled Boolean @default(false)
-  twoFactorSecret  String? // encrypted base32 secret
+  twoFactorSecret  String?
 
   // ── Account Lockout ─────────────────────────────
   failedLoginAttempts Int       @default(0)
@@ -71,6 +75,7 @@ model User {
 
   sessions Session[]
   founder  Founder?
+  files    File[]
 
   @@map("users")
 }
@@ -111,19 +116,92 @@ model Founder {
 }
 
 // ─────────────────────────────────────────────
+// File — Uploaded file metadata (not binary)
+// ─────────────────────────────────────────────
+model File {
+  id               String       @id @default(uuid())
+  publicId         String
+  url              String
+  secureUrl        String
+  originalName     String
+  fileName         String
+  mimeType         String
+  format           String
+  bytes            Int
+  width            Int?
+  height           Int?
+  folder           String
+  provider         FileProvider @default(CLOUDINARY)
+  uploadedByUserId String
+  createdAt        DateTime     @default(now())
+
+  uploadedBy     User       @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+  waitlistLogos  Waitlist[] @relation("WaitlistLogo")
+  brandingLogos  Branding[] @relation("BrandingLogo")
+
+  @@index([uploadedByUserId])
+  @@map("files")
+}
+
+// ─────────────────────────────────────────────
 // Waitlist — A single waitlist owned by a Founder
 // ─────────────────────────────────────────────
 model Waitlist {
-  id        String   @id @default(uuid())
-  founderId String
-  name      String
-  slug      String   @unique
-  createdAt DateTime @default(now())
+  id          String   @id @default(uuid())
+  founderId   String
+  name        String
+  tagline     String
+  description String?
+  slug        String   @unique
+  logoId      String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   founder      Founder       @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  logo         File?         @relation("WaitlistLogo", fields: [logoId], references: [id], onDelete: SetNull)
+  branding     Branding?
+  widget       Widget?
   participants Participant[]
 
+  @@index([founderId])
   @@map("waitlists")
+}
+
+// ─────────────────────────────────────────────
+// Branding — Visual identity for a waitlist
+// ─────────────────────────────────────────────
+model Branding {
+  id              String   @id @default(uuid())
+  waitlistId      String   @unique
+  logoId          String?
+  primaryColor    String
+  secondaryColor  String
+  backgroundColor String
+  buttonColor     String
+  font            String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  logo     File?    @relation("BrandingLogo", fields: [logoId], references: [id], onDelete: SetNull)
+
+  @@map("brandings")
+}
+
+// ─────────────────────────────────────────────
+// Widget — Embed metadata for a waitlist
+// ─────────────────────────────────────────────
+model Widget {
+  id         String   @id @default(uuid())
+  waitlistId String   @unique
+  scriptUrl  String
+  embedCode  String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
+  @@map("widgets")
 }
 
 // ─────────────────────────────────────────────
