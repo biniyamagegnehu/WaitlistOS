@@ -12,4 +12,5 @@ export const routes = {
   verifyEmail: "/verify-email",
   resendVerification: "/resend-verification",
   create: "/create",
+  waitlist: (slug: string) => `/w/${slug}`,
 } as const;
