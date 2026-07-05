@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { routes } from "@/lib/routes";
 
 export const metadata: Metadata = {
   title: "Pricing — WaitlistOS",
@@ -8,92 +9,108 @@ export const metadata: Metadata = {
 
 export default function PricingPage() {
   return (
-    <div className="relative flex-1">
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
-      >
-        <div className="absolute -top-40 left-1/2 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-indigo-600/8 blur-[120px]" />
-      </div>
-
+    <div className="flex-1">
       <div className="mx-auto max-w-5xl px-4 py-24 text-center">
-        <h1 className="text-4xl font-extrabold text-white mb-4">
+        <h1 className="mb-4 text-4xl font-semibold text-foreground">
           Simple pricing
         </h1>
-        <p className="text-zinc-400 mb-16 text-lg">
+        <p className="mb-16 text-lg text-muted-foreground">
           Start for free. No credit card required.
         </p>
 
-        <div className="grid md:grid-cols-3 gap-6 text-left">
-          {/* Free */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 flex flex-col">
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">
-              Free
-            </p>
-            <p className="text-4xl font-extrabold text-white mb-1">$0</p>
-            <p className="text-sm text-zinc-500 mb-8">Forever</p>
-            <ul className="space-y-3 mb-10 text-sm text-zinc-300 flex-1">
-              {["1 waitlist", "500 signups"].map(
-                (f) => (
-                  <li key={f} className="flex items-center gap-2">
-                    <span className="text-emerald-400">✓</span> {f}
-                  </li>
-                )
-              )}
-            </ul>
-            <Link
-              href="/register"
-              className="block text-center w-full rounded-xl bg-white/10 border border-white/15 py-3 text-sm font-semibold text-white hover:bg-white/15 transition-colors mt-auto"
-            >
-              Get Started Free
-            </Link>
-          </div>
-
-          {/* Starter */}
-          <div className="rounded-2xl border border-indigo-500/40 bg-indigo-600/10 p-8 flex flex-col relative">
-            <p className="text-xs font-semibold uppercase tracking-widest text-indigo-400 mb-3">
-              Starter
-            </p>
-            <p className="text-4xl font-extrabold text-white mb-1">$19</p>
-            <p className="text-sm text-zinc-500 mb-8">per month</p>
-            <ul className="space-y-3 mb-10 text-sm text-zinc-300 flex-1">
-              {["5 waitlists", "5,000 signups"].map((f) => (
-                <li key={f} className="flex items-center gap-2">
-                  <span className="text-indigo-400">✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/register"
-              className="block text-center w-full rounded-xl bg-indigo-600 hover:bg-indigo-500 py-3 text-sm font-semibold text-white transition-colors mt-auto shadow-xl shadow-indigo-600/30"
-            >
-              Get Starter
-            </Link>
-          </div>
-
-          {/* Pro */}
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-8 flex flex-col">
-            <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500 mb-3">
-              Pro
-            </p>
-            <p className="text-4xl font-extrabold text-white mb-1">$49</p>
-            <p className="text-sm text-zinc-500 mb-8">per month</p>
-            <ul className="space-y-3 mb-10 text-sm text-zinc-300 flex-1">
-              {["Unlimited waitlists", "Unlimited signups", "Custom domain"].map((f) => (
-                <li key={f} className="flex items-center gap-2">
-                  <span className="text-indigo-400">✓</span> {f}
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/register"
-              className="block text-center w-full rounded-xl bg-white/10 border border-white/15 py-3 text-sm font-semibold text-white hover:bg-white/15 transition-colors mt-auto"
-            >
-              Get Pro
-            </Link>
-          </div>
+        <div className="grid gap-6 text-left md:grid-cols-3">
+          <PricingCard
+            name="Free"
+            price="$0"
+            period="Forever"
+            features={["1 waitlist", "500 signups"]}
+            href={routes.register}
+            cta="Get Started Free"
+            variant="default"
+          />
+          <PricingCard
+            name="Starter"
+            price="$19"
+            period="per month"
+            features={["5 waitlists", "5,000 signups"]}
+            href={routes.register}
+            cta="Get Starter"
+            variant="featured"
+          />
+          <PricingCard
+            name="Pro"
+            price="$49"
+            period="per month"
+            features={[
+              "Unlimited waitlists",
+              "Unlimited signups",
+              "Custom domain",
+            ]}
+            href={routes.register}
+            cta="Get Pro"
+            variant="default"
+          />
         </div>
       </div>
+    </div>
+  );
+}
+
+function PricingCard({
+  name,
+  price,
+  period,
+  features,
+  href,
+  cta,
+  variant,
+}: {
+  name: string;
+  price: string;
+  period: string;
+  features: string[];
+  href: string;
+  cta: string;
+  variant: "default" | "featured";
+}) {
+  const isFeatured = variant === "featured";
+
+  return (
+    <div
+      className={
+        isFeatured
+          ? "flex flex-col rounded-md border border-primary/30 bg-surface p-8 shadow-sm"
+          : "flex flex-col rounded-md border border-border bg-surface p-8 shadow-sm"
+      }
+    >
+      <p
+        className={
+          isFeatured
+            ? "mb-3 text-xs font-semibold uppercase tracking-widest text-primary"
+            : "mb-3 text-xs font-semibold uppercase tracking-widest text-muted-foreground"
+        }
+      >
+        {name}
+      </p>
+      <p className="mb-1 text-4xl font-semibold text-foreground">{price}</p>
+      <p className="mb-8 text-sm text-muted-foreground">{period}</p>
+      <ul className="mb-10 flex-1 space-y-3 text-sm text-foreground">
+        {features.map((feature) => (
+          <li key={feature} className="flex items-center gap-2">
+            <span className="text-primary">✓</span> {feature}
+          </li>
+        ))}
+      </ul>
+      <Link
+        href={href}
+        className={
+          isFeatured
+            ? "mt-auto block w-full rounded-md bg-primary py-3 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+            : "mt-auto block w-full rounded-md border border-border bg-background py-3 text-center text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+        }
+      >
+        {cta}
+      </Link>
     </div>
   );
 }

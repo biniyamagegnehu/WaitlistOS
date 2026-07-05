@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { routes } from "@/lib/routes";
 
 export const metadata: Metadata = {
   title: "WaitlistOS — Launch with Momentum",
@@ -9,81 +10,74 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="relative flex-1 overflow-hidden">
-      {/* Background gradients */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 -z-10"
+    <div className="flex-1">
+      <section
+        className="mx-auto max-w-4xl px-4 py-24 text-center sm:py-32"
+        id="hero"
       >
-        <div className="absolute -top-40 left-1/2 h-[600px] w-[800px] -translate-x-1/2 rounded-full bg-indigo-600/10 blur-[120px]" />
-        <div className="absolute bottom-0 right-0 h-[400px] w-[500px] rounded-full bg-purple-600/10 blur-[100px]" />
-      </div>
-
-      {/* Hero */}
-      <section className="mx-auto max-w-4xl px-4 py-24 sm:py-36 text-center" id="hero">
-        <div className="inline-flex items-center gap-2 rounded-full border border-indigo-500/30 bg-indigo-600/10 px-4 py-1.5 text-xs font-semibold text-indigo-400 mb-8">
-          <span className="h-1.5 w-1.5 rounded-full bg-indigo-400 animate-pulse" />
-          Early Access — Now Live
+        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent">
+          Early access — now live
         </div>
 
-        <h1 className="text-5xl sm:text-6xl font-extrabold tracking-tight text-white leading-tight mb-6">
-          Launch with{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">
-            momentum
-          </span>
+        <h1 className="mb-6 text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          Launch with momentum
         </h1>
 
-        <p className="text-xl text-zinc-400 max-w-2xl mx-auto mb-10 leading-relaxed">
+        <p className="mx-auto mb-10 max-w-2xl text-lg leading-relaxed text-muted-foreground">
           WaitlistOS lets you create viral waitlists in minutes. Build hype,
           grow your audience, and reward early believers with a built-in
           referral system.
         </p>
 
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+        <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
-            href="/register"
-            className="inline-flex items-center rounded-2xl bg-indigo-600 px-8 py-4 text-base font-semibold text-white shadow-xl shadow-indigo-600/30 transition-all hover:bg-indigo-500 hover:scale-[1.02] active:scale-[0.98]"
+            href={routes.register}
+            className="inline-flex h-11 items-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
           >
             Start for Free
           </Link>
           <Link
-            href="/login"
-            className="inline-flex items-center rounded-2xl bg-white/5 border border-white/15 px-8 py-4 text-base font-semibold text-zinc-300 hover:bg-white/10 hover:text-white transition-all"
+            href={routes.login}
+            className="inline-flex h-11 items-center rounded-md border border-border bg-surface px-6 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
           >
-            Sign In →
+            Sign In
           </Link>
         </div>
       </section>
 
-      {/* Features */}
-      <section id="features" className="mx-auto max-w-5xl px-4 py-16 sm:py-24">
-        <div className="text-center mb-14">
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Everything you need to launch
-          </h2>
-          <p className="text-zinc-400 max-w-xl mx-auto">
-            From referral tracking to email notifications — WaitlistOS has all
-            the tools founders need.
-          </p>
-        </div>
+      <section
+        id="features"
+        className="border-t border-divider bg-surface py-16 sm:py-24"
+      >
+        <div className="mx-auto max-w-5xl px-4">
+          <div className="mb-14 text-center">
+            <h2 className="mb-4 text-3xl font-semibold text-foreground">
+              Everything you need to launch
+            </h2>
+            <p className="mx-auto max-w-xl text-muted-foreground">
+              From referral tracking to email notifications — WaitlistOS has all
+              the tools founders need.
+            </p>
+          </div>
 
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="rounded-2xl border border-white/10 bg-white/5 p-6 hover:border-white/20 hover:bg-white/8 transition-all duration-200"
-            >
-              <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-xl bg-indigo-600/20 text-indigo-400 text-lg">
-                {feature.icon}
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {features.map((feature) => (
+              <div
+                key={feature.title}
+                className="rounded-md border border-border bg-background p-6 shadow-sm"
+              >
+                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-lg text-primary">
+                  {feature.icon}
+                </div>
+                <h3 className="mb-2 text-base font-semibold text-foreground">
+                  {feature.title}
+                </h3>
+                <p className="text-sm leading-relaxed text-muted-foreground">
+                  {feature.description}
+                </p>
               </div>
-              <h3 className="text-base font-semibold text-white mb-2">
-                {feature.title}
-              </h3>
-              <p className="text-sm text-zinc-400 leading-relaxed">
-                {feature.description}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </section>
     </div>

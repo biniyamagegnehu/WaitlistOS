@@ -6,6 +6,9 @@ import * as z from "zod";
 import { joinWaitlist, JoinWaitlistError } from "../../services/participants";
 import { JoinResponse, JoinErrorCode } from "../../types/participant";
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Alert } from "@/components/ui/alert";
 
 const joinSchema = z.object({
   email: z
@@ -49,7 +52,7 @@ export default function JoinWaitlistForm({
     mode: "onChange",
     defaultValues: {
       referralCode: initialReferralCode || "",
-    }
+    },
   });
 
   const onSubmit = async (data: JoinFormValues) => {
@@ -71,44 +74,38 @@ export default function JoinWaitlistForm({
   };
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-3 w-full max-w-sm mx-auto">
-      <div>
-        <input
-          {...register("email")}
-          type="email"
-          placeholder="Enter your email address"
-          disabled={isSubmitting}
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-50"
-        />
-        {errors.email && (
-          <p className="text-red-500 text-xs mt-1">{errors.email.message}</p>
-        )}
-      </div>
+    <form
+      onSubmit={handleSubmit(onSubmit)}
+      className="mx-auto w-full max-w-sm space-y-4"
+    >
+      <Input
+        label="Email"
+        type="email"
+        placeholder="Enter your email address"
+        disabled={isSubmitting}
+        error={errors.email?.message}
+        {...register("email")}
+      />
 
-      <div>
-        <input
-          {...register("referralCode")}
-          type="text"
-          placeholder="Referral Code (Optional)"
-          disabled={isSubmitting}
-          className="w-full border border-gray-300 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-black disabled:opacity-50"
-        />
-        {errors.referralCode && (
-          <p className="text-red-500 text-xs mt-1">{errors.referralCode.message}</p>
-        )}
-      </div>
+      <Input
+        label="Referral code"
+        type="text"
+        placeholder="Optional"
+        disabled={isSubmitting}
+        error={errors.referralCode?.message}
+        {...register("referralCode")}
+      />
 
-      {serverError && (
-        <p className="text-red-500 text-sm text-center">{serverError}</p>
-      )}
+      {serverError && <Alert variant="error">{serverError}</Alert>}
 
-      <button
+      <Button
         type="submit"
+        className="w-full"
+        loading={isSubmitting}
         disabled={isSubmitting || !isValid}
-        className="w-full bg-black text-white rounded-lg px-4 py-3 text-sm font-medium hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
       >
-        {isSubmitting ? "Joining…" : "Join Waitlist"}
-      </button>
+        Join Waitlist
+      </Button>
     </form>
   );
 }

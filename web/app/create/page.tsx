@@ -22,6 +22,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
+import { LoadingScreen } from "@/components/layouts/loading-screen";
+import { Textarea } from "@/components/ui/textarea";
 
 export default function CreateWaitlistPage() {
   const router = useRouter();
@@ -98,16 +100,12 @@ export default function CreateWaitlistPage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#0d0d14] text-white">
-        Loading...
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (result) {
     return (
-      <div className="min-h-screen bg-[#0d0d14] px-4 py-12">
+      <div className="min-h-screen bg-background px-4 py-12">
         <div className="mx-auto max-w-2xl space-y-6">
           <Alert variant="success" title="Waitlist created">
             Your hosted page and widget embed code are ready.
@@ -116,17 +114,17 @@ export default function CreateWaitlistPage() {
           <Card>
             <CardContent className="p-6 space-y-6">
               <div>
-                <h1 className="text-2xl font-semibold text-white">{result.waitlist.name}</h1>
-                <p className="text-zinc-400 mt-1">{result.waitlist.tagline}</p>
-                <p className="text-sm text-zinc-500 mt-2">
-                  Slug: <span className="font-mono text-zinc-300">{result.waitlist.slug}</span>
+                <h1 className="text-2xl font-semibold text-foreground">{result.waitlist.name}</h1>
+                <p className="mt-1 text-muted-foreground">{result.waitlist.tagline}</p>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  Slug: <span className="font-mono text-foreground">{result.waitlist.slug}</span>
                 </p>
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium text-zinc-300">Hosted page</p>
+                <p className="text-sm font-medium text-foreground">Hosted page</p>
                 <div className="flex gap-2">
-                  <code className="flex-1 rounded-xl bg-black/40 px-4 py-3 text-sm text-zinc-200 break-all">
+                  <code className="flex-1 break-all rounded-md border border-border bg-surface-muted px-4 py-3 text-sm text-foreground">
                     {result.hostedPage}
                   </code>
                   <Button
@@ -140,8 +138,8 @@ export default function CreateWaitlistPage() {
 
               {result.widget?.embedCode && (
                 <div className="space-y-2">
-                  <p className="text-sm font-medium text-zinc-300">Widget embed code</p>
-                  <code className="block rounded-xl bg-black/40 px-4 py-3 text-sm text-zinc-200 break-all">
+                  <p className="text-sm font-medium text-foreground">Widget embed code</p>
+                  <code className="block break-all rounded-md border border-border bg-surface-muted px-4 py-3 text-sm text-foreground">
                     {result.widget.embedCode}
                   </code>
                   <Button
@@ -155,7 +153,7 @@ export default function CreateWaitlistPage() {
               )}
 
               <div className="flex flex-col gap-3 sm:flex-row">
-                <Link href={routes.waitlist(result.waitlist.slug)} className="flex-1">
+                <Link href={routes.waitlistPublic(result.waitlist.slug)} className="flex-1">
                   <Button className="w-full">
                     <ExternalLink className="h-4 w-4 mr-2" />
                     View waitlist page
@@ -175,11 +173,11 @@ export default function CreateWaitlistPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d0d14] px-4 py-12">
+    <div className="min-h-screen bg-background px-4 py-12">
       <div className="mx-auto max-w-xl">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold text-white">Create your waitlist</h1>
-          <p className="text-zinc-400 mt-2">
+          <h1 className="text-3xl font-semibold text-foreground">Create your waitlist</h1>
+          <p className="mt-2 text-muted-foreground">
             Upload your logo and launch a hosted page in seconds.
           </p>
         </div>
@@ -201,24 +199,17 @@ export default function CreateWaitlistPage() {
                 {...register("tagline")}
               />
 
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-zinc-300">
-                  Description <span className="text-zinc-500">(optional)</span>
-                </label>
-                <textarea
-                  rows={4}
-                  placeholder="Tell visitors what your product is about"
-                  className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-white placeholder:text-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  {...register("description")}
-                />
-                {errors.description?.message && (
-                  <p className="text-sm text-red-400">{errors.description.message}</p>
-                )}
-              </div>
+              <Textarea
+                label="Description (optional)"
+                rows={4}
+                placeholder="Tell visitors what your product is about"
+                error={errors.description?.message}
+                {...register("description")}
+              />
 
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-zinc-300">Logo</label>
-                <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border border-dashed border-white/15 bg-white/5 px-6 py-8 hover:bg-white/8 transition-colors">
+                <label className="block text-sm font-medium text-foreground">Logo</label>
+                <label className="flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border bg-surface-muted px-6 py-8 transition-colors hover:bg-surface">
                   {logoPreview ? (
                     <Image
                       src={logoPreview}
@@ -226,12 +217,12 @@ export default function CreateWaitlistPage() {
                       width={96}
                       height={96}
                       unoptimized
-                      className="h-24 w-24 rounded-xl object-cover"
+                      className="h-24 w-24 rounded-md object-cover"
                     />
                   ) : (
                     <>
-                      <Upload className="h-8 w-8 text-zinc-500 mb-2" />
-                      <span className="text-sm text-zinc-400">
+                      <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
+                      <span className="text-sm text-muted-foreground">
                         PNG, JPEG, JPG, or WEBP up to 5MB
                       </span>
                     </>
@@ -243,7 +234,7 @@ export default function CreateWaitlistPage() {
                     onChange={handleLogoChange}
                   />
                 </label>
-                {logoError && <p className="text-sm text-red-400">{logoError}</p>}
+                {logoError && <p className="text-sm text-destructive">{logoError}</p>}
               </div>
 
               {serverError && (
