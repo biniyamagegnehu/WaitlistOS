@@ -1,15 +1,31 @@
 import { api } from "@/lib/axios";
-import type { CreateWaitlistInput, Waitlist } from "@/types";
+import type {
+  CreateWaitlistInput,
+  CreateWaitlistResponse,
+  PublicWaitlistResponse,
+} from "@/types/waitlist";
 
-export async function createWaitlist(data: CreateWaitlistInput): Promise<Waitlist> {
-  const response = await api.post<Waitlist>("/waitlists", data);
-  return response.data;
+export async function createWaitlist(
+  data: CreateWaitlistInput
+): Promise<CreateWaitlistResponse> {
+  const response = await api.post<{
+    success: boolean;
+    data: CreateWaitlistResponse;
+  }>("/waitlists", data);
+
+  return response.data.data;
 }
 
-export async function getWaitlistBySlug(slug: string): Promise<Waitlist | null> {
+export async function getPublicWaitlistBySlug(
+  slug: string
+): Promise<PublicWaitlistResponse | null> {
   try {
-    const response = await api.get<Waitlist>(`/waitlists/${slug}`);
-    return response.data;
+    const response = await api.get<{
+      success: boolean;
+      data: PublicWaitlistResponse;
+    }>(`/w/${slug}`);
+
+    return response.data.data;
   } catch (error: unknown) {
     if (
       typeof error === "object" &&
