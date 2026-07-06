@@ -13,7 +13,6 @@ export default function LoginCallbackContent() {
 
   React.useEffect(() => {
     const accessToken = searchParams.get("accessToken");
-    const refreshToken = searchParams.get("refreshToken");
     const error = searchParams.get("error");
 
     if (error) {
@@ -21,8 +20,8 @@ export default function LoginCallbackContent() {
       return;
     }
 
-    if (accessToken && refreshToken) {
-      applyAuthResponse({ accessToken, refreshToken });
+    if (accessToken) {
+      applyAuthResponse({ accessToken });
       void refreshUser().finally(() => {
         router.replace(routes.dashboard);
       });

@@ -35,6 +35,10 @@ function getAllowedOrigins(): string[] {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
+  if (process.env.NODE_ENV === 'production') {
+    app.getHttpAdapter().getInstance().set('trust proxy', 1);
+  }
+
   app.use(
     helmet({
       crossOriginResourcePolicy: { policy: 'cross-origin' },
@@ -65,8 +69,7 @@ async function bootstrap() {
     credentials: true,
   });
 
-  // Cookies (still needed for some backward compatibility or edge cases, 
-  // though auth now uses Authorization headers)
+  // Refresh tokens travel in httpOnly cookies; access tokens use Authorization headers.
   app.use(cookieParser());
 
   // Global Exception Filters

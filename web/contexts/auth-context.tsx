@@ -42,8 +42,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const isAuthenticated = !!user;
 
   const applyAuthResponse = React.useCallback((data: AuthResponse["data"]) => {
-    if (data.accessToken && data.refreshToken) {
-      tokenStorage.setTokens(data.accessToken, data.refreshToken);
+    if (data.accessToken) {
+      tokenStorage.setAccessToken(data.accessToken);
     }
 
     if (data.user) {

@@ -34,6 +34,11 @@ import { GoogleUser } from '../interfaces/jwt-payload.interface';
 import { Throttle } from '@nestjs/throttler';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
+import type { AuthResponse } from '../services/auth.service';
+import {
+  clearRefreshTokenCookie,
+  setRefreshTokenCookie,
+} from '../utils/refresh-token-cookie.util';
 
 @Controller('auth')
 export class AuthController {
@@ -41,6 +46,19 @@ export class AuthController {
     private readonly authService: AuthService,
     private readonly configService: ConfigService,
   ) {}
+
+  private sendAuthResponse(res: Response, response: AuthResponse): AuthResponse {
+    const { refreshToken, ...publicData } = response.data;
+
+    if (refreshToken) {
+      setRefreshTokenCookie(res, refreshToken, this.configService);
+    }
+
+    return {
+      ...response,
+      data: publicData,
+    };
+  }
 
   // ──────────────────────────────────────────────────────────────
   // POST /auth/register
@@ -62,8 +80,13 @@ export class AuthController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
-    return this.authService.login(dto, req.ip, req.headers['user-agent']);
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const response = await this.authService.login(dto, req.ip, req.headers['user-agent']);
+    return this.sendAuthResponse(res, response);
   }
 
   // ──────────────────────────────────────────────────────────────
@@ -182,8 +205,18 @@ export class AuthController {
   @Post('2fa/verify')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  async verify2fa(@Body() dto: Verify2faDto, @Req() req: Request) {
-    return this.authService.verify2fa(dto.userId, dto.otp, req.ip, req.headers['user-agent']);
+  async verify2fa(
+    @Body() dto: Verify2faDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const response = await this.authService.verify2fa(
+      dto.userId,
+      dto.otp,
+      req.ip,
+      req.headers['user-agent'],
+    );
+    return this.sendAuthResponse(res, response);
   }
 
   // ──────────────────────────────────────────────────────────────
@@ -230,8 +263,10 @@ export class AuthController {
       return res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
     }
 
+    setRefreshTokenCookie(res, refreshToken, this.configService);
+
     return res.redirect(
-      `${frontendUrl}/login/callback?accessToken=${encodeURIComponent(accessToken)}&refreshToken=${encodeURIComponent(refreshToken)}`,
+      `${frontendUrl}/login/callback?accessToken=${encodeURIComponent(accessToken)}`,
     );
   }
 
@@ -244,17 +279,24 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @UseGuards(RefreshTokenGuard)
   @Throttle({ default: { limit: 20, ttl: 60000 } })
-  async refresh(@CurrentUser() tokenData: RefreshTokenRequest) {
+  async refresh(
+    @CurrentUser() tokenData: RefreshTokenRequest,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const tokens = await this.authService.refresh(
       tokenData.userId,
       tokenData.sessionId,
       tokenData.rawRefreshToken,
     );
 
+    setRefreshTokenCookie(res, tokens.refreshToken, this.configService);
+
     return {
       success: true,
       message: 'Tokens refreshed successfully',
-      data: tokens,
+      data: {
+        accessToken: tokens.accessToken,
+      },
     };
   }
 
@@ -265,8 +307,12 @@ export class AuthController {
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  async logout(@CurrentUser() user: AuthenticatedUser) {
+  async logout(
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await this.authService.logout(user.sessionId);
+    clearRefreshTokenCookie(res, this.configService);
 
     return {
       success: true,
@@ -280,8 +326,12 @@ export class AuthController {
 
   @Post('logout-all')
   @HttpCode(HttpStatus.OK)
-  async logoutAll(@CurrentUser() user: AuthenticatedUser) {
+  async logoutAll(
+    @CurrentUser() user: AuthenticatedUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     await this.authService.logoutAll(user.userId);
+    clearRefreshTokenCookie(res, this.configService);
 
     return {
       success: true,

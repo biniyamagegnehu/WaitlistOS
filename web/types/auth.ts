@@ -31,7 +31,8 @@ export interface AuthResponse {
     user?: User;
     founder?: Founder | null;
     accessToken?: string;
-    refreshToken?: string;
+    /** Issued only as an httpOnly cookie by the API — never stored in the browser. */
+    refreshToken?: never;
     requiresTwoFactor?: boolean;
     userId?: string;
   };
