@@ -1,23 +1,29 @@
 import type { ReactElement } from "react";
-import { ImageResponse } from "next/og";
 import { DefaultOgImage } from "@/components/og/DefaultOgImage";
 import { ReferralOgImage } from "@/components/og/ReferralOgImage";
 import { loadOgFonts } from "@/lib/og-fonts";
-import { OG_CACHE_HEADERS, OG_SIZE } from "@/lib/og";
+import { materializeOgImage } from "@/lib/og-response";
 import { prepareReferralOgDataForImage } from "@/lib/og-render";
 import { fetchReferralOgDataUncached } from "@/lib/referral";
 
 export const runtime = "nodejs";
 
-async function renderOgImage(element: ReactElement) {
+async function renderWithFallback(
+  primary: ReactElement,
+  fallback: ReactElement = <DefaultOgImage />
+): Promise<Response> {
   const fonts = await loadOgFonts();
+  const fontOptions = fonts.length > 0 ? { fonts } : undefined;
 
-  return new ImageResponse(element, {
-    width: OG_SIZE.width,
-    height: OG_SIZE.height,
-    fonts,
-    headers: OG_CACHE_HEADERS,
-  });
+  try {
+    return await materializeOgImage(primary, fontOptions);
+  } catch {
+    try {
+      return await materializeOgImage(fallback, fontOptions);
+    } catch {
+      return await materializeOgImage(<DefaultOgImage />);
+    }
+  }
 }
 
 export async function GET(
@@ -30,12 +36,12 @@ export async function GET(
     const data = await fetchReferralOgDataUncached(referralCode);
 
     if (!data) {
-      return renderOgImage(<DefaultOgImage />);
+      return renderWithFallback(<DefaultOgImage />);
     }
 
     const prepared = await prepareReferralOgDataForImage(data);
-    return renderOgImage(<ReferralOgImage data={prepared} />);
+    return renderWithFallback(<ReferralOgImage data={prepared} />);
   } catch {
-    return renderOgImage(<DefaultOgImage />);
+    return renderWithFallback(<DefaultOgImage />);
   }
 }

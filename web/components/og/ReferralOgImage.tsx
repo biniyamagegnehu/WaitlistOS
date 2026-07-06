@@ -1,15 +1,27 @@
 import type { ReferralOgData } from "@/types/referral-og";
 import { OG_COLORS, getParticipantDisplayName } from "@/lib/og";
-import { OgLogo, OgWaitlistOsMark } from "@/components/og/OgLogo";
-import { OgRewardProgress } from "@/components/og/OgRewardProgress";
+import { OgWaitlistOsMark } from "@/components/og/OgLogo";
 
 interface ReferralOgImageProps {
   data: ReferralOgData;
 }
 
+const PROGRESS_BAR_WIDTH = 900;
+
 export function ReferralOgImage({ data }: ReferralOgImageProps) {
   const participantName = getParticipantDisplayName(data.participant.displayName);
-  const { waitlist, branding, participant } = data;
+  const { waitlist, participant } = data;
+  const referralLabel =
+    participant.referralCount === 1
+      ? "1 referral"
+      : `${participant.referralCount} referrals`;
+  const fillWidth = Math.max(
+    0,
+    Math.min(
+      PROGRESS_BAR_WIDTH,
+      Math.round((participant.rewardProgress.percent / 100) * PROGRESS_BAR_WIDTH)
+    )
+  );
 
   return (
     <div
@@ -20,141 +32,180 @@ export function ReferralOgImage({ data }: ReferralOgImageProps) {
         alignItems: "center",
         justifyContent: "center",
         backgroundColor: OG_COLORS.background,
-        padding: 40,
       }}
     >
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          width: "100%",
-          height: "100%",
+          alignItems: "center",
+          width: 1120,
+          height: 550,
           backgroundColor: OG_COLORS.card,
           borderRadius: 24,
-          border: `1px solid ${OG_COLORS.border}`,
-          paddingTop: 48,
-          paddingBottom: 48,
-          paddingLeft: 56,
-          paddingRight: 56,
-          justifyContent: "space-between",
+          border: `2px solid ${OG_COLORS.border}`,
+          paddingTop: 40,
+          paddingBottom: 40,
+          paddingLeft: 48,
+          paddingRight: 48,
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 16,
-          }}
-        >
-          <OgLogo
-            logoUrl={branding?.logoUrl}
-            productName={waitlist.name}
-            size={64}
-          />
-          <span
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <OgWaitlistOsMark size={56} />
+          <div style={{ display: "flex", height: 20, width: 1 }} />
+          <div
             style={{
-              fontSize: 42,
+              display: "flex",
+              fontSize: 36,
               fontWeight: 700,
               color: OG_COLORS.text,
-              letterSpacing: -0.5,
             }}
           >
             {waitlist.name}
-          </span>
-          <span
+          </div>
+          <div style={{ display: "flex", height: 12, width: 1 }} />
+          <div
             style={{
-              fontSize: 24,
+              display: "flex",
+              fontSize: 22,
               color: OG_COLORS.secondary,
               textAlign: "center",
               maxWidth: 900,
-              lineHeight: 1.35,
             }}
           >
             {waitlist.tagline}
-          </span>
+          </div>
         </div>
 
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: 8,
-          }}
-        >
-          <span
+        <div style={{ display: "flex", height: 32, width: 1 }} />
+
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div
             style={{
-              fontSize: 30,
+              display: "flex",
+              fontSize: 26,
               fontWeight: 600,
               color: OG_COLORS.text,
             }}
           >
             {participantName}
-          </span>
-          <span
+          </div>
+          <div style={{ display: "flex", height: 8, width: 1 }} />
+          <div
             style={{
-              fontSize: 96,
+              display: "flex",
+              fontSize: 80,
               fontWeight: 700,
               color: OG_COLORS.primary,
               lineHeight: 1,
-              letterSpacing: -2,
             }}
           >
             #{participant.position}
-          </span>
-          <span
+          </div>
+          <div style={{ display: "flex", height: 8, width: 1 }} />
+          <div
             style={{
-              fontSize: 26,
+              display: "flex",
+              fontSize: 22,
               color: OG_COLORS.secondary,
             }}
           >
             on the waitlist
-          </span>
+          </div>
         </div>
+
+        <div style={{ display: "flex", height: 32, width: 1 }} />
 
         <div
           style={{
             display: "flex",
             flexDirection: "column",
-            gap: 20,
+            width: "100%",
           }}
         >
-          <span
+          <div
             style={{
-              fontSize: 24,
+              display: "flex",
+              fontSize: 22,
               fontWeight: 600,
               color: OG_COLORS.primary,
-              textAlign: "center",
+              justifyContent: "center",
             }}
           >
             Invite friends to move up.
-          </span>
+          </div>
+          <div style={{ display: "flex", height: 16, width: 1 }} />
 
-          <OgRewardProgress
-            progress={participant.rewardProgress}
-            referralCount={participant.referralCount}
-          />
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              width: "100%",
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                fontSize: 20,
+                fontWeight: 600,
+                color: OG_COLORS.text,
+              }}
+            >
+              {referralLabel}
+            </div>
+            <div
+              style={{
+                display: "flex",
+                fontSize: 18,
+                color: OG_COLORS.secondary,
+              }}
+            >
+              {participant.rewardProgress.current}/{participant.rewardProgress.target}{" "}
+              reward progress
+            </div>
+          </div>
+          <div style={{ display: "flex", height: 10, width: 1 }} />
+
+          <div
+            style={{
+              display: "flex",
+              width: PROGRESS_BAR_WIDTH,
+              height: 12,
+              backgroundColor: OG_COLORS.border,
+              borderRadius: 999,
+            }}
+          >
+            <div
+              style={{
+                display: "flex",
+                width: fillWidth,
+                height: 12,
+                backgroundColor: OG_COLORS.accent,
+                borderRadius: 999,
+              }}
+            />
+          </div>
+          <div style={{ display: "flex", height: 16, width: 1 }} />
 
           <div
             style={{
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              gap: 10,
-              marginTop: 4,
             }}
           >
-            <OgWaitlistOsMark size={24} />
-            <span
+            <OgWaitlistOsMark size={20} />
+            <div style={{ display: "flex", width: 8 }} />
+            <div
               style={{
-                fontSize: 20,
+                display: "flex",
+                fontSize: 18,
                 color: OG_COLORS.secondary,
                 fontWeight: 600,
               }}
             >
               waitlistos.com
-            </span>
+            </div>
           </div>
         </div>
       </div>

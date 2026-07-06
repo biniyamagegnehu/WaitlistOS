@@ -32,14 +32,11 @@ export class ReferralsService {
       throw new NotFoundException('REFERRAL_NOT_FOUND');
     }
 
-    try {
-      await this.paymentService.assertFeatureAccess(
-        participant.waitlist.founder.userId,
-        'DYNAMIC_OG',
-      );
-    } catch {
-      throw new NotFoundException('REFERRAL_NOT_FOUND');
-    }
+    const founderUserId = participant.waitlist.founder.userId;
+    const branding = await this.resolvePublicBranding(
+      founderUserId,
+      participant.waitlist.branding,
+    );
 
     const referralCount = participant.referralCount;
 
@@ -64,10 +61,43 @@ export class ReferralsService {
           tagline: participant.waitlist.tagline,
           slug: participant.waitlist.slug,
         },
-        branding: this.brandingService.formatPublicBranding(
-          participant.waitlist.branding,
-        ),
+        branding,
       },
+    };
+  }
+
+  private async resolvePublicBranding(
+    founderUserId: string,
+    branding: Parameters<BrandingService['formatPublicBranding']>[0],
+  ) {
+    const formatted = this.brandingService.formatPublicBranding(branding);
+    if (!formatted) {
+      return null;
+    }
+
+    let includeCustomBranding = false;
+
+    try {
+      await this.paymentService.assertFeatureAccess(
+        founderUserId,
+        'CUSTOM_BRANDING',
+      );
+      includeCustomBranding = true;
+    } catch {
+      includeCustomBranding = false;
+    }
+
+    if (includeCustomBranding) {
+      return formatted;
+    }
+
+    return {
+      logoUrl: null,
+      primaryColor: formatted.primaryColor,
+      secondaryColor: formatted.secondaryColor,
+      backgroundColor: formatted.backgroundColor,
+      buttonColor: formatted.buttonColor,
+      font: formatted.font,
     };
   }
 }

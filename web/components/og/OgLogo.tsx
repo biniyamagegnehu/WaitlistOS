@@ -27,7 +27,6 @@ export function OgLogo({ logoUrl, productName, size = 56 }: OgLogoProps) {
         height={size}
         style={{
           borderRadius: 12,
-          objectFit: "cover",
           border: `1px solid ${OG_COLORS.border}`,
         }}
       />

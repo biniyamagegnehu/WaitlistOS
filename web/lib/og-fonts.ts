@@ -14,33 +14,42 @@ const INTER_BOLD =
 
 let fontsPromise: Promise<OgFont[]> | null = null;
 
-export function loadOgFonts(): Promise<OgFont[]> {
+async function fetchFont(
+  url: string,
+  weight: OgFont["weight"]
+): Promise<OgFont | null> {
+  try {
+    const response = await fetch(url, { cache: "force-cache" });
+    if (!response.ok) {
+      return null;
+    }
+
+    return {
+      name: "Inter",
+      data: await response.arrayBuffer(),
+      weight,
+      style: "normal",
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function loadOgFonts(): Promise<OgFont[]> {
   if (!fontsPromise) {
     fontsPromise = Promise.all([
-      fetch(INTER_REGULAR).then((response) => response.arrayBuffer()),
-      fetch(INTER_SEMIBOLD).then((response) => response.arrayBuffer()),
-      fetch(INTER_BOLD).then((response) => response.arrayBuffer()),
-    ]).then(([regular, semibold, bold]) => [
-      {
-        name: "Inter",
-        data: regular,
-        weight: 400,
-        style: "normal",
-      },
-      {
-        name: "Inter",
-        data: semibold,
-        weight: 600,
-        style: "normal",
-      },
-      {
-        name: "Inter",
-        data: bold,
-        weight: 700,
-        style: "normal",
-      },
-    ]);
+      fetchFont(INTER_REGULAR, 400),
+      fetchFont(INTER_SEMIBOLD, 600),
+      fetchFont(INTER_BOLD, 700),
+    ]).then((fonts) =>
+      fonts.filter((font): font is OgFont => font !== null)
+    );
   }
 
-  return fontsPromise;
+  try {
+    return await fontsPromise;
+  } catch {
+    fontsPromise = null;
+    return [];
+  }
 }
