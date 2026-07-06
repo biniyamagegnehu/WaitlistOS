@@ -1,0 +1,5 @@
+-- Rename SubscriptionPlanCode enum values: STARTER->FREE, PRO->STARTER, BUSINESS->PRO
+ALTER TYPE "SubscriptionPlanCode" RENAME VALUE 'BUSINESS' TO 'PRO_TEMP';
+ALTER TYPE "SubscriptionPlanCode" RENAME VALUE 'STARTER' TO 'FREE';
+ALTER TYPE "SubscriptionPlanCode" RENAME VALUE 'PRO' TO 'STARTER';
+ALTER TYPE "SubscriptionPlanCode" RENAME VALUE 'PRO_TEMP' TO 'PRO';

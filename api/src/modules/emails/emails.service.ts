@@ -11,6 +11,11 @@ import { getEmailChangedConfirmationTemplate } from './templates/email-changed-c
 import { getNewLoginTemplate } from './templates/new-login';
 import { getTwoFactorEnabledTemplate } from './templates/two-factor-enabled';
 import { getTwoFactorDisabledTemplate } from './templates/two-factor-disabled';
+import { getPaymentSuccessfulTemplate } from './templates/payment-successful';
+import { getSubscriptionActivatedTemplate } from './templates/subscription-activated';
+import { getPaymentFailedTemplate } from './templates/payment-failed';
+import { getSubscriptionRenewedTemplate } from './templates/subscription-renewed';
+import { getSubscriptionExpiredTemplate } from './templates/subscription-expired';
 
 @Injectable()
 export class EmailsService {
@@ -87,6 +92,51 @@ export class EmailsService {
       .catch(e => this.logger.error('Failed to queue 2fa disabled email: ' + e.message));
   }
 
+  queuePaymentSuccessfulEmail(
+    email: string,
+    name: string | null,
+    planName: string,
+    amount: number,
+    currency: string,
+  ) {
+    this.emailsQueue
+      .add('send-payment-successful', { email, name, planName, amount, currency })
+      .catch((e) => this.logger.error('Failed to queue payment successful email: ' + e.message));
+  }
+
+  queueSubscriptionActivatedEmail(
+    email: string,
+    name: string | null,
+    planName: string,
+  ) {
+    this.emailsQueue
+      .add('send-subscription-activated', { email, name, planName })
+      .catch((e) => this.logger.error('Failed to queue subscription activated email: ' + e.message));
+  }
+
+  queuePaymentFailedEmail(email: string, name: string | null, planName: string) {
+    this.emailsQueue
+      .add('send-payment-failed', { email, name, planName })
+      .catch((e) => this.logger.error('Failed to queue payment failed email: ' + e.message));
+  }
+
+  queueSubscriptionRenewedEmail(
+    email: string,
+    name: string | null,
+    planName: string,
+    expiresAt: string,
+  ) {
+    this.emailsQueue
+      .add('send-subscription-renewed', { email, name, planName, expiresAt })
+      .catch((e) => this.logger.error('Failed to queue subscription renewed email: ' + e.message));
+  }
+
+  queueSubscriptionExpiredEmail(email: string, name: string | null, planName: string) {
+    this.emailsQueue
+      .add('send-subscription-expired', { email, name, planName })
+      .catch((e) => this.logger.error('Failed to queue subscription expired email: ' + e.message));
+  }
+
   // ── Direct Sending Methods (Called by Processor) ────────────────────────────
 
   private async executeSend(email: string, subject: string, html: string) {
@@ -156,5 +206,62 @@ export class EmailsService {
   async sendTwoFactorDisabledEmail(data: { email: string; name: string | null }) {
     const html = getTwoFactorDisabledTemplate(data.name);
     await this.executeSend(data.email, 'Two-Factor Authentication disabled', html);
+  }
+
+  async sendPaymentSuccessfulEmail(data: {
+    email: string;
+    name: string | null;
+    planName: string;
+    amount: number;
+    currency: string;
+  }) {
+    const html = getPaymentSuccessfulTemplate(
+      data.name,
+      data.planName,
+      data.amount,
+      data.currency,
+    );
+    await this.executeSend(data.email, 'Payment successful', html);
+  }
+
+  async sendSubscriptionActivatedEmail(data: {
+    email: string;
+    name: string | null;
+    planName: string;
+  }) {
+    const html = getSubscriptionActivatedTemplate(data.name, data.planName);
+    await this.executeSend(data.email, 'Subscription activated', html);
+  }
+
+  async sendPaymentFailedEmail(data: {
+    email: string;
+    name: string | null;
+    planName: string;
+  }) {
+    const html = getPaymentFailedTemplate(data.name, data.planName);
+    await this.executeSend(data.email, 'Payment failed', html);
+  }
+
+  async sendSubscriptionRenewedEmail(data: {
+    email: string;
+    name: string | null;
+    planName: string;
+    expiresAt: string;
+  }) {
+    const html = getSubscriptionRenewedTemplate(
+      data.name,
+      data.planName,
+      data.expiresAt,
+    );
+    await this.executeSend(data.email, 'Subscription renewed', html);
+  }
+
+  async sendSubscriptionExpiredEmail(data: {
+    email: string;
+    name: string | null;
+    planName: string;
+  }) {
+    const html = getSubscriptionExpiredTemplate(data.name, data.planName);
+    await this.executeSend(data.email, 'Subscription expired', html);
   }
 }

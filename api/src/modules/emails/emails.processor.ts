@@ -62,4 +62,29 @@ export class EmailsProcessor {
     this.logger.debug(`Processing send-2fa-disabled job for ${job.data.email}...`);
     await this.emailsService.sendTwoFactorDisabledEmail(job.data);
   }
+
+  @Process('send-payment-successful')
+  async handleSendPaymentSuccessful(job: Job<any>) {
+    await this.emailsService.sendPaymentSuccessfulEmail(job.data);
+  }
+
+  @Process('send-subscription-activated')
+  async handleSendSubscriptionActivated(job: Job<any>) {
+    await this.emailsService.sendSubscriptionActivatedEmail(job.data);
+  }
+
+  @Process('send-payment-failed')
+  async handleSendPaymentFailed(job: Job<any>) {
+    await this.emailsService.sendPaymentFailedEmail(job.data);
+  }
+
+  @Process('send-subscription-renewed')
+  async handleSendSubscriptionRenewed(job: Job<any>) {
+    await this.emailsService.sendSubscriptionRenewedEmail(job.data);
+  }
+
+  @Process('send-subscription-expired')
+  async handleSendSubscriptionExpired(job: Job<any>) {
+    await this.emailsService.sendSubscriptionExpiredEmail(job.data);
+  }
 }
