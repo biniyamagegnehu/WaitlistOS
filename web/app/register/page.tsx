@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { Mail, User } from "lucide-react";
 import { AuthLayout } from "@/components/features/auth/layout/auth-layout";
 import { AuthForm } from "@/components/features/auth/forms/auth-form";
+import { AuthDivider } from "@/components/features/auth/auth-divider";
+import { GoogleAuthButton } from "@/components/features/auth/google-auth-button";
 import { LoadingScreen } from "@/components/layouts/loading-screen";
 import { Input } from "@/components/ui/input";
 import { PasswordInput } from "@/components/ui/password-input";
@@ -15,7 +17,7 @@ import { routes } from "@/lib/routes";
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { register: registerUser, isAuthenticated, isLoading } = useAuth();
+  const { register: registerUser, googleLogin, isAuthenticated, isLoading } = useAuth();
 
   React.useEffect(() => {
     if (isAuthenticated && !isLoading) {
@@ -100,6 +102,9 @@ export default function RegisterPage() {
           </>
         )}
       </AuthForm>
+
+      <AuthDivider />
+      <GoogleAuthButton onClick={googleLogin} label="Continue with Google" />
 
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Already have an account?{" "}

@@ -17,6 +17,13 @@ export default function TwoFactorVerifyPage() {
   const { applyAuthResponse, refreshUser } = useAuth();
   const [userId] = React.useState(() => {
     if (typeof window === "undefined") return "";
+
+    const fromQuery = new URLSearchParams(window.location.search).get("userId");
+    if (fromQuery) {
+      sessionStorage.setItem("pending_2fa_user_id", fromQuery);
+      return fromQuery;
+    }
+
     return sessionStorage.getItem("pending_2fa_user_id") ?? "";
   });
 

@@ -9,6 +9,11 @@ export const routes = {
   waitlist: (id: string) => `/dashboard/waitlists/${id}`,
   settings: "/dashboard/settings",
   settingsTab: (tab: SettingsTab) => `/dashboard/settings?tab=${tab}`,
+  billing: "/dashboard/billing",
+  pricing: "/pricing",
+  paymentSuccess: "/payment/success",
+  paymentFailed: "/payment/failed",
+  paymentPending: "/payment/pending",
   profile: "/dashboard/profile",
   security: "/dashboard/security",
   sessions: "/dashboard/sessions",
@@ -19,4 +24,6 @@ export const routes = {
   resendVerification: "/resend-verification",
   create: "/create",
   waitlistPublic: (slug: string) => `/w/${slug}`,
+  referral: (code: string) => `/r/${encodeURIComponent(code)}`,
+  referralOg: (code: string) => `/og/referral/${encodeURIComponent(code)}`,
 } as const;
