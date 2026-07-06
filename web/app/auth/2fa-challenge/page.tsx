@@ -1,10 +1,11 @@
 "use client";
 
 import * as React from "react";
+import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { LoadingScreen } from "@/components/layouts/loading-screen";
 
-export default function AuthTwoFactorChallengePage() {
+function AuthTwoFactorChallengeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -21,4 +22,12 @@ export default function AuthTwoFactorChallengePage() {
   }, [router, searchParams]);
 
   return <LoadingScreen message="Opening two-factor verification…" />;
+}
+
+export default function AuthTwoFactorChallengePage() {
+  return (
+    <Suspense fallback={<LoadingScreen message="Opening two-factor verification…" />}>
+      <AuthTwoFactorChallengeContent />
+    </Suspense>
+  );
 }
