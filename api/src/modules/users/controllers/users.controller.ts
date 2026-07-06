@@ -18,12 +18,14 @@ import { VerifiedEmailGuard } from '../../auth/guards/verified-email.guard';
 import type { AuthenticatedUser } from '../../auth/interfaces/jwt-payload.interface';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { Throttle } from '@nestjs/throttler';
+import { PaymentService } from '../../payments/payment.service';
 
 @Controller('users')
 export class UsersController {
   constructor(
     private readonly usersService: UsersService,
     private readonly prisma: PrismaService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   /**
@@ -39,6 +41,8 @@ export class UsersController {
     const founder = await this.prisma.founder.findUnique({
       where: { userId: user.userId },
     });
+
+    const subscription = await this.paymentService.getSubscriptionSummary(user.userId);
 
     return {
       success: true,
@@ -59,6 +63,7 @@ export class UsersController {
           updatedAt: safeUser.updatedAt,
         },
         founder: founder ?? null,
+        subscription,
       },
     };
   }

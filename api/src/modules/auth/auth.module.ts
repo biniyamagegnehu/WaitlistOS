@@ -8,6 +8,7 @@ import { AuthController } from './controllers/auth.controller';
 import { AccessTokenStrategy } from './strategies/access-token.strategy';
 import { RefreshTokenStrategy } from './strategies/refresh-token.strategy';
 import { GoogleStrategy } from './strategies/google.strategy';
+import { GoogleOAuthGuard } from './guards/google-oauth.guard';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { VerifiedEmailGuard } from './guards/verified-email.guard';
@@ -40,6 +41,7 @@ import { EmailsModule } from '../emails/emails.module';
     AccessTokenStrategy,
     RefreshTokenStrategy,
     GoogleStrategy,
+    GoogleOAuthGuard,
     AccessTokenGuard,
     RefreshTokenGuard,
     VerifiedEmailGuard,

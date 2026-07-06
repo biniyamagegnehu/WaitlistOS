@@ -27,16 +27,20 @@ import { Public } from '../../../common/decorators/public.decorator';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
 import { RefreshTokenGuard } from '../guards/refresh-token.guard';
 import { VerifiedEmailGuard } from '../guards/verified-email.guard';
+import { GoogleOAuthGuard } from '../guards/google-oauth.guard';
 import type { AuthenticatedUser } from '../interfaces/jwt-payload.interface';
 import type { RefreshTokenRequest } from '../strategies/refresh-token.strategy';
 import { GoogleUser } from '../interfaces/jwt-payload.interface';
-import { AuthGuard } from '@nestjs/passport';
 import { Throttle } from '@nestjs/throttler';
+import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   // ──────────────────────────────────────────────────────────────
   // POST /auth/register
@@ -188,7 +192,7 @@ export class AuthController {
 
   @Public()
   @Get('google')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleOAuthGuard)
   async googleAuth(): Promise<void> {
     // Passport redirects to Google — this body never executes
   }
@@ -199,7 +203,7 @@ export class AuthController {
 
   @Public()
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
+  @UseGuards(GoogleOAuthGuard)
   async googleAuthCallback(@Req() req: Request & { user: GoogleUser }, @Res() res: Response) {
     const response = await this.authService.googleLogin(
       req.user,
@@ -207,16 +211,26 @@ export class AuthController {
       req.headers['user-agent'],
     );
 
-    const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
-    
-    if (response.data.requiresTwoFactor) {
-      res.redirect(`${frontendUrl}/auth/2fa-challenge?userId=${response.data.userId}`);
+    const frontendUrl =
+      this.configService.get<string>('app.frontendUrl') ??
+      'http://localhost:3001';
+
+    if (response.data.requiresTwoFactor && response.data.userId) {
+      res.redirect(
+        `${frontendUrl}/two-factor/verify?userId=${encodeURIComponent(response.data.userId)}`,
+      );
       return;
     }
 
     const { accessToken, refreshToken } = response.data;
+
+    if (!accessToken || !refreshToken) {
+      res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+      return;
+    }
+
     res.redirect(
-      `${frontendUrl}/auth/callback?accessToken=${accessToken}&refreshToken=${refreshToken}`,
+      `${frontendUrl}/auth/callback?accessToken=${encodeURIComponent(accessToken)}&refreshToken=${encodeURIComponent(refreshToken)}`,
     );
   }
 

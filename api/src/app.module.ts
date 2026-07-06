@@ -6,6 +6,8 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { appConfig } from './config/app.config';
+import { chapaConfig } from './config/chapa.config';
+import { plansConfig } from './config/plans.config';
 import { CommonModule } from './common/common.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
@@ -20,6 +22,8 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { BrandingModule } from './modules/branding/branding.module';
 import { WidgetsModule } from './modules/widgets/widgets.module';
 import { PublicWaitlistsModule } from './modules/public-waitlists/public-waitlists.module';
+import { ReferralsModule } from './modules/referrals/referrals.module';
+import { PaymentModule } from './modules/payments/payment.module';
 import { AccessTokenGuard } from './modules/auth/guards/access-token.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -27,7 +31,7 @@ import { RolesGuard } from './common/guards/roles.guard';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig],
+      load: [appConfig, chapaConfig, plansConfig],
     }),
     ThrottlerModule.forRoot([
       {
@@ -52,6 +56,8 @@ import { RolesGuard } from './common/guards/roles.guard';
     BrandingModule,
     WidgetsModule,
     PublicWaitlistsModule,
+    ReferralsModule,
+    PaymentModule,
   ],
   controllers: [AppController],
   providers: [
