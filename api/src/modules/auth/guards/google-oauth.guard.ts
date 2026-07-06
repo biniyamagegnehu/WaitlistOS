@@ -1,32 +1,17 @@
-import {
-  ExecutionContext,
-  Injectable,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { ExecutionContext, Injectable, UnauthorizedException } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
-import { ConfigService } from '@nestjs/config';
-import type { Response } from 'express';
 
 @Injectable()
 export class GoogleOAuthGuard extends AuthGuard('google') {
-  constructor(private readonly configService: ConfigService) {
-    super();
+  getAuthenticateOptions(_context: ExecutionContext) {
+    return {
+      session: false,
+    };
   }
 
-  handleRequest<TUser>(
-    err: Error | null,
-    user: TUser,
-    _info: unknown,
-    context: ExecutionContext,
-  ): TUser {
-    const response = context.switchToHttp().getResponse<Response>();
-    const frontendUrl =
-      this.configService.get<string>('app.frontendUrl') ??
-      'http://localhost:3001';
-
+  handleRequest<TUser>(err: Error | null, user: TUser, _info: unknown): TUser {
     if (err || !user) {
-      response.redirect(`${frontendUrl}/login?error=google_auth_failed`);
-      throw new UnauthorizedException('Google authentication failed');
+      throw err ?? new UnauthorizedException('Google authentication failed');
     }
 
     return user;

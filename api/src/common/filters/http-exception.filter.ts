@@ -32,6 +32,19 @@ export class HttpExceptionFilter implements ExceptionFilter {
       `[${request.method}] ${request.url} → ${status}: ${JSON.stringify(message)}`,
     );
 
+    if (response.headersSent) {
+      return;
+    }
+
+    if (
+      status === HttpStatus.UNAUTHORIZED &&
+      request.url.includes('/auth/google')
+    ) {
+      const frontendUrl = process.env.FRONTEND_URL ?? 'http://localhost:3001';
+      response.redirect(`${frontendUrl}/login?error=google_auth_failed`);
+      return;
+    }
+
     response.status(status).json({
       success: false,
       statusCode: status,
@@ -61,6 +74,10 @@ export class AllExceptionsFilter implements ExceptionFilter {
       `[${request.method}] ${request.url} → Unhandled exception`,
       exception instanceof Error ? exception.stack : String(exception),
     );
+
+    if (response.headersSent) {
+      return;
+    }
 
     response.status(status).json({
       success: false,

@@ -6,7 +6,7 @@ import { useAuth } from "@/contexts/auth-context";
 import { routes } from "@/lib/routes";
 import { LoadingScreen } from "@/components/layouts/loading-screen";
 
-export default function AuthCallbackContent() {
+export default function LoginCallbackContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { applyAuthResponse, refreshUser } = useAuth();

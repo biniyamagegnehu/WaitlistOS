@@ -204,7 +204,10 @@ export class AuthController {
   @Public()
   @Get('google/callback')
   @UseGuards(GoogleOAuthGuard)
-  async googleAuthCallback(@Req() req: Request & { user: GoogleUser }, @Res() res: Response) {
+  async googleAuthCallback(
+    @Req() req: Request & { user: GoogleUser },
+    @Res({ passthrough: false }) res: Response,
+  ) {
     const response = await this.authService.googleLogin(
       req.user,
       req.ip,
@@ -216,21 +219,19 @@ export class AuthController {
       'http://localhost:3001';
 
     if (response.data.requiresTwoFactor && response.data.userId) {
-      res.redirect(
+      return res.redirect(
         `${frontendUrl}/two-factor/verify?userId=${encodeURIComponent(response.data.userId)}`,
       );
-      return;
     }
 
     const { accessToken, refreshToken } = response.data;
 
     if (!accessToken || !refreshToken) {
-      res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
-      return;
+      return res.redirect(`${frontendUrl}/login?error=google_auth_failed`);
     }
 
-    res.redirect(
-      `${frontendUrl}/auth/callback?accessToken=${encodeURIComponent(accessToken)}&refreshToken=${encodeURIComponent(refreshToken)}`,
+    return res.redirect(
+      `${frontendUrl}/login/callback?accessToken=${encodeURIComponent(accessToken)}&refreshToken=${encodeURIComponent(refreshToken)}`,
     );
   }
 

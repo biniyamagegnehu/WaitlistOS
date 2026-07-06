@@ -3,6 +3,7 @@ import type { SettingsTab } from "@/types/dashboard";
 export const routes = {
   home: "/",
   login: "/login",
+  loginCallback: "/login/callback",
   register: "/register",
   dashboard: "/dashboard",
   waitlists: "/dashboard/waitlists",
