@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { PaymentService } from '../../payments/payment.service';
 
 export interface DashboardWaitlist {
   id: string;
@@ -33,7 +34,10 @@ export interface DashboardOverview {
 
 @Injectable()
 export class DashboardService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly paymentService: PaymentService,
+  ) {}
 
   /** Get the Founder ID from a User ID */
   private async getFounderId(userId: string): Promise<string> {
@@ -78,15 +82,22 @@ export class DashboardService {
     const referralConversionRate =
       totalSignups > 0 ? Math.round((referredSignups / totalSignups) * 1000) / 10 : 0;
 
-    const topReferrers = participants
-      .filter((p) => p.referralCount > 0)
-      .sort((a, b) => b.referralCount - a.referralCount)
-      .slice(0, 5)
-      .map((p) => ({
-        email: p.email,
-        referralCount: p.referralCount,
-        waitlistName: p.waitlistName,
-      }));
+    let topReferrers: DashboardOverview['topReferrers'] = [];
+
+    try {
+      await this.paymentService.assertFeatureAccess(userId, 'ADVANCED_ANALYTICS');
+      topReferrers = participants
+        .filter((p) => p.referralCount > 0)
+        .sort((a, b) => b.referralCount - a.referralCount)
+        .slice(0, 5)
+        .map((p) => ({
+          email: p.email,
+          referralCount: p.referralCount,
+          waitlistName: p.waitlistName,
+        }));
+    } catch {
+      topReferrers = [];
+    }
 
     return {
       totalSignups,

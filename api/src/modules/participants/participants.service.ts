@@ -9,12 +9,14 @@ import type { Queue } from 'bull';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
+import { PaymentService } from '../payments/payment.service';
 
 @Injectable()
 export class ParticipantsService {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue('emails') private readonly emailsQueue: Queue,
+    private readonly paymentService: PaymentService,
   ) {}
 
   // ── Referral code generator ──────────────────────────────
@@ -38,10 +40,13 @@ export class ParticipantsService {
     // 1. Resolve waitlist by slug — 404 if not found
     const waitlist = await this.prisma.waitlist.findUnique({
       where: { slug: waitlistSlug },
+      include: { founder: true },
     });
     if (!waitlist) {
       throw new NotFoundException('WAITLIST_NOT_FOUND');
     }
+
+    await this.paymentService.assertCanAddParticipant(waitlist.founder.userId);
 
     // 2. Duplicate email guard — 409
     const existing = await this.prisma.participant.findUnique({
@@ -131,8 +136,8 @@ export class ParticipantsService {
       return p;
     });
 
-    // 5. Build referral link
-    const referralLink = `/w/${waitlistSlug}?ref=${participant.referralCode}`;
+    // 5. Build referral link (OG-enabled share URL)
+    const referralLink = `/r/${participant.referralCode}`;
 
     // 6. Queue Welcome Email
     await this.emailsQueue.add(

@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BrandingService } from '../branding/branding.service';
 import { WidgetsService } from '../widgets/widgets.service';
+import { PaymentService } from '../payments/payment.service';
 
 @Injectable()
 export class PublicWaitlistsService {
@@ -9,12 +10,14 @@ export class PublicWaitlistsService {
     private readonly prisma: PrismaService,
     private readonly brandingService: BrandingService,
     private readonly widgetsService: WidgetsService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   async findBySlug(slug: string) {
     const waitlist = await this.prisma.waitlist.findUnique({
       where: { slug },
       include: {
+        founder: true,
         branding: {
           include: { logo: true },
         },
@@ -30,6 +33,16 @@ export class PublicWaitlistsService {
     }
 
     const widgetMetadata = this.widgetsService.buildMetadata(waitlist.slug);
+    let widget = this.widgetsService.formatWidget(waitlist.widget);
+
+    try {
+      await this.paymentService.assertFeatureAccess(
+        waitlist.founder.userId,
+        'EMBED_WIDGET',
+      );
+    } catch {
+      widget = null;
+    }
 
     return {
       success: true,
@@ -44,7 +57,7 @@ export class PublicWaitlistsService {
         },
         branding: this.brandingService.formatPublicBranding(waitlist.branding),
         hostedPage: widgetMetadata.hostedPage,
-        widget: this.widgetsService.formatWidget(waitlist.widget),
+        widget,
       },
     };
   }

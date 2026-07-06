@@ -11,6 +11,7 @@ import { WidgetsService } from '../widgets/widgets.service';
 import { CreateWaitlistDto } from './dto/create-waitlist.dto';
 import { UpdateWaitlistDto } from './dto/update-waitlist.dto';
 import { SlugService } from './services/slug.service';
+import { PaymentService } from '../payments/payment.service';
 
 @Injectable()
 export class WaitlistsService {
@@ -20,9 +21,11 @@ export class WaitlistsService {
     private readonly brandingService: BrandingService,
     private readonly widgetsService: WidgetsService,
     private readonly slugService: SlugService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   async create(createWaitlistDto: CreateWaitlistDto, userId: string) {
+    await this.paymentService.assertCanCreateWaitlist(userId);
     const founder = await this.getFounderByUserId(userId);
 
     await this.filesService.assertOwnership(createWaitlistDto.logoId, userId);

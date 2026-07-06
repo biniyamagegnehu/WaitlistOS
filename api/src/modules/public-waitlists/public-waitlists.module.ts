@@ -3,9 +3,10 @@ import { PublicWaitlistsController } from './public-waitlists.controller';
 import { PublicWaitlistsService } from './public-waitlists.service';
 import { BrandingModule } from '../branding/branding.module';
 import { WidgetsModule } from '../widgets/widgets.module';
+import { PaymentModule } from '../payments/payment.module';
 
 @Module({
-  imports: [BrandingModule, WidgetsModule],
+  imports: [BrandingModule, WidgetsModule, PaymentModule],
   controllers: [PublicWaitlistsController],
   providers: [PublicWaitlistsService],
 })
