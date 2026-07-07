@@ -46,8 +46,12 @@ export class PaymentService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
+      console.log('========== PAYMENT SERVICE INIT ==========');
+
     try {
       await this.seedPlans();
+          console.log('========== PLANS SEEDED ==========');
+
     } catch (error) {
       this.logger.error(
         'Failed to seed subscription plans. Run `npx prisma migrate deploy` if tables are missing.',
