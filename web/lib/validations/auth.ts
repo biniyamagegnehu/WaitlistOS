@@ -54,7 +54,6 @@ export type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
 // ── Reset Password Schema ─────────────────────────────────────────────────────────
 export const resetPasswordSchema = z
   .object({
-    token: z.string().min(1, "Token is required"),
     newPassword: z
       .string()
       .min(1, "Password is required")
