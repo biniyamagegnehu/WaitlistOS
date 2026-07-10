@@ -42,3 +42,24 @@ export async function exportWaitlistCsv(waitlistId: string): Promise<void> {
   link.remove();
   window.URL.revokeObjectURL(url);
 }
+
+export async function updateWaitlist(
+  waitlistId: string,
+  data: {
+    name?: string;
+    tagline?: string;
+    description?: string;
+    logoId?: string;
+    slug?: string;
+  }
+): Promise<DashboardWaitlist> {
+  const response = await api.patch<DashboardWaitlist>(
+    `/waitlists/${waitlistId}`,
+    data
+  );
+  return response.data;
+}
+
+export async function deleteWaitlist(waitlistId: string): Promise<void> {
+  await api.delete(`/waitlists/${waitlistId}`);
+}

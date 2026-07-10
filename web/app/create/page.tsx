@@ -2,46 +2,26 @@
 
 import * as React from "react";
 import Link from "next/link";
-import Image from "next/image";
 import { useRouter } from "next/navigation";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, Copy, Check, ExternalLink } from "lucide-react";
+import { Copy, Check, ExternalLink } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { createWaitlist } from "@/services/api";
-import { uploadFile } from "@/services/files";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
-import {
-  createWaitlistSchema,
-  validateLogoFile,
-  type CreateWaitlistFormData,
-} from "@/lib/validations/waitlist";
+import type { CreateWaitlistFormData } from "@/lib/validations/waitlist";
 import type { CreateWaitlistResponse } from "@/types/waitlist";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { LoadingScreen } from "@/components/layouts/loading-screen";
-import { Textarea } from "@/components/ui/textarea";
+import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
 
 export default function CreateWaitlistPage() {
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
-  const [logoFile, setLogoFile] = React.useState<File | null>(null);
-  const [logoPreview, setLogoPreview] = React.useState<string | null>(null);
-  const [logoError, setLogoError] = React.useState<string | null>(null);
   const [serverError, setServerError] = React.useState("");
   const [result, setResult] = React.useState<CreateWaitlistResponse | null>(null);
   const [copiedField, setCopiedField] = React.useState<string | null>(null);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<CreateWaitlistFormData>({
-    resolver: zodResolver(createWaitlistSchema),
-  });
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -49,53 +29,27 @@ export default function CreateWaitlistPage() {
     }
   }, [isAuthenticated, isLoading, router]);
 
-  React.useEffect(() => {
-    return () => {
-      if (logoPreview) {
-        URL.revokeObjectURL(logoPreview);
-      }
-    };
-  }, [logoPreview]);
-
-  const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null;
-    setLogoError(validateLogoFile(file));
-
-    if (logoPreview) {
-      URL.revokeObjectURL(logoPreview);
-    }
-
-    setLogoFile(file);
-    setLogoPreview(file ? URL.createObjectURL(file) : null);
-  };
-
   const handleCopy = async (value: string, field: string) => {
     await navigator.clipboard.writeText(value);
     setCopiedField(field);
     window.setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const onSubmit = async (data: CreateWaitlistFormData) => {
+  const onSubmit = async (data: CreateWaitlistFormData & { logoId: string }) => {
     setServerError("");
 
-    const validationError = validateLogoFile(logoFile);
-    if (validationError) {
-      setLogoError(validationError);
-      return;
-    }
-
     try {
-      const uploaded = await uploadFile(logoFile as File);
       const response = await createWaitlist({
         name: data.name,
         tagline: data.tagline,
         description: data.description,
-        logoId: uploaded.id,
+        logoId: data.logoId,
       });
 
       setResult(response);
     } catch (error: unknown) {
       setServerError(getApiErrorMessage(error, "Failed to create waitlist"));
+      throw error;
     }
   };
 
@@ -182,73 +136,12 @@ export default function CreateWaitlistPage() {
           </p>
         </div>
 
-        <Card>
-          <CardContent className="p-8">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-              <Input
-                label="Product name"
-                placeholder="My Awesome Product"
-                error={errors.name?.message}
-                {...register("name")}
-              />
-
-              <Input
-                label="Tagline"
-                placeholder="Join the waitlist for early access"
-                error={errors.tagline?.message}
-                {...register("tagline")}
-              />
-
-              <Textarea
-                label="Description (optional)"
-                rows={4}
-                placeholder="Tell visitors what your product is about"
-                error={errors.description?.message}
-                {...register("description")}
-              />
-
-              <div className="space-y-2">
-                <label className="block text-sm font-medium text-foreground">Logo</label>
-                <label className="flex cursor-pointer flex-col items-center justify-center rounded-md border border-dashed border-border bg-surface-muted px-6 py-8 transition-colors hover:bg-surface">
-                  {logoPreview ? (
-                    <Image
-                      src={logoPreview}
-                      alt="Logo preview"
-                      width={96}
-                      height={96}
-                      unoptimized
-                      className="h-24 w-24 rounded-md object-cover"
-                    />
-                  ) : (
-                    <>
-                      <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
-                      <span className="text-sm text-muted-foreground">
-                        PNG, JPEG, JPG, or WEBP up to 5MB
-                      </span>
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/jpg,image/webp"
-                    className="hidden"
-                    onChange={handleLogoChange}
-                  />
-                </label>
-                {logoError && <p className="text-sm text-destructive">{logoError}</p>}
-              </div>
-
-              {serverError && (
-                <Alert variant="error" title="Error">
-                  {serverError}
-                </Alert>
-              )}
-
-              <Button type="submit" className="w-full" loading={isSubmitting}>
-                Create waitlist
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+        <WaitlistForm
+          mode="create"
+          onSubmit={onSubmit}
+          submitButtonText="Create waitlist"
+          serverError={serverError}
+        />
       </div>
     </div>
   );

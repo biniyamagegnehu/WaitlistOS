@@ -8,17 +8,21 @@ import { SectionHeader } from "@/components/ui/section-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { getDashboardWaitlists } from "@/services/dashboard";
+import { getDashboardWaitlists, deleteWaitlist } from "@/services/dashboard";
 import type { DashboardWaitlist } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
+import { DeleteWaitlistDialog } from "@/components/waitlist/DeleteWaitlistDialog";
 
 export default function WaitlistsPage() {
   const [waitlists, setWaitlists] = React.useState<DashboardWaitlist[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
+  const [deletingWaitlist, setDeletingWaitlist] = React.useState<DashboardWaitlist | null>(null);
 
-  React.useEffect(() => {
+  const refreshWaitlists = React.useCallback(() => {
+    setIsLoading(true);
+    setError(null);
     getDashboardWaitlists()
       .then(setWaitlists)
       .catch((err: unknown) => {
@@ -26,6 +30,26 @@ export default function WaitlistsPage() {
       })
       .finally(() => setIsLoading(false));
   }, []);
+
+  React.useEffect(() => {
+    refreshWaitlists();
+  }, [refreshWaitlists]);
+
+  const handleDelete = (waitlist: DashboardWaitlist) => {
+    setDeletingWaitlist(waitlist);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!deletingWaitlist) return;
+
+    try {
+      await deleteWaitlist(deletingWaitlist.id);
+      setWaitlists((prev: DashboardWaitlist[]) => prev.filter((w: DashboardWaitlist) => w.id !== deletingWaitlist.id));
+      setDeletingWaitlist(null);
+    } catch (error: unknown) {
+      throw error;
+    }
+  };
 
   if (isLoading) {
     return (
@@ -77,9 +101,21 @@ export default function WaitlistsPage() {
       {!error && waitlists.length > 0 && (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {waitlists.map((waitlist) => (
-            <WaitlistCard key={waitlist.id} waitlist={waitlist} />
+            <WaitlistCard
+              key={waitlist.id}
+              waitlist={waitlist}
+              onDelete={handleDelete}
+            />
           ))}
         </div>
+      )}
+
+      {deletingWaitlist && (
+        <DeleteWaitlistDialog
+          waitlist={deletingWaitlist}
+          onClose={() => setDeletingWaitlist(null)}
+          onConfirm={handleDeleteConfirm}
+        />
       )}
     </div>
   );
