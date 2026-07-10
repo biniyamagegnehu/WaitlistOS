@@ -85,22 +85,16 @@ export class DashboardService {
     const referralConversionRate =
       totalSignups > 0 ? Math.round((referredSignups / totalSignups) * 1000) / 10 : 0;
 
-    let topReferrers: DashboardOverview['topReferrers'] = [];
-
-    try {
-      await this.paymentService.assertFeatureAccess(userId, 'ADVANCED_ANALYTICS');
-      topReferrers = participants
-        .filter((p) => p.referralCount > 0)
-        .sort((a, b) => b.referralCount - a.referralCount)
-        .slice(0, 5)
-        .map((p) => ({
-          email: p.email,
-          referralCount: p.referralCount,
-          waitlistName: p.waitlistName,
-        }));
-    } catch {
-      topReferrers = [];
-    }
+    // Top referrers - available to all users
+    const topReferrers = participants
+      .filter((p) => p.referralCount > 0)
+      .sort((a, b) => b.referralCount - a.referralCount)
+      .slice(0, 5)
+      .map((p) => ({
+        email: p.email,
+        referralCount: p.referralCount,
+        waitlistName: p.waitlistName,
+      }));
 
     return {
       totalSignups,

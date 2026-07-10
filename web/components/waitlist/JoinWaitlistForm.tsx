@@ -51,6 +51,7 @@ export default function JoinWaitlistForm({
     resolver: zodResolver(joinSchema),
     mode: "onChange",
     defaultValues: {
+      email: "",
       referralCode: initialReferralCode || "",
     },
   });
@@ -87,14 +88,8 @@ export default function JoinWaitlistForm({
         {...register("email")}
       />
 
-      <Input
-        label="Referral code"
-        type="text"
-        placeholder="Optional"
-        disabled={isSubmitting}
-        error={errors.referralCode?.message}
-        {...register("referralCode")}
-      />
+      {/* Hidden referral code field - automatically applied from URL parameter */}
+      <input type="hidden" {...register("referralCode")} />
 
       {serverError && <Alert variant="error">{serverError}</Alert>}
 
