@@ -10,6 +10,8 @@ export interface DashboardWaitlist {
   name: string;
   slug: string;
   totalParticipants: number;
+  description?: string | null;
+  logoUrl?: string | null;
 }
 
 export interface DashboardWaitlistDetail {

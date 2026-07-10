@@ -7,6 +7,8 @@ export interface DashboardWaitlist {
   name: string;
   slug: string;
   totalParticipants: number;
+  description?: string | null;
+  logoUrl?: string | null;
 }
 
 export interface DashboardParticipant {
@@ -118,6 +120,7 @@ export class DashboardService {
         _count: {
           select: { participants: true },
         },
+        logo: true,
       },
     });
 
@@ -126,6 +129,8 @@ export class DashboardService {
       name: w.name,
       slug: w.slug,
       totalParticipants: w._count.participants,
+      description: w.description,
+      logoUrl: w.logo?.url || null,
     }));
   }
 
@@ -140,6 +145,7 @@ export class DashboardService {
       where: { id: waitlistId, founderId },
       include: {
         _count: { select: { participants: true } },
+        logo: true,
         participants: {
           orderBy: { position: 'asc' },
           select: {
@@ -164,6 +170,8 @@ export class DashboardService {
         name: waitlist.name,
         slug: waitlist.slug,
         totalParticipants: waitlist._count.participants,
+        description: waitlist.description,
+        logoUrl: waitlist.logo?.url || null,
       },
       participants: waitlist.participants,
     };

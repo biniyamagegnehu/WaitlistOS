@@ -150,11 +150,11 @@ export default function EditWaitlistPage() {
         <WaitlistForm
           mode="edit"
           initialValues={{
-            name: waitlistData?.name,
-            tagline: waitlistData?.slug,
-            description: waitlistData?.description || "",
-            logoUrl: waitlistData?.logoUrl || null,
-            slug: waitlistData?.slug,
+            name: waitlistData?.waitlist.name,
+            tagline: waitlistData?.waitlist.slug,
+            description: waitlistData?.waitlist.description || "",
+            logoUrl: waitlistData?.waitlist.logoUrl || null,
+            slug: waitlistData?.waitlist.slug,
           }}
           onSubmit={onSubmit}
           submitButtonText="Save changes"
