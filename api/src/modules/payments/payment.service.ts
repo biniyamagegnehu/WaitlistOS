@@ -35,7 +35,7 @@ import type { PremiumFeature } from './decorators/subscription.decorator';
 import { EmailsService } from '../emails/emails.service';
 
 @Injectable()
-export class PaymentService implements OnModuleInit {
+export class PaymentService {
   private readonly logger = new Logger(PaymentService.name);
 
   constructor(
@@ -44,21 +44,6 @@ export class PaymentService implements OnModuleInit {
     private readonly configService: ConfigService,
     private readonly emailsService: EmailsService,
   ) {}
-
-  async onModuleInit() {
-      console.log('========== PAYMENT SERVICE INIT ==========');
-
-    try {
-      await this.seedPlans();
-          console.log('========== PLANS SEEDED ==========');
-
-    } catch (error) {
-      this.logger.error(
-        'Failed to seed subscription plans. Run `npx prisma migrate deploy` if tables are missing.',
-        error instanceof Error ? error.stack : String(error),
-      );
-    }
-  }
 
   async seedPlans() {
     const currency = this.configService.get<string>('plans.currency') ?? 'USD';

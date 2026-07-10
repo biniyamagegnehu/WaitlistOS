@@ -204,9 +204,18 @@ export class DashboardService {
       );
     }
 
+    // Helper function to properly escape CSV values
+    const escapeCsvValue = (val: unknown): string => {
+      const stringified = String(val);
+      if (/[",\n\r]/.test(stringified)) {
+        return `"${stringified.replace(/"/g, '""')}"`;
+      }
+      return stringified;
+    };
+
     const header = 'email,position,referralCount';
     const rows = waitlist.participants.map(
-      (p) => `${p.email},${p.position},${p.referralCount}`,
+      (p) => [escapeCsvValue(p.email), escapeCsvValue(p.position), escapeCsvValue(p.referralCount)].join(','),
     );
     const csv = [header, ...rows].join('\n');
 

@@ -69,10 +69,10 @@ export class AuthService {
     }
 
     const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
-    
-    // Generate verification token
+
+    // Generate verification token using SHA-256
     const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(rawToken, BCRYPT_ROUNDS);
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
     const expiresInMs = this.configService.get<number>('app.emailVerificationExpiresInMs', 86400000);
     const expiresAt = new Date(Date.now() + expiresInMs);
 
@@ -124,20 +124,17 @@ export class AuthService {
   // ──────────────────────────────────────────────────────────────
 
   async verifyEmail(token: string): Promise<AuthResponse> {
-    // Find a user who has a token expiry in the future
+    // Hash the token using SHA-256 and find the user by the hashed token
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await this.prisma.user.findFirst({
       where: {
+        emailVerificationToken: hashedToken,
         emailVerificationExpiresAt: { gt: new Date() },
         status: 'PENDING_VERIFICATION',
       },
     });
 
-    if (!user || !user.emailVerificationToken) {
-      throw new BadRequestException('Invalid or expired verification token');
-    }
-
-    const isValid = await bcrypt.compare(token, user.emailVerificationToken);
-    if (!isValid) {
+    if (!user) {
       throw new BadRequestException('Invalid or expired verification token');
     }
 
@@ -173,7 +170,7 @@ export class AuthService {
     }
 
     const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(rawToken, BCRYPT_ROUNDS);
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
     const expiresInMs = this.configService.get<number>('app.emailVerificationExpiresInMs', 86400000);
     const expiresAt = new Date(Date.now() + expiresInMs);
 
@@ -289,7 +286,7 @@ export class AuthService {
     }
 
     const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(rawToken, BCRYPT_ROUNDS);
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
     const expiresInMs = this.configService.get<number>('app.passwordResetExpiresInMs', 3600000);
     const expiresAt = new Date(Date.now() + expiresInMs);
 
@@ -311,18 +308,16 @@ export class AuthService {
   // ──────────────────────────────────────────────────────────────
 
   async resetPassword(token: string, newPassword: string): Promise<AuthResponse> {
+    // Hash the token using SHA-256 and find the user by the hashed token
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await this.prisma.user.findFirst({
       where: {
+        passwordResetToken: hashedToken,
         passwordResetExpiresAt: { gt: new Date() },
       },
     });
 
-    if (!user || !user.passwordResetToken) {
-      throw new BadRequestException('Invalid or expired password reset token');
-    }
-
-    const isValid = await bcrypt.compare(token, user.passwordResetToken);
-    if (!isValid) {
+    if (!user) {
       throw new BadRequestException('Invalid or expired password reset token');
     }
 

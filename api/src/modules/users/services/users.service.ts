@@ -165,7 +165,7 @@ export class UsersService {
     }
 
     const rawToken = crypto.randomBytes(32).toString('hex');
-    const hashedToken = await bcrypt.hash(rawToken, BCRYPT_ROUNDS);
+    const hashedToken = crypto.createHash('sha256').update(rawToken).digest('hex');
     const expiresInMs = this.configService.get<number>('app.pendingEmailExpiresInMs', 86400000);
 
     await this.prisma.user.update({
@@ -185,18 +185,16 @@ export class UsersService {
    * Verify and confirm email change
    */
   async verifyEmailChange(token: string): Promise<void> {
+    // Hash the token using SHA-256 and find the user by the hashed token
+    const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
     const user = await this.prisma.user.findFirst({
       where: {
+        pendingEmailVerificationToken: hashedToken,
         pendingEmailVerificationExpiresAt: { gt: new Date() },
       },
     });
 
-    if (!user || !user.pendingEmailVerificationToken || !user.pendingEmail) {
-      throw new BadRequestException('Invalid or expired email change token');
-    }
-
-    const isValid = await bcrypt.compare(token, user.pendingEmailVerificationToken);
-    if (!isValid) {
+    if (!user || !user.pendingEmail) {
       throw new BadRequestException('Invalid or expired email change token');
     }
 

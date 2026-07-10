@@ -81,60 +81,94 @@ export class ParticipantsService {
     // Generate unique referral code for this new participant
     const newReferralCode = await this.generateUniqueCode();
 
-    // 4. Transaction to create participant and swap positions
-    const participant = await this.prisma.$transaction(async (tx) => {
-      const count = await tx.participant.count({
-        where: { waitlistId: waitlist.id },
-      });
-      const position = count + 1;
+    // 4. Transaction to create participant and swap positions with SKIP LOCKED retry logic
+    const maxRetries = 5;
+    const baseRetryDelay = 100; // ms
 
-      const p = await tx.participant.create({
-        data: {
-          waitlistId: waitlist.id,
-          email,
-          position,
-          referralCode: newReferralCode,
-          ...(referrer ? { referredById: referrer.id } : {}),
-        },
-      });
+    let participant;
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        participant = await this.prisma.$transaction(async (tx) => {
+          // Try to acquire lock with SKIP LOCKED - skips if row is locked by another transaction
+          const result = await tx.$queryRaw<Array<{ id: string }>>`
+            SELECT id FROM waitlists
+            WHERE id = ${waitlist.id}
+            FOR UPDATE SKIP LOCKED
+            LIMIT 1
+          `;
 
-      if (referrer) {
-        // Increment referral count
-        const updatedReferrer = await tx.participant.update({
-          where: { id: referrer.id },
-          data: { referralCount: { increment: 1 } },
-        });
+          // If no row was returned, it means the row is locked by another transaction
+          if (!result || result.length === 0) {
+            throw new Error('ROW_LOCKED');
+          }
 
-        // Swap positions if referrer can move up
-        if (updatedReferrer.position > 1) {
-          const targetPosition = updatedReferrer.position - 1;
+          const count = await tx.participant.count({
+            where: { waitlistId: waitlist.id },
+          });
+          const position = count + 1;
 
-          // Find the person currently at the target position
-          const personToDemote = await tx.participant.findFirst({
-            where: {
+          const p = await tx.participant.create({
+            data: {
               waitlistId: waitlist.id,
-              position: targetPosition,
+              email,
+              position,
+              referralCode: newReferralCode,
+              ...(referrer ? { referredById: referrer.id } : {}),
             },
           });
 
-          if (personToDemote) {
-            // Move the person ahead down by 1
-            await tx.participant.update({
-              where: { id: personToDemote.id },
-              data: { position: updatedReferrer.position },
-            });
-
-            // Move the referrer up by 1
-            await tx.participant.update({
+          if (referrer) {
+            // Increment referral count
+            const updatedReferrer = await tx.participant.update({
               where: { id: referrer.id },
-              data: { position: targetPosition },
+              data: { referralCount: { increment: 1 } },
             });
-          }
-        }
-      }
 
-      return p;
-    });
+            // Swap positions if referrer can move up
+            if (updatedReferrer.position > 1) {
+              const targetPosition = updatedReferrer.position - 1;
+
+              // Find the person currently at the target position
+              const personToDemote = await tx.participant.findFirst({
+                where: {
+                  waitlistId: waitlist.id,
+                  position: targetPosition,
+                },
+              });
+
+              if (personToDemote) {
+                // Move the person ahead down by 1
+                await tx.participant.update({
+                  where: { id: personToDemote.id },
+                  data: { position: updatedReferrer.position },
+                });
+
+                // Move the referrer up by 1
+                await tx.participant.update({
+                  where: { id: referrer.id },
+                  data: { position: targetPosition },
+                });
+              }
+            }
+          }
+
+          return p;
+        });
+
+        // If successful, break out of retry loop
+        break;
+      } catch (error) {
+        // If the error is ROW_LOCKED and we haven't exhausted retries, wait and retry
+        if (error instanceof Error && error.message === 'ROW_LOCKED' && attempt < maxRetries - 1) {
+          // Exponential backoff: 100ms, 200ms, 400ms, 800ms
+          const delay = baseRetryDelay * Math.pow(2, attempt);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        // If it's a different error or we've exhausted retries, throw it
+        throw error;
+      }
+    }
 
     // 5. Build referral link (OG-enabled share URL)
     const referralLink = `/r/${participant.referralCode}`;
