@@ -35,8 +35,13 @@ export default function CreateWaitlistPage() {
     window.setTimeout(() => setCopiedField(null), 2000);
   };
 
-  const onSubmit = async (data: CreateWaitlistFormData & { logoId: string }) => {
+  const onSubmit = async (data: CreateWaitlistFormData & { logoId?: string; slug?: string }) => {
     setServerError("");
+
+    if (!data.logoId) {
+      setServerError("Logo is required");
+      return;
+    }
 
     try {
       const response = await createWaitlist({
