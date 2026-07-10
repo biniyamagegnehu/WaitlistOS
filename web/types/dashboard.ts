@@ -8,6 +8,7 @@ export interface DashboardParticipant {
 export interface DashboardWaitlist {
   id: string;
   name: string;
+  tagline: string;
   slug: string;
   totalParticipants: number;
   description?: string | null;

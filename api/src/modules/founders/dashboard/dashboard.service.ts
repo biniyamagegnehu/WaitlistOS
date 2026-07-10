@@ -5,6 +5,7 @@ import { PaymentService } from '../../payments/payment.service';
 export interface DashboardWaitlist {
   id: string;
   name: string;
+  tagline: string;
   slug: string;
   totalParticipants: number;
   description?: string | null;
@@ -127,6 +128,7 @@ export class DashboardService {
     return waitlists.map((w) => ({
       id: w.id,
       name: w.name,
+      tagline: w.tagline,
       slug: w.slug,
       totalParticipants: w._count.participants,
       description: w.description,
@@ -168,6 +170,7 @@ export class DashboardService {
       waitlist: {
         id: waitlist.id,
         name: waitlist.name,
+        tagline: waitlist.tagline,
         slug: waitlist.slug,
         totalParticipants: waitlist._count.participants,
         description: waitlist.description,
