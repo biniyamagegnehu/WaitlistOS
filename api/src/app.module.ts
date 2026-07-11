@@ -23,6 +23,7 @@ import { BrandingModule } from './modules/branding/branding.module';
 import { WidgetsModule } from './modules/widgets/widgets.module';
 import { PublicWaitlistsModule } from './modules/public-waitlists/public-waitlists.module';
 import { ReferralsModule } from './modules/referrals/referrals.module';
+import { RewardsModule } from './modules/rewards/rewards.module';
 import { PaymentModule } from './modules/payments/payment.module';
 import { AccessTokenGuard } from './modules/auth/guards/access-token.guard';
 import { RolesGuard } from './common/guards/roles.guard';
@@ -58,6 +59,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     PublicWaitlistsModule,
     ReferralsModule,
     PaymentModule,
+    RewardsModule,
   ],
   controllers: [AppController],
   providers: [

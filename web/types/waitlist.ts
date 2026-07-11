@@ -12,6 +12,16 @@ export interface WaitlistWidget {
   embedCode: string;
 }
 
+export interface WaitlistReward {
+  id: string;
+  milestone: number;
+  type: string;
+  value: number | null;
+  title: string;
+  description: string | null;
+  unlocked?: boolean;
+}
+
 export interface WaitlistSummary {
   id: string;
   name: string;
@@ -19,6 +29,7 @@ export interface WaitlistSummary {
   slug: string;
   description?: string | null;
   participantCount?: number;
+  rewards?: WaitlistReward[];
 }
 
 export interface CreateWaitlistInput {

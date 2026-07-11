@@ -10,6 +10,7 @@ export const routes = {
   waitlist: (id: string) => `/dashboard/waitlists/${id}`,
   waitlistEdit: (id: string) => `/dashboard/waitlists/${id}/edit`,
   waitlistShare: (id: string) => `/dashboard/waitlists/${id}/share`,
+  waitlistRewards: (id: string) => `/dashboard/waitlists/${id}/rewards`,
   settings: "/dashboard/settings",
   settingsTab: (tab: SettingsTab) => `/dashboard/settings?tab=${tab}`,
   billing: "/dashboard/billing",

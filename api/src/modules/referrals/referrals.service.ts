@@ -23,7 +23,13 @@ export class ReferralsService {
             branding: {
               include: { logo: true },
             },
+            rewards: {
+              orderBy: { milestone: 'asc' },
+            },
           },
+        },
+        participantRewards: {
+          include: { reward: true },
         },
       },
     });
@@ -39,6 +45,27 @@ export class ReferralsService {
     );
 
     const referralCount = participant.referralCount;
+    
+    const rewards = participant.waitlist.rewards || [];
+    const unlockedRewardIds = new Set(participant.participantRewards.map(pr => pr.reward.id));
+    
+    let nextTarget = REWARD_REFERRAL_TARGET;
+    const unachievedRewards = rewards.filter(r => r.milestone > referralCount);
+    if (unachievedRewards.length > 0) {
+      nextTarget = unachievedRewards[0].milestone;
+    } else if (rewards.length > 0) {
+      nextTarget = rewards[rewards.length - 1].milestone;
+    }
+
+    const mappedRewards = rewards.map(r => ({
+      id: r.id,
+      milestone: r.milestone,
+      type: r.type,
+      value: r.value,
+      title: r.title,
+      description: r.description,
+      unlocked: unlockedRewardIds.has(r.id),
+    }));
 
     return {
       success: true,
@@ -49,17 +76,25 @@ export class ReferralsService {
           referralCount,
           rewardProgress: {
             current: referralCount,
-            target: REWARD_REFERRAL_TARGET,
+            target: nextTarget,
             percent: Math.min(
-              Math.round((referralCount / REWARD_REFERRAL_TARGET) * 100),
+              Math.round((referralCount / nextTarget) * 100),
               100,
             ),
           },
+          unlockedRewards: participant.participantRewards.map(pr => ({
+            id: pr.reward.id,
+            title: pr.reward.title,
+            unlockedAt: pr.unlockedAt,
+            type: pr.reward.type,
+            value: pr.reward.value,
+          })).sort((a, b) => b.unlockedAt.getTime() - a.unlockedAt.getTime()),
         },
         waitlist: {
           name: participant.waitlist.name,
           tagline: participant.waitlist.tagline,
           slug: participant.waitlist.slug,
+          rewards: mappedRewards,
         },
         branding,
       },

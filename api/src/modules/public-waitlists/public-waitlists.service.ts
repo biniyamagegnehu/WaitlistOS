@@ -21,6 +21,9 @@ export class PublicWaitlistsService {
         branding: {
           include: { logo: true },
         },
+        rewards: {
+          orderBy: { milestone: 'asc' },
+        },
         widget: true,
         _count: {
           select: { participants: true },
@@ -54,6 +57,14 @@ export class PublicWaitlistsService {
           description: waitlist.description,
           slug: waitlist.slug,
           participantCount: waitlist._count.participants,
+          rewards: waitlist.rewards.map(r => ({
+            id: r.id,
+            milestone: r.milestone,
+            type: r.type,
+            value: r.value,
+            title: r.title,
+            description: r.description,
+          })),
         },
         branding: this.brandingService.formatPublicBranding(waitlist.branding),
         hostedPage: widgetMetadata.hostedPage,

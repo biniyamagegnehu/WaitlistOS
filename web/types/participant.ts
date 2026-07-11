@@ -5,6 +5,20 @@ export type JoinErrorCode =
   | "SELF_REFERRAL"
   | "SERVER_ERROR";
 
+export interface RewardProgress {
+  current: number;
+  target: number;
+  percent: number;
+}
+
+export interface UnlockedReward {
+  id: string;
+  title: string;
+  unlockedAt: string;
+  type: string;
+  value: number | null;
+}
+
 export interface JoinResponse {
   success: boolean;
   email: string;
@@ -12,6 +26,8 @@ export interface JoinResponse {
   referralCode: string;
   referralCount: number;
   referralLink: string;
+  rewardProgress?: RewardProgress;
+  unlockedRewards?: UnlockedReward[];
 }
 
 export interface JoinWaitlistInput {

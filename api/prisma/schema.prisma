@@ -1,390 +1,841 @@
 // This is your Prisma schema file,
+
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
+
+
 generator client {
+
   provider = "prisma-client-js"
+
 }
+
+
 
 datasource db {
+
   provider = "postgresql"
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // Enums
+
 // ─────────────────────────────────────────────
+
+
 
 enum Role {
+
   USER
+
   ADMIN
+
 }
+
+
 
 enum Provider {
+
   EMAIL
+
   GOOGLE
+
 }
+
+
 
 enum UserStatus {
+
   PENDING_VERIFICATION
+
   ACTIVE
+
   SUSPENDED
+
 }
+
+
 
 enum FileProvider {
+
   CLOUDINARY
+
 }
+
+
+
 
 enum SubscriptionPlanCode {
+
   FREE
+
   STARTER
+
   PRO
+
 }
+
+
 
 enum SubscriptionStatus {
+
   ACTIVE
+
   INACTIVE
+
   PENDING
+
   CANCELLED
+
   EXPIRED
+
   PAST_DUE
+
 }
+
+
 
 enum BillingCycle {
+
   FREE
+
   MONTHLY
+
 }
+
+
 
 enum PaymentProvider {
+
   CHAPA
+
 }
+
+
 
 enum PaymentStatus {
+
   PENDING
+
   SUCCESS
+
   FAILED
+
   CANCELLED
+
 }
+
+
 
 enum PaymentEventType {
+
   INITIALIZED
+
   WEBHOOK_RECEIVED
+
   VERIFIED
+
   FAILED
+
   CANCELLED
+
   DUPLICATE
+
 }
 
+
+
+enum RewardType {
+
+  POSITION_BOOST
+
+  EARLY_ACCESS
+
+  VIP_ACCESS
+
+  DISCOUNT
+
+  CUSTOM
+
+}
+
+
+
 // ─────────────────────────────────────────────
+
 // User — Authentication identity
+
 // ─────────────────────────────────────────────
+
 model User {
+
   id           String     @id @default(uuid())
+
   email        String     @unique
+
   passwordHash String?
+
   firstName    String?
+
   lastName     String?
+
   avatar       String?
+
   role         Role       @default(USER)
+
   provider     Provider   @default(EMAIL)
+
   status       UserStatus @default(PENDING_VERIFICATION)
+
   lastLoginAt  DateTime?
+
   createdAt    DateTime   @default(now())
+
   updatedAt    DateTime   @updatedAt
 
+
+
   // ── Email Verification ──────────────────────────
+
   emailVerifiedAt            DateTime?
+
   emailVerificationToken     String?
+
   emailVerificationExpiresAt DateTime?
 
+
+
   // ── Password Reset ──────────────────────────────
+
   passwordResetToken     String?
+
   passwordResetExpiresAt DateTime?
+
   passwordChangedAt      DateTime?
 
+
+
   // ── Email Change ────────────────────────────────
+
   pendingEmail                      String?
+
   pendingEmailVerificationToken     String?
+
   pendingEmailVerificationExpiresAt DateTime?
 
+
+
   // ── Two-Factor Authentication (TOTP) ────────────
+
   twoFactorEnabled Boolean @default(false)
+
   twoFactorSecret  String?
 
+
+
   // ── Account Lockout ─────────────────────────────
+
   failedLoginAttempts Int       @default(0)
+
   lockedUntil         DateTime?
 
+
+
   sessions Session[]
+
   founder  Founder?
+
   files    File[]
+
   subscription Subscription?
+
   payments Payment[]
 
+
+
   @@map("users")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // Session — Refresh token tracking per device
+
 // ─────────────────────────────────────────────
+
 model Session {
+
   id               String    @id @default(uuid())
+
   userId           String
+
   refreshTokenHash String
+
   ipAddress        String?
+
   userAgent        String?
+
   expiresAt        DateTime
+
   lastUsedAt       DateTime  @default(now())
+
   revokedAt        DateTime?
+
   createdAt        DateTime  @default(now())
+
+
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+
+
   @@map("sessions")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // Founder — Business entity, owns Waitlists
+
 // ─────────────────────────────────────────────
+
 model Founder {
+
   id        String   @id @default(uuid())
+
   userId    String   @unique
+
   email     String   @unique
+
   name      String?
+
   createdAt DateTime @default(now())
 
+
+
   user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   waitlists Waitlist[]
 
+
+
   @@map("founders")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // File — Uploaded file metadata (not binary)
+
 // ─────────────────────────────────────────────
+
 model File {
+
   id               String       @id @default(uuid())
+
   publicId         String
+
   url              String
+
   secureUrl        String
+
   originalName     String
+
   fileName         String
+
   mimeType         String
+
   format           String
+
   bytes            Int
+
   width            Int?
+
   height           Int?
+
   folder           String
+
   provider         FileProvider @default(CLOUDINARY)
+
   uploadedByUserId String
+
   createdAt        DateTime     @default(now())
 
+
+
   uploadedBy     User       @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
+
   waitlistLogos  Waitlist[] @relation("WaitlistLogo")
+
   brandingLogos  Branding[] @relation("BrandingLogo")
 
+
+
   @@index([uploadedByUserId])
+
   @@map("files")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // Waitlist — A single waitlist owned by a Founder
+
 // ─────────────────────────────────────────────
+
 model Waitlist {
+
   id          String   @id @default(uuid())
+
   founderId   String
+
   name        String
+
   tagline     String
+
   description String?
+
   slug        String   @unique
+
   logoId      String?
+
   createdAt   DateTime @default(now())
+
   updatedAt   DateTime @updatedAt
 
+
+
   founder      Founder       @relation(fields: [founderId], references: [id], onDelete: Cascade)
+
   logo         File?         @relation("WaitlistLogo", fields: [logoId], references: [id], onDelete: SetNull)
+
   branding     Branding?
+
   widget       Widget?
+
   participants Participant[]
 
+  rewards      Reward[]
+
+
+
   @@index([founderId])
+
   @@map("waitlists")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // Branding — Visual identity for a waitlist
+
 // ─────────────────────────────────────────────
+
 model Branding {
+
   id              String   @id @default(uuid())
+
   waitlistId      String   @unique
+
   logoId          String?
+
   primaryColor    String
+
   secondaryColor  String
+
   backgroundColor String
+
   buttonColor     String
+
   font            String
+
   createdAt       DateTime @default(now())
+
   updatedAt       DateTime @updatedAt
 
+
+
   waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
   logo     File?    @relation("BrandingLogo", fields: [logoId], references: [id], onDelete: SetNull)
 
+
+
   @@map("brandings")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // Widget — Embed metadata for a waitlist
+
 // ─────────────────────────────────────────────
+
 model Widget {
+
   id         String   @id @default(uuid())
+
   waitlistId String   @unique
+
   scriptUrl  String
+
   embedCode  String
+
   createdAt  DateTime @default(now())
+
   updatedAt  DateTime @updatedAt
+
+
 
   waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 
+
+
   @@map("widgets")
+
 }
 
-// ─────────────────────────────────────────────
-// Participant — A user who joined a waitlist
-// ─────────────────────────────────────────────
-model Participant {
-  id            String   @id @default(uuid())
-  waitlistId    String
-  email         String
-  position      Int
-  referralCode  String   @unique
-  referredById  String?
-  referralCount Int      @default(0)
-  createdAt     DateTime @default(now())
 
-  waitlist   Waitlist      @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
-  referredBy Participant?  @relation("Referrals", fields: [referredById], references: [id])
-  referrals  Participant[] @relation("Referrals")
+
+// ─────────────────────────────────────────────
+
+// Participant — A user who joined a waitlist
+
+// ─────────────────────────────────────────────
+
+model Participant {
+
+  id                 String   @id @default(uuid())
+
+  waitlistId         String
+
+  email              String
+
+  position           Int
+
+  referralCode       String   @unique
+
+  referredById       String?
+
+  referralCount      Int      @default(0)
+
+  positionBoostBonus Int      @default(0)
+
+  createdAt          DateTime @default(now())
+
+
+
+  waitlist   Waitlist           @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
+  referredBy Participant?      @relation("Referrals", fields: [referredById], references: [id])
+
+  referrals  Participant[]      @relation("Referrals")
+
+  participantRewards    ParticipantReward[]
+
+
 
   @@unique([waitlistId, email])
+
   @@map("participants")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // SubscriptionPlan — Configurable plan catalog
+
 // ─────────────────────────────────────────────
+
 model SubscriptionPlan {
+
   id               String               @id @default(uuid())
+
   code             SubscriptionPlanCode @unique
+
   name             String
+
   description      String?
+
   price            Decimal              @default(0) @db.Decimal(12, 2)
+
   currency         String               @default("ETB")
+
   billingCycle     BillingCycle
+
   maxWaitlists     Int?
+
   maxParticipants  Int?
+
   features         Json?
+
   isActive         Boolean              @default(true)
+
   createdAt        DateTime             @default(now())
+
   updatedAt        DateTime             @updatedAt
+
+
 
   subscriptions Subscription[]
 
+
+
   @@map("subscription_plans")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // Subscription — Founder's active plan
+
 // ─────────────────────────────────────────────
+
 model Subscription {
+
   id                String               @id @default(uuid())
+
   userId            String               @unique
+
   planId            String
+
   planCode          SubscriptionPlanCode
+
   status            SubscriptionStatus   @default(ACTIVE)
+
   billingCycle      BillingCycle         @default(FREE)
+
   amount            Decimal              @default(0) @db.Decimal(12, 2)
+
   currency          String               @default("ETB")
+
   provider          PaymentProvider?
+
   providerReference String?
+
   transactionId     String?
+
   paymentStatus     PaymentStatus?
+
   startedAt         DateTime?
+
   expiresAt         DateTime?
+
   cancelledAt       DateTime?
+
   createdAt         DateTime             @default(now())
+
   updatedAt         DateTime             @updatedAt
+
+
 
   user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+
   payments Payment[]
+
   history  SubscriptionHistory[]
 
+
+
   @@index([planCode, status])
+
   @@map("subscriptions")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // Payment — Individual Chapa transactions
+
 // ─────────────────────────────────────────────
+
 model Payment {
+
   id                String               @id @default(uuid())
+
   subscriptionId    String?
+
   userId            String
+
   planCode          SubscriptionPlanCode
+
   amount            Decimal              @db.Decimal(12, 2)
+
   currency          String
+
   provider          PaymentProvider      @default(CHAPA)
+
   providerReference String               @unique
+
   transactionId     String?              @unique
+
   paymentStatus     PaymentStatus        @default(PENDING)
+
   checkoutUrl       String?
+
   metadata          Json?
+
   paidAt            DateTime?
+
   createdAt         DateTime             @default(now())
+
   updatedAt         DateTime             @updatedAt
 
+
+
   user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+
   events       PaymentEvent[]
 
+
+
   @@index([userId, paymentStatus])
+
   @@map("payments")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // PaymentEvent — Webhook / verification audit log
+
 // ─────────────────────────────────────────────
+
 model PaymentEvent {
+
   id             String           @id @default(uuid())
+
   paymentId      String
+
   eventType      PaymentEventType
+
   payload        Json
+
   processed      Boolean          @default(false)
+
   idempotencyKey String           @unique
+
   createdAt      DateTime         @default(now())
+
+
 
   payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
+
+
   @@index([paymentId])
+
   @@map("payment_events")
+
 }
 
+
+
 // ─────────────────────────────────────────────
+
 // SubscriptionHistory — Plan/status change audit
+
 // ─────────────────────────────────────────────
+
 model SubscriptionHistory {
+
   id             String                @id @default(uuid())
+
   subscriptionId String
+
   userId         String
+
   fromPlan       SubscriptionPlanCode?
+
   toPlan         SubscriptionPlanCode
+
   fromStatus     SubscriptionStatus?
+
   toStatus       SubscriptionStatus
+
   reason         String?
+
   metadata       Json?
+
   createdAt      DateTime              @default(now())
+
+
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
+
+
   @@index([subscriptionId])
+
   @@index([userId])
+
   @@map("subscription_history")
+
+}
+
+// ─────────────────────────────────────────────
+// Reward — A milestone reward defined by a founder
+// ─────────────────────────────────────────────
+
+model Reward {
+  id          String     @id @default(uuid())
+  waitlistId  String
+  milestone   Int
+  type        RewardType
+  value       Int?
+  title       String
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  waitlist           Waitlist            @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  participantRewards ParticipantReward[]
+
+  @@unique([waitlistId, milestone])
+  @@map("rewards")
+}
+
+// ─────────────────────────────────────────────
+// ParticipantReward — A reward unlocked by a participant
+// ─────────────────────────────────────────────
+
+model ParticipantReward {
+  id            String   @id @default(uuid())
+  participantId String
+  rewardId      String
+  unlockedAt    DateTime @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  reward      Reward      @relation(fields: [rewardId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, rewardId])
+  @@map("participant_rewards")
 }

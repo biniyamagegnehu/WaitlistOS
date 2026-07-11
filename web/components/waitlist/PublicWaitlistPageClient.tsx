@@ -113,6 +113,61 @@ export default function PublicWaitlistPageClient() {
           </CardContent>
         </Card>
 
+        {waitlist.rewards && waitlist.rewards.length > 0 && (
+          <Card>
+            <CardContent className="space-y-4 p-5 text-left">
+              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                Rewards
+              </p>
+              
+              <div className="space-y-3">
+                {waitlist.rewards.map(reward => {
+                  const isUnlocked = joined.referralCount >= reward.milestone;
+                  return (
+                    <div key={reward.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-surface">
+                      <div className="mt-0.5">
+                        <CheckCircle className={`h-5 w-5 ${isUnlocked ? 'text-success' : 'text-muted-foreground/30'}`} />
+                      </div>
+                      <div>
+                        <p className={`font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
+                          {reward.title}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          Refer {reward.milestone} people
+                        </p>
+                        {reward.description && (
+                          <p className="mt-1 text-sm text-muted-foreground/80">{reward.description}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {(() => {
+                const unachieved = waitlist.rewards.filter(r => r.milestone > joined.referralCount);
+                const nextTarget = unachieved.length > 0 ? unachieved[0].milestone : waitlist.rewards[waitlist.rewards.length - 1].milestone;
+                const percent = Math.min(Math.round((joined.referralCount / nextTarget) * 100), 100);
+                
+                return (
+                  <div className="pt-2">
+                    <div className="flex justify-between text-xs mb-1">
+                      <span className="text-muted-foreground">Progress to next reward</span>
+                      <span className="font-medium text-foreground">{joined.referralCount} / {nextTarget}</span>
+                    </div>
+                    <div className="h-2 w-full bg-surface-muted rounded-full overflow-hidden">
+                      <div 
+                        className="h-full rounded-full transition-all duration-500"
+                        style={{ width: `${percent}%`, backgroundColor: primaryColor }}
+                      />
+                    </div>
+                  </div>
+                );
+              })()}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="space-y-3 p-5 text-left">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

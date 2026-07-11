@@ -10,6 +10,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
 import { PaymentService } from '../payments/payment.service';
+import type { Prisma } from '@prisma/client';
+
+type TransactionClient = Prisma.TransactionClient;
 
 @Injectable()
 export class ParticipantsService {
@@ -20,7 +23,6 @@ export class ParticipantsService {
   ) {}
 
   // ── Referral code generator ──────────────────────────────
-  // Produces a 6-char URL-safe code, retries on collision
   private async generateUniqueCode(): Promise<string> {
     for (let attempt = 0; attempt < 5; attempt++) {
       const code = randomBytes(4).toString('base64url').slice(0, 6);
@@ -29,8 +31,51 @@ export class ParticipantsService {
       });
       if (!clash) return code;
     }
-    // Fallback: longer code essentially never collides
     return randomBytes(8).toString('hex');
+  }
+
+  // ── Rerank all participants in a waitlist ─────────────────
+  // Fetches all participants ordered by:
+  //   1. (referralCount + positionBoostBonus) DESC  — more referrals = higher priority
+  //   2. createdAt ASC                              — earlier joiner wins on tie
+  // Then assigns sequential positions 1, 2, 3... and bulk-updates any that changed.
+  private async rerankParticipants(
+    waitlistId: string,
+    tx: TransactionClient,
+  ): Promise<void> {
+    const participants = await tx.participant.findMany({
+      where: { waitlistId },
+      orderBy: [
+        // Prisma doesn't support expressions in orderBy directly, so we fetch
+        // and sort in application memory — safe for typical waitlist sizes.
+        { referralCount: 'desc' },
+        { createdAt: 'asc' },
+      ],
+    });
+
+    // Sort by effective score (referralCount + positionBoostBonus) DESC, then createdAt ASC
+    participants.sort((a, b) => {
+      const scoreA = a.referralCount + a.positionBoostBonus;
+      const scoreB = b.referralCount + b.positionBoostBonus;
+      if (scoreB !== scoreA) return scoreB - scoreA;
+      return a.createdAt.getTime() - b.createdAt.getTime();
+    });
+
+    // Bulk update only participants whose position changed
+    const updates: Promise<any>[] = [];
+    for (let i = 0; i < participants.length; i++) {
+      const newPosition = i + 1;
+      if (participants[i].position !== newPosition) {
+        updates.push(
+          tx.participant.update({
+            where: { id: participants[i].id },
+            data: { position: newPosition },
+          }),
+        );
+      }
+    }
+
+    await Promise.all(updates);
   }
 
   // ── Create participant ────────────────────────────────────
@@ -67,12 +112,10 @@ export class ParticipantsService {
         throw new BadRequestException('INVALID_REFERRAL');
       }
 
-      // Must belong to the same waitlist
       if (referrer.waitlistId !== waitlist.id) {
         throw new BadRequestException('INVALID_REFERRAL');
       }
 
-      // Self-referral guard
       if (referrer.email === email) {
         throw new BadRequestException('SELF_REFERRAL');
       }
@@ -81,96 +124,114 @@ export class ParticipantsService {
     // Generate unique referral code for this new participant
     const newReferralCode = await this.generateUniqueCode();
 
-    // 4. Transaction to create participant and swap positions with SKIP LOCKED retry logic
+    // 4. Transaction with SKIP LOCKED retry logic
     const maxRetries = 5;
     const baseRetryDelay = 100; // ms
 
-    let participant;
+    let participant: any;
     for (let attempt = 0; attempt < maxRetries; attempt++) {
       try {
         participant = await this.prisma.$transaction(async (tx) => {
-          // Try to acquire lock with SKIP LOCKED - skips if row is locked by another transaction
-          const result = await tx.$queryRaw<Array<{ id: string }>>`
+          // Acquire exclusive lock on the waitlist row to serialize concurrent signups
+          const lockResult = await tx.$queryRaw<Array<{ id: string }>>`
             SELECT id FROM waitlists
             WHERE id = ${waitlist.id}
             FOR UPDATE SKIP LOCKED
             LIMIT 1
           `;
 
-          // If no row was returned, it means the row is locked by another transaction
-          if (!result || result.length === 0) {
+          if (!lockResult || lockResult.length === 0) {
             throw new Error('ROW_LOCKED');
           }
 
+          // New participant starts at the bottom (count + 1)
           const count = await tx.participant.count({
             where: { waitlistId: waitlist.id },
           });
-          const position = count + 1;
+          const initialPosition = count + 1;
 
           const p = await tx.participant.create({
             data: {
               waitlistId: waitlist.id,
               email,
-              position,
+              position: initialPosition,
               referralCode: newReferralCode,
               ...(referrer ? { referredById: referrer.id } : {}),
             },
           });
 
           if (referrer) {
-            // Increment referral count
-            const updatedReferrer = await tx.participant.update({
+            // Increment referrer's referral count
+            let updatedReferrer = await tx.participant.update({
               where: { id: referrer.id },
               data: { referralCount: { increment: 1 } },
             });
 
-            // Swap positions if referrer can move up
-            if (updatedReferrer.position > 1) {
-              const targetPosition = updatedReferrer.position - 1;
+            // Check for reward milestones
+            const matchingRewards = await tx.reward.findMany({
+              where: {
+                waitlistId: waitlist.id,
+                milestone: updatedReferrer.referralCount,
+              },
+            });
 
-              // Find the person currently at the target position
-              const personToDemote = await tx.participant.findFirst({
-                where: {
-                  waitlistId: waitlist.id,
-                  position: targetPosition,
+            for (const reward of matchingRewards) {
+              // Unlock reward record
+              await tx.participantReward.create({
+                data: {
+                  participantId: referrer.id,
+                  rewardId: reward.id,
                 },
               });
 
-              if (personToDemote) {
-                // Move the person ahead down by 1
-                await tx.participant.update({
-                  where: { id: personToDemote.id },
-                  data: { position: updatedReferrer.position },
-                });
-
-                // Move the referrer up by 1
-                await tx.participant.update({
+              // POSITION_BOOST: add virtual bonus to effective rank score
+              if (
+                reward.type === 'POSITION_BOOST' &&
+                reward.value &&
+                reward.value > 0
+              ) {
+                updatedReferrer = await tx.participant.update({
                   where: { id: referrer.id },
-                  data: { position: targetPosition },
+                  data: { positionBoostBonus: { increment: reward.value } },
                 });
               }
             }
+
+            // Rerank all participants based on new referral counts / bonuses
+            await this.rerankParticipants(waitlist.id, tx);
+
+            // Re-fetch the created participant with its final position
+            const finalParticipant = await tx.participant.findUniqueOrThrow({
+              where: { id: p.id },
+            });
+            return finalParticipant;
           }
 
-          return p;
+          // No referrer: rerank still runs to assign a clean sequential position
+          await this.rerankParticipants(waitlist.id, tx);
+
+          const finalParticipant = await tx.participant.findUniqueOrThrow({
+            where: { id: p.id },
+          });
+          return finalParticipant;
         });
 
-        // If successful, break out of retry loop
-        break;
+        break; // success
       } catch (error) {
-        // If the error is ROW_LOCKED and we haven't exhausted retries, wait and retry
-        if (error instanceof Error && error.message === 'ROW_LOCKED' && attempt < maxRetries - 1) {
-          // Exponential backoff: 100ms, 200ms, 400ms, 800ms
+        if (
+          error instanceof Error &&
+          error.message === 'ROW_LOCKED' &&
+          attempt < maxRetries - 1
+        ) {
           const delay = baseRetryDelay * Math.pow(2, attempt);
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
           continue;
         }
-        // If it's a different error or we've exhausted retries, throw it
         throw error;
       }
     }
 
-    // 5. Build referral link (OG-enabled share URL)
+    // 5. Build referral link
     const referralLink = `/r/${participant.referralCode}`;
 
     // 6. Queue Welcome Email
