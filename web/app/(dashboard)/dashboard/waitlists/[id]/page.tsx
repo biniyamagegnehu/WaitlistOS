@@ -24,7 +24,7 @@ export default function WaitlistDetailPage() {
   const [detail, setDetail] = React.useState<DashboardWaitlistDetail | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
-  const [isExpanded, setIsExpanded] = React.useState(false);
+  const [isExpanded, setIsExpanded] = React.useState(true);
 
   const loadPage = React.useCallback(async (options: {
     page: number;
