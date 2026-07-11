@@ -64,7 +64,8 @@ export function ParticipantTable({
   const [sortBy, setSortBy] = React.useState<'position' | 'referralCount' | 'createdAt'>('position');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [status, setStatus] = React.useState<'WAITING' | 'INVITED' | 'ACCESSED' | undefined>(undefined);
-  const [pageSize] = React.useState(20);
+  const [pageSize, setPageSize] = React.useState(20);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   const loadPage = React.useCallback(async (page: number) => {
     setLoading(true);
@@ -79,6 +80,7 @@ export function ParticipantTable({
       });
       setParticipants(result.participants);
       setPagination(result.pagination);
+      setCurrentPage(page);
     } catch (error) {
       console.error('Failed to load participants:', error);
     } finally {
@@ -86,10 +88,14 @@ export function ParticipantTable({
     }
   }, [pageSize, search, sortBy, sortOrder, status, onLoadPage]);
 
+  // Trigger loadPage when search, status, pageSize, or sort changes
+  React.useEffect(() => {
+    loadPage(1);
+  }, [search, status, pageSize, sortBy, sortOrder]);
+
   const handleSearch = React.useCallback((value: string) => {
     setSearch(value);
-    loadPage(1);
-  }, [loadPage]);
+  }, []);
 
   const handleSort = React.useCallback((field: 'position' | 'referralCount' | 'createdAt') => {
     if (sortBy === field) {
@@ -98,13 +104,15 @@ export function ParticipantTable({
       setSortBy(field);
       setSortOrder('asc');
     }
-    loadPage(1);
-  }, [sortBy, sortOrder, loadPage]);
+  }, [sortBy, sortOrder]);
 
   const handleStatusFilter = React.useCallback((newStatus: 'WAITING' | 'INVITED' | 'ACCESSED' | undefined) => {
     setStatus(newStatus);
-    loadPage(1);
-  }, [loadPage]);
+  }, []);
+
+  const handlePageSizeChange = React.useCallback((newPageSize: number) => {
+    setPageSize(newPageSize);
+  }, []);
 
   const handlePreviousPage = React.useCallback(() => {
     if (pagination && pagination.hasPrevious) {
@@ -166,6 +174,17 @@ export function ParticipantTable({
               Accessed
             </Button>
           </div>
+
+          {/* Page Size Selector */}
+          <select
+            value={pageSize}
+            onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+            className="px-3 py-1.5 text-sm border rounded-md bg-background"
+          >
+            <option value={20}>20 per page</option>
+            <option value={50}>50 per page</option>
+            <option value={100}>100 per page</option>
+          </select>
         </div>
       </div>
 
@@ -271,13 +290,19 @@ export function ParticipantTable({
             </Table>
           </div>
 
-          {/* Pagination Controls */}
-          {pagination && pagination.totalPages > 1 && (
+          {/* Pagination Controls - Always show when there are participants */}
+          {pagination && pagination.totalItems > 0 && (
             <div className="flex items-center justify-between">
               <div className="text-sm text-muted-foreground">
-                Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1}-
-                {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of{' '}
-                {pagination.totalItems} participants
+                {pagination.totalItems > 0 ? (
+                  <>
+                    Showing {((pagination.currentPage - 1) * pagination.pageSize) + 1}-
+                    {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of{' '}
+                    {pagination.totalItems} participants
+                  </>
+                ) : (
+                  'No participants'
+                )}
               </div>
 
               <div className="flex items-center gap-2">
