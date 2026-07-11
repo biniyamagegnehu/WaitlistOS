@@ -16,6 +16,8 @@ import { getSubscriptionActivatedTemplate } from './templates/subscription-activ
 import { getPaymentFailedTemplate } from './templates/payment-failed';
 import { getSubscriptionRenewedTemplate } from './templates/subscription-renewed';
 import { getSubscriptionExpiredTemplate } from './templates/subscription-expired';
+import { getInvitationTemplate } from './templates/invitation';
+import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class EmailsService {
@@ -23,10 +25,13 @@ export class EmailsService {
   private resend: Resend;
   private readonly fromEmail: string;
 
-  constructor(@InjectQueue('emails') private emailsQueue: Queue) {
+  constructor(
+    @InjectQueue('emails') private emailsQueue: Queue,
+    private readonly prisma: PrismaService,
+  ) {
     const apiKey = process.env.RESEND_API_KEY;
     this.fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
-    
+
     if (!apiKey) {
       this.logger.warn('RESEND_API_KEY is not configured. Emails will not be sent.');
     }
@@ -135,6 +140,12 @@ export class EmailsService {
     this.emailsQueue
       .add('send-subscription-expired', { email, name, planName })
       .catch((e) => this.logger.error('Failed to queue subscription expired email: ' + e.message));
+  }
+
+  queueInvitationEmail(email: string, waitlistId: string, position: number) {
+    this.emailsQueue
+      .add('send-invitation', { email, waitlistId, position })
+      .catch((e) => this.logger.error('Failed to queue invitation email: ' + e.message));
   }
 
   // ── Direct Sending Methods (Called by Processor) ────────────────────────────
@@ -263,5 +274,30 @@ export class EmailsService {
   }) {
     const html = getSubscriptionExpiredTemplate(data.name, data.planName);
     await this.executeSend(data.email, 'Subscription expired', html);
+  }
+
+  async sendInvitationEmail(data: { email: string; waitlistId: string; position: number }) {
+    // Fetch waitlist name
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { id: data.waitlistId },
+      select: { name: true },
+    });
+
+    const waitlistName = waitlist?.name || 'the waitlist';
+    const html = getInvitationTemplate(waitlistName, data.position);
+    await this.executeSend(data.email, "You're In!", html);
+  }
+
+  // Direct method for cohorts service (non-queued)
+  async sendInvitationEmailDirect(email: string, waitlistId: string, position: number) {
+    // Fetch waitlist name
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { id: waitlistId },
+      select: { name: true },
+    });
+
+    const waitlistName = waitlist?.name || 'the waitlist';
+    const html = getInvitationTemplate(waitlistName, position);
+    await this.executeSend(email, "You're In!", html);
   }
 }

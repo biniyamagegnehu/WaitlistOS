@@ -163,6 +163,16 @@ enum RewardType {
 
 }
 
+enum ParticipantStatus {
+
+  WAITING
+
+  INVITED
+
+  ACCESSED
+
+}
+
 
 
 // ─────────────────────────────────────────────
@@ -429,6 +439,8 @@ model Waitlist {
 
   rewards      Reward[]
 
+  cohorts      Cohort[]
+
 
 
   @@index([founderId])
@@ -537,6 +549,12 @@ model Participant {
 
   positionBoostBonus Int      @default(0)
 
+  status             ParticipantStatus @default(WAITING)
+
+  invitedAt          DateTime?
+
+  accessedAt         DateTime?
+
   createdAt          DateTime @default(now())
 
 
@@ -549,9 +567,13 @@ model Participant {
 
   participantRewards    ParticipantReward[]
 
+  cohortInvitations    CohortInvitation[]
+
 
 
   @@unique([waitlistId, email])
+
+  @@index([waitlistId, status])
 
   @@map("participants")
 
@@ -838,4 +860,39 @@ model ParticipantReward {
 
   @@unique([participantId, rewardId])
   @@map("participant_rewards")
+}
+
+// ─────────────────────────────────────────────
+// Cohort — A batch of invited participants
+// ─────────────────────────────────────────────
+model Cohort {
+  id          String   @id @default(uuid())
+  waitlistId  String
+  batchNumber Int      // Cohort #1, #2, #3, etc.
+  size        Int      // Number of participants invited
+  createdAt   DateTime @default(now())
+
+  waitlist    Waitlist            @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  invitations CohortInvitation[]
+
+  @@unique([waitlistId, batchNumber])
+  @@index([waitlistId])
+  @@map("cohorts")
+}
+
+// ─────────────────────────────────────────────
+// CohortInvitation — Participant invited in a cohort
+// ─────────────────────────────────────────────
+model CohortInvitation {
+  id            String   @id @default(uuid())
+  cohortId      String
+  participantId String
+  invitedAt     DateTime @default(now())
+
+  cohort      Cohort      @relation(fields: [cohortId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([cohortId, participantId])
+  @@index([participantId])
+  @@map("cohort_invitations")
 }
