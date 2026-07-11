@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Res } from '@nestjs/common';
+import { Controller, Get, Param, Res, Query } from '@nestjs/common';
 import type { Response } from 'express';
 import { DashboardService } from './dashboard.service';
 import { CurrentUser } from '../../../common/decorators/current-user.decorator';
@@ -25,8 +25,21 @@ export class DashboardController {
   getWaitlistDetail(
     @Param('id') id: string,
     @CurrentUser() user: AuthenticatedUser,
+    @Query('page') page?: string,
+    @Query('pageSize') pageSize?: string,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: 'position' | 'referralCount' | 'createdAt',
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+    @Query('status') status?: 'WAITING' | 'INVITED' | 'ACCESSED',
   ) {
-    return this.dashboardService.getWaitlistDetail(id, user.userId);
+    return this.dashboardService.getWaitlistDetail(id, user.userId, {
+      page: page ? parseInt(page) : undefined,
+      pageSize: pageSize ? parseInt(pageSize) : undefined,
+      search,
+      sortBy,
+      sortOrder,
+      status,
+    });
   }
 
   // ── GET /dashboard/waitlists/:id/export ──────────────────────────────────

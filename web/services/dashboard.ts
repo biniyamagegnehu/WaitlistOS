@@ -16,11 +16,31 @@ export async function getDashboardWaitlists(): Promise<DashboardWaitlist[]> {
 }
 
 export async function getDashboardWaitlistDetail(
-  waitlistId: string
+  waitlistId: string,
+  options?: {
+    page?: number;
+    pageSize?: number;
+    search?: string;
+    sortBy?: 'position' | 'referralCount' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+    status?: 'WAITING' | 'INVITED' | 'ACCESSED';
+  }
 ): Promise<DashboardWaitlistDetail> {
-  const response = await api.get<DashboardWaitlistDetail>(
-    `/dashboard/waitlists/${waitlistId}`
-  );
+  const params = new URLSearchParams();
+  
+  if (options?.page) params.append('page', options.page.toString());
+  if (options?.pageSize) params.append('pageSize', options.pageSize.toString());
+  if (options?.search) params.append('search', options.search);
+  if (options?.sortBy) params.append('sortBy', options.sortBy);
+  if (options?.sortOrder) params.append('sortOrder', options.sortOrder);
+  if (options?.status) params.append('status', options.status);
+
+  const queryString = params.toString();
+  const url = queryString 
+    ? `/dashboard/waitlists/${waitlistId}?${queryString}`
+    : `/dashboard/waitlists/${waitlistId}`;
+
+  const response = await api.get<DashboardWaitlistDetail>(url);
   return response.data;
 }
 

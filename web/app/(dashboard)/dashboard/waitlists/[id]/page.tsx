@@ -13,7 +13,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import { getDashboardWaitlistDetail } from "@/services/dashboard";
-import type { DashboardWaitlistDetail } from "@/types/dashboard";
+import type { DashboardWaitlistDetail, DashboardParticipant, PaginationMetadata } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 
@@ -25,6 +25,21 @@ export default function WaitlistDetailPage() {
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isExpanded, setIsExpanded] = React.useState(false);
+
+  const loadPage = React.useCallback(async (options: {
+    page: number;
+    pageSize: number;
+    search?: string;
+    sortBy?: 'position' | 'referralCount' | 'createdAt';
+    sortOrder?: 'asc' | 'desc';
+    status?: 'WAITING' | 'INVITED' | 'ACCESSED';
+  }) => {
+    const result = await getDashboardWaitlistDetail(waitlistId, options);
+    return {
+      participants: result.participants,
+      pagination: result.pagination,
+    };
+  }, [waitlistId]);
 
   React.useEffect(() => {
     if (!waitlistId) return;
@@ -60,7 +75,7 @@ export default function WaitlistDetailPage() {
     );
   }
 
-  const { waitlist, participants } = detail;
+  const { waitlist, participants, pagination } = detail;
 
   return (
     <div className="space-y-6">
@@ -173,7 +188,12 @@ export default function WaitlistDetailPage() {
         </CardContent>
       </Card>
 
-      <ParticipantTable participants={participants} />
+      <ParticipantTable
+        waitlistId={waitlistId}
+        initialParticipants={participants}
+        initialPagination={pagination}
+        onLoadPage={loadPage}
+      />
     </div>
   );
 }

@@ -3,6 +3,7 @@ export interface DashboardParticipant {
   position: number;
   referralCount: number;
   createdAt: string;
+  status: string;
 }
 
 export interface DashboardWaitlist {
@@ -15,9 +16,19 @@ export interface DashboardWaitlist {
   logoUrl?: string | null;
 }
 
+export interface PaginationMetadata {
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
+}
+
 export interface DashboardWaitlistDetail {
   waitlist: DashboardWaitlist;
   participants: DashboardParticipant[];
+  pagination?: PaginationMetadata;
 }
 
 export interface DashboardOverview {

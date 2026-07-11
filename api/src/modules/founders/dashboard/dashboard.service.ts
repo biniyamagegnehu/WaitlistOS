@@ -17,11 +17,22 @@ export interface DashboardParticipant {
   position: number;
   referralCount: number;
   createdAt: Date;
+  status: string;
+}
+
+export interface PaginationMetadata {
+  currentPage: number;
+  pageSize: number;
+  totalItems: number;
+  totalPages: number;
+  hasNext: boolean;
+  hasPrevious: boolean;
 }
 
 export interface DashboardWaitlistDetail {
   waitlist: DashboardWaitlist;
   participants: DashboardParticipant[];
+  pagination?: PaginationMetadata;
 }
 
 export interface DashboardOverview {
@@ -130,25 +141,72 @@ export class DashboardService {
     }));
   }
 
-  // ── Get a single waitlist with its participants ──────────────────────────
+  // ── Get a single waitlist with its participants (paginated) ───────────────
   async getWaitlistDetail(
     waitlistId: string,
     userId: string,
+    options?: {
+      page?: number;
+      pageSize?: number;
+      search?: string;
+      sortBy?: 'position' | 'referralCount' | 'createdAt';
+      sortOrder?: 'asc' | 'desc';
+      status?: 'WAITING' | 'INVITED' | 'ACCESSED';
+    },
   ): Promise<DashboardWaitlistDetail> {
     const founderId = await this.getFounderId(userId);
 
+    const page = options?.page || 1;
+    const pageSize = options?.pageSize || 20;
+    const search = options?.search || '';
+    const sortBy = options?.sortBy || 'position';
+    const sortOrder = options?.sortOrder || 'asc';
+    const status = options?.status;
+
+    // Build where clause to find the waitlist itself
+    const where: any = { id: waitlistId, founderId };
+
+    // Get total count for pagination
+    const totalParticipants = await this.prisma.participant.count({
+      where: {
+        waitlistId,
+        ...(search && {
+          email: {
+            contains: search,
+            mode: 'insensitive',
+          },
+        }),
+        ...(status && { status }),
+      },
+    });
+
+    const totalPages = Math.ceil(totalParticipants / pageSize);
+    const skip = (page - 1) * pageSize;
+
     const waitlist = await this.prisma.waitlist.findFirst({
-      where: { id: waitlistId, founderId },
+      where,
       include: {
         _count: { select: { participants: true } },
         logo: true,
         participants: {
-          orderBy: { position: 'asc' },
+          where: {
+            ...(search && {
+              email: {
+                contains: search,
+                mode: 'insensitive',
+              },
+            }),
+            ...(status && { status }),
+          },
+          orderBy: { [sortBy]: sortOrder },
+          skip,
+          take: pageSize,
           select: {
             email: true,
             position: true,
             referralCount: true,
             createdAt: true,
+            status: true,
           },
         },
       },
@@ -171,6 +229,14 @@ export class DashboardService {
         logoUrl: waitlist.logo?.url || null,
       },
       participants: waitlist.participants,
+      pagination: {
+        currentPage: page,
+        pageSize,
+        totalItems: totalParticipants,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
     };
   }
 
