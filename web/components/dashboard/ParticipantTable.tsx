@@ -64,7 +64,7 @@ export function ParticipantTable({
   const [sortBy, setSortBy] = React.useState<'position' | 'referralCount' | 'createdAt'>('position');
   const [sortOrder, setSortOrder] = React.useState<'asc' | 'desc'>('asc');
   const [status, setStatus] = React.useState<'WAITING' | 'INVITED' | 'ACCESSED' | undefined>(undefined);
-  const [pageSize, setPageSize] = React.useState(20);
+  const [pageSize, setPageSize] = React.useState(10);
   const [currentPage, setCurrentPage] = React.useState(1);
 
   const loadPage = React.useCallback(async (page: number) => {
@@ -174,17 +174,6 @@ export function ParticipantTable({
               Accessed
             </Button>
           </div>
-
-          {/* Page Size Selector */}
-          <select
-            value={pageSize}
-            onChange={(e) => handlePageSizeChange(Number(e.target.value))}
-            className="px-3 py-1.5 text-sm border rounded-md bg-background"
-          >
-            <option value={20}>20 per page</option>
-            <option value={50}>50 per page</option>
-            <option value={100}>100 per page</option>
-          </select>
         </div>
       </div>
 
@@ -292,7 +281,7 @@ export function ParticipantTable({
 
           {/* Pagination Controls - Always show when there are participants */}
           {pagination && pagination.totalItems > 0 && (
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="text-sm text-muted-foreground">
                 {pagination.totalItems > 0 ? (
                   <>
@@ -305,7 +294,7 @@ export function ParticipantTable({
                 )}
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex flex-wrap items-center gap-2">
                 <Button
                   variant="outline"
                   size="sm"
@@ -331,6 +320,17 @@ export function ParticipantTable({
                   Next
                   <ChevronRight className="h-4 w-4 ml-1" />
                 </Button>
+
+                {/* Page Size Selector */}
+                <select
+                  value={pageSize}
+                  onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                  className="px-3 py-1.5 text-sm border rounded-md bg-background"
+                >
+                  <option value={10}>10 per page</option>
+                  <option value={15}>15 per page</option>
+                  <option value={20}>20 per page</option>
+                </select>
               </div>
             </div>
           )}
