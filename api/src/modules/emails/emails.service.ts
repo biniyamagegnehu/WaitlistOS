@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
-import { Resend } from 'resend';
+import * as nodemailer from 'nodemailer';
 import { getWelcomeEmailTemplate } from './templates/welcome';
 import { getEmailVerificationTemplate } from './templates/email-verification';
 import { getPasswordResetTemplate } from './templates/password-reset';
@@ -22,20 +22,39 @@ import { PrismaService } from '../../prisma/prisma.service';
 @Injectable()
 export class EmailsService {
   private readonly logger = new Logger(EmailsService.name);
-  private resend: Resend;
+  private transporter: nodemailer.Transporter;
   private readonly fromEmail: string;
 
   constructor(
     @InjectQueue('emails') private emailsQueue: Queue,
     private readonly prisma: PrismaService,
   ) {
-    const apiKey = process.env.RESEND_API_KEY;
-    this.fromEmail = process.env.EMAIL_FROM || 'onboarding@resend.dev';
+    this.fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@waitlistos.com';
 
-    if (!apiKey) {
-      this.logger.warn('RESEND_API_KEY is not configured. Emails will not be sent.');
+    const smtpHost = process.env.SMTP_HOST;
+    const smtpPort = process.env.SMTP_PORT || '587';
+    const smtpSecure = process.env.SMTP_SECURE === 'true';
+    const smtpUser = process.env.SMTP_USER;
+    const smtpPassword = process.env.SMTP_PASSWORD;
+
+    if (!smtpHost || !smtpUser || !smtpPassword) {
+      this.logger.warn('SMTP credentials are not configured. Emails will not be sent.');
+      this.transporter = nodemailer.createTransport({
+        host: smtpHost || 'localhost',
+        port: parseInt(smtpPort),
+        secure: smtpSecure,
+      });
+    } else {
+      this.transporter = nodemailer.createTransport({
+        host: smtpHost,
+        port: parseInt(smtpPort),
+        secure: smtpSecure,
+        auth: {
+          user: smtpUser,
+          pass: smtpPassword,
+        },
+      });
     }
-    this.resend = new Resend(apiKey);
   }
 
   // ── Queueing Methods ────────────────────────────────────────────────────────
@@ -151,26 +170,29 @@ export class EmailsService {
   // ── Direct Sending Methods (Called by Processor) ────────────────────────────
 
   private async executeSend(email: string, subject: string, html: string) {
-    if (!process.env.RESEND_API_KEY) {
-      this.logger.warn(`Skipping email "${subject}" to ${email} - API key not set.`);
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+      this.logger.warn(`Skipping email "${subject}" to ${email} - SMTP not configured.`);
       return;
     }
 
     try {
-      const response = await this.resend.emails.send({
-        from: this.fromEmail,
+      const mailOptions = {
+        from: `"WaitlistOS" <${this.fromEmail}>`,
         to: email,
         subject,
         html,
-      });
+      };
 
-      if (response.error) {
-        this.logger.error(`Failed to send email to ${email}: ${response.error.message}`);
-      } else {
-        this.logger.log(`Email "${subject}" sent successfully to ${email} [ID: ${response.data?.id}]`);
-      }
+      this.logger.debug(`Sending email: ${JSON.stringify({ to: email, from: this.fromEmail, subject })}`);
+
+      const info = await this.transporter.sendMail(mailOptions);
+
+      this.logger.log(`Email "${subject}" sent successfully to ${email} [Message ID: ${info.messageId}]`);
+      this.logger.debug(`Full response: ${JSON.stringify(info)}`);
     } catch (error: any) {
-      this.logger.error(`Exception while sending email to ${email}: ${error.message}`);
+      this.logger.error(`Failed to send email to ${email}: ${error.message}`);
+      this.logger.error(`Error details: ${JSON.stringify(error)}`);
+      throw error;
     }
   }
 
@@ -299,5 +321,17 @@ export class EmailsService {
     const waitlistName = waitlist?.name || 'the waitlist';
     const html = getInvitationTemplate(waitlistName, position);
     await this.executeSend(email, "You're In!", html);
+  }
+
+  // Test method to verify SMTP connection
+  async testConnection() {
+    try {
+      await this.transporter.verify();
+      this.logger.log('SMTP connection verified successfully');
+      return { success: true, message: 'SMTP connection verified' };
+    } catch (error: any) {
+      this.logger.error(`SMTP connection failed: ${error.message}`);
+      return { success: false, message: error.message };
+    }
   }
 }
