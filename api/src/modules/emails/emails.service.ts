@@ -43,7 +43,7 @@ export class EmailsService {
         host: smtpHost || 'localhost',
         port: parseInt(smtpPort),
         secure: smtpSecure,
-      });
+      } as any);
     } else {
       this.transporter = nodemailer.createTransport({
         host: smtpHost,
@@ -53,7 +53,8 @@ export class EmailsService {
           user: smtpUser,
           pass: smtpPassword,
         },
-      });
+        family: 4, // Force IPv4 to avoid IPv6 connectivity issues
+      } as any);
     }
   }
 
