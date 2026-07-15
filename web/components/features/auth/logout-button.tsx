@@ -4,6 +4,7 @@ import * as React from "react";
 import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
+import { LogoutConfirmationDialog } from "./logout-confirmation-dialog";
 
 interface LogoutButtonProps {
   className?: string;
@@ -14,12 +15,9 @@ interface LogoutButtonProps {
 export function LogoutButton({ className, collapsed = false, onLogout }: LogoutButtonProps) {
   const router = useRouter();
   const { logout } = useAuth();
-  const [isLoading, setIsLoading] = React.useState(false);
+  const [showDialog, setShowDialog] = React.useState(false);
 
   async function handleLogout() {
-    if (isLoading) return;
-    setIsLoading(true);
-
     try {
       await logout();
       onLogout?.();
@@ -27,21 +25,31 @@ export function LogoutButton({ className, collapsed = false, onLogout }: LogoutB
       router.refresh();
     } catch (error) {
       console.error("Logout failed:", error);
-    } finally {
-      setIsLoading(false);
     }
   }
 
+  function handleClick() {
+    setShowDialog(true);
+  }
+
   return (
-    <button
-      type="button"
-      onClick={handleLogout}
-      disabled={isLoading}
-      title={collapsed ? "Logout" : undefined}
-      className={className}
-    >
-      <LogOut className="h-4 w-4 shrink-0" />
-      {!collapsed && <span>{isLoading ? "Logging out..." : "Logout"}</span>}
-    </button>
+    <>
+      <button
+        type="button"
+        onClick={handleClick}
+        title={collapsed ? "Logout" : undefined}
+        className={className}
+      >
+        <LogOut className="h-4 w-4 shrink-0" />
+        {!collapsed && <span>Logout</span>}
+      </button>
+
+      {showDialog && (
+        <LogoutConfirmationDialog
+          onClose={() => setShowDialog(false)}
+          onConfirm={handleLogout}
+        />
+      )}
+    </>
   );
 }
