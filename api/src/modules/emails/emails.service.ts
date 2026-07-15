@@ -43,17 +43,28 @@ export class EmailsService {
         host: smtpHost || 'localhost',
         port: parseInt(smtpPort),
         secure: smtpSecure,
+        tls: {
+          rejectUnauthorized: false,
+        },
       } as any);
     } else {
+      // Force IPv4 by using IP address if it's Gmail
+      let smtpHostToUse = smtpHost;
+      if (smtpHost === 'smtp.gmail.com') {
+        smtpHostToUse = '142.250.185.109'; // Gmail SMTP IPv4 address
+      }
+
       this.transporter = nodemailer.createTransport({
-        host: smtpHost,
+        host: smtpHostToUse,
         port: parseInt(smtpPort),
         secure: smtpSecure,
         auth: {
           user: smtpUser,
           pass: smtpPassword,
         },
-        family: 4, // Force IPv4 to avoid IPv6 connectivity issues
+        tls: {
+          rejectUnauthorized: false,
+        },
       } as any);
     }
   }
