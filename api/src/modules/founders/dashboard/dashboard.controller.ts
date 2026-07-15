@@ -16,8 +16,17 @@ export class DashboardController {
 
   // ── GET /dashboard/waitlists ─────────────────────────────────────────────
   @Get('waitlists')
-  getWaitlists(@CurrentUser() user: AuthenticatedUser) {
-    return this.dashboardService.getWaitlists(user.userId);
+  getWaitlists(
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('search') search?: string,
+    @Query('sortBy') sortBy?: 'name' | 'createdAt' | 'totalParticipants',
+    @Query('sortOrder') sortOrder?: 'asc' | 'desc',
+  ) {
+    return this.dashboardService.getWaitlists(user.userId, {
+      search,
+      sortBy,
+      sortOrder,
+    });
   }
 
   // ── GET /dashboard/waitlists/:id ─────────────────────────────────────────

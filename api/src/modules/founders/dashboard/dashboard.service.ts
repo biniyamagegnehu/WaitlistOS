@@ -119,12 +119,64 @@ export class DashboardService {
   }
 
   // ── List all waitlists owned by the founder ──────────────────────────────
-  async getWaitlists(userId: string): Promise<DashboardWaitlist[]> {
+  async getWaitlists(
+    userId: string,
+    options?: {
+      search?: string;
+      sortBy?: 'name' | 'createdAt' | 'totalParticipants';
+      sortOrder?: 'asc' | 'desc';
+    },
+  ): Promise<DashboardWaitlist[]> {
     const founderId = await this.getFounderId(userId);
 
+    const { search, sortBy = 'createdAt', sortOrder = 'desc' } = options || {};
+
+    const where: any = { founderId };
+    
+    if (search) {
+      where.OR = [
+        { name: { contains: search, mode: 'insensitive' } },
+        { tagline: { contains: search, mode: 'insensitive' } },
+        { description: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const orderBy: any = {};
+    if (sortBy === 'totalParticipants') {
+      // For sorting by participants, we need to include the count
+      const waitlists = await this.prisma.waitlist.findMany({
+        where,
+        include: {
+          _count: {
+            select: { participants: true },
+          },
+          logo: true,
+        },
+      });
+
+      // Sort manually by participant count
+      const sorted = waitlists.sort((a, b) => {
+        const aCount = a._count.participants;
+        const bCount = b._count.participants;
+        return sortOrder === 'asc' ? aCount - bCount : bCount - aCount;
+      });
+
+      return sorted.map((w) => ({
+        id: w.id,
+        name: w.name,
+        tagline: w.tagline,
+        slug: w.slug,
+        totalParticipants: w._count.participants,
+        description: w.description,
+        logoUrl: w.logo?.url || null,
+      }));
+    }
+
+    orderBy[sortBy] = sortOrder;
+
     const waitlists = await this.prisma.waitlist.findMany({
-      where: { founderId },
-      orderBy: { createdAt: 'desc' },
+      where,
+      orderBy,
       include: {
         _count: {
           select: { participants: true },

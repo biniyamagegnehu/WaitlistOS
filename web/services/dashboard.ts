@@ -10,8 +10,23 @@ export async function getDashboardOverview(): Promise<DashboardOverview> {
   return response.data;
 }
 
-export async function getDashboardWaitlists(): Promise<DashboardWaitlist[]> {
-  const response = await api.get<DashboardWaitlist[]>("/dashboard/waitlists");
+export async function getDashboardWaitlists(options?: {
+  search?: string;
+  sortBy?: 'name' | 'createdAt' | 'totalParticipants';
+  sortOrder?: 'asc' | 'desc';
+}): Promise<DashboardWaitlist[]> {
+  const params = new URLSearchParams();
+  
+  if (options?.search) params.append('search', options.search);
+  if (options?.sortBy) params.append('sortBy', options.sortBy);
+  if (options?.sortOrder) params.append('sortOrder', options.sortOrder);
+
+  const queryString = params.toString();
+  const url = queryString 
+    ? `/dashboard/waitlists?${queryString}`
+    : '/dashboard/waitlists';
+
+  const response = await api.get<DashboardWaitlist[]>(url);
   return response.data;
 }
 
