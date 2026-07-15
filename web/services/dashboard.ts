@@ -63,6 +63,44 @@ export async function exportWaitlistCsv(waitlistId: string): Promise<void> {
   window.URL.revokeObjectURL(url);
 }
 
+export async function exportWaitlist(waitlistId: string, format: 'csv' | 'xlsx' | 'doc' | 'pdf'): Promise<void> {
+  const response = await api.get<Blob>(`/dashboard/waitlists/${waitlistId}/export/${format}`, {
+    responseType: "blob",
+  });
+
+  const disposition = response.headers["content-disposition"] as string | undefined;
+  const filenameMatch = disposition?.match(/filename="(.+)"/);
+  const filename = filenameMatch?.[1] ?? `participants.${format}`;
+
+  const url = window.URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
+export async function exportWaitlists(format: 'csv' | 'xlsx' | 'doc' | 'pdf'): Promise<void> {
+  const response = await api.get<Blob>(`/dashboard/waitlists/export/${format}`, {
+    responseType: "blob",
+  });
+
+  const disposition = response.headers["content-disposition"] as string | undefined;
+  const filenameMatch = disposition?.match(/filename="(.+)"/);
+  const filename = filenameMatch?.[1] ?? `waitlists.${format}`;
+
+  const url = window.URL.createObjectURL(response.data);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export async function updateWaitlist(
   waitlistId: string,
   data: {

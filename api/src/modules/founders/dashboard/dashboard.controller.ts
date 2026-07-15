@@ -58,4 +58,40 @@ export class DashboardController {
     );
     res.send(csv);
   }
+
+  // ── GET /dashboard/waitlists/:id/export/:format ───────────────────────────
+  @Get('waitlists/:id/export/:format')
+  async exportParticipants(
+    @Param('id') id: string,
+    @Param('format') format: 'csv' | 'xlsx' | 'doc' | 'pdf',
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const { data, filename, contentType } = await this.dashboardService.exportParticipants(
+      id,
+      user.userId,
+      format,
+    );
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(data);
+  }
+
+  // ── GET /dashboard/waitlists/export/:format ─────────────────────────────
+  @Get('waitlists/export/:format')
+  async exportWaitlists(
+    @Param('format') format: 'csv' | 'xlsx' | 'doc' | 'pdf',
+    @CurrentUser() user: AuthenticatedUser,
+    @Res() res: Response,
+  ) {
+    const { data, filename, contentType } = await this.dashboardService.exportWaitlists(
+      user.userId,
+      format,
+    );
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(data);
+  }
 }

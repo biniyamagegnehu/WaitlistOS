@@ -2,23 +2,27 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { Plus, Download } from "lucide-react";
 import { WaitlistCard } from "@/components/dashboard/WaitlistCard";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { getDashboardWaitlists, deleteWaitlist } from "@/services/dashboard";
+import { getDashboardWaitlists, deleteWaitlist, exportWaitlists } from "@/services/dashboard";
 import type { DashboardWaitlist } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { DeleteWaitlistDialog } from "@/components/waitlist/DeleteWaitlistDialog";
+
+type ExportFormat = 'csv' | 'xlsx' | 'doc' | 'pdf';
 
 export default function WaitlistsPage() {
   const [waitlists, setWaitlists] = React.useState<DashboardWaitlist[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [deletingWaitlist, setDeletingWaitlist] = React.useState<DashboardWaitlist | null>(null);
+  const [exporting, setExporting] = React.useState(false);
+  const [showExportDropdown, setShowExportDropdown] = React.useState(false);
 
   const refreshWaitlists = React.useCallback(() => {
     setIsLoading(true);
@@ -51,6 +55,18 @@ export default function WaitlistsPage() {
     }
   };
 
+  const handleExport = async (format: ExportFormat) => {
+    setExporting(true);
+    setShowExportDropdown(false);
+    try {
+      await exportWaitlists(format);
+    } catch (error: unknown) {
+      setError(getApiErrorMessage(error, "Export failed"));
+    } finally {
+      setExporting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -70,9 +86,50 @@ export default function WaitlistsPage() {
         title="Waitlists"
         description="Manage your waitlists and view participants"
         action={
-          <Link href={routes.create}>
-            <Button leftIcon={<Plus className="h-4 w-4" />}>New waitlist</Button>
-          </Link>
+          <div className="flex items-center gap-2">
+            <div className="relative">
+              <Button
+                variant="secondary"
+                size="sm"
+                onClick={() => setShowExportDropdown(!showExportDropdown)}
+                loading={exporting}
+                leftIcon={<Download className="h-4 w-4" />}
+              >
+                Export
+              </Button>
+              {showExportDropdown && !exporting && (
+                <div className="absolute right-0 mt-2 w-32 bg-background border rounded-md shadow-lg z-10">
+                  <button
+                    onClick={() => handleExport('csv')}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-muted"
+                  >
+                    CSV
+                  </button>
+                  <button
+                    onClick={() => handleExport('xlsx')}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-muted"
+                  >
+                    XLSX
+                  </button>
+                  <button
+                    onClick={() => handleExport('doc')}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-muted"
+                  >
+                    DOC
+                  </button>
+                  <button
+                    onClick={() => handleExport('pdf')}
+                    className="w-full text-left px-4 py-2 text-sm hover:bg-muted"
+                  >
+                    PDF
+                  </button>
+                </div>
+              )}
+            </div>
+            <Link href={routes.create}>
+              <Button leftIcon={<Plus className="h-4 w-4" />}>New waitlist</Button>
+            </Link>
+          </div>
         }
       />
 
