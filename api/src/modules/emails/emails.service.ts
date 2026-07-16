@@ -42,6 +42,17 @@ export class EmailsService {
     const connectionTimeout = appConfig.smtpConnectionTimeout;
     const greetingTimeout = appConfig.smtpGreetingTimeout;
     const socketTimeout = appConfig.smtpSocketTimeout;
+    const smtpRequireTLS = appConfig.smtpRequireTLS;
+    const smtpIgnoreTLS = appConfig.smtpIgnoreTLS;
+    const smtpDisablePooling = appConfig.smtpDisablePooling;
+    const smtpDisableIPv6 = appConfig.smtpDisableIPv6;
+    const smtpTlsVersion = appConfig.smtpTlsVersion;
+    const smtpProxyHost = appConfig.smtpProxyHost;
+    const smtpProxyPort = appConfig.smtpProxyPort;
+    const smtpProxyUser = appConfig.smtpProxyUser;
+    const smtpProxyPassword = appConfig.smtpProxyPassword;
+
+    this.logger.log(`SMTP Configuration: host=${smtpHost}, port=${smtpPort}, secure=${smtpSecure}, requireTLS=${smtpRequireTLS}, ignoreTLS=${smtpIgnoreTLS}, disablePooling=${smtpDisablePooling}, disableIPv6=${smtpDisableIPv6}, tlsVersion=${smtpTlsVersion}`);
 
     if (!smtpHost || !smtpUser || !smtpPassword) {
       this.logger.warn('SMTP credentials are not configured. Emails will not be sent.');
@@ -49,14 +60,17 @@ export class EmailsService {
         host: smtpHost || 'localhost',
         port: smtpPort,
         secure: smtpSecure,
-        family: 4, // Force IPv4 to prevent connection timeouts on some cloud providers
+        family: smtpDisableIPv6 ? 4 : undefined, // Force IPv4 if disabled
+        connectionTimeout,
+        greetingTimeout,
+        socketTimeout,
       } as any);
     } else {
-      this.transporter = nodemailer.createTransport({
+      const transportConfig: any = {
         host: smtpHost,
         port: smtpPort,
         secure: smtpSecure,
-        family: 4, // Force IPv4 to prevent connection timeouts on some cloud providers
+        family: smtpDisableIPv6 ? 4 : undefined, // Force IPv4 if disabled
         auth: {
           user: smtpUser,
           pass: smtpPassword,
@@ -64,13 +78,59 @@ export class EmailsService {
         connectionTimeout,
         greetingTimeout,
         socketTimeout,
-        tls: {
+        dns: smtpDisableIPv6 ? {
+          family: 4, // Force IPv4 for DNS resolution
+        } : undefined,
+      };
+
+      // TLS configuration
+      if (smtpIgnoreTLS) {
+        transportConfig.ignoreTLS = true;
+        this.logger.log('TLS is explicitly ignored');
+      } else {
+        const tlsConfig: any = {
           rejectUnauthorized: false, // Allow self-signed certificates
-        },
-        pool: true, // Use connection pooling
-        maxConnections: 5,
-        maxMessages: 100,
-      } as any);
+        };
+        if (smtpTlsVersion) {
+          tlsConfig.minVersion = smtpTlsVersion;
+          this.logger.log(`TLS version set to: ${smtpTlsVersion}`);
+        }
+        transportConfig.tls = tlsConfig;
+        if (smtpRequireTLS) {
+          transportConfig.requireTLS = true;
+          this.logger.log('TLS is explicitly required');
+        }
+      }
+
+      // Connection pooling
+      if (!smtpDisablePooling) {
+        transportConfig.pool = true;
+        transportConfig.maxConnections = 5;
+        transportConfig.maxMessages = 100;
+        this.logger.log('Connection pooling enabled');
+      } else {
+        this.logger.log('Connection pooling disabled');
+      }
+
+      // Proxy configuration
+      if (smtpProxyHost && smtpProxyPort > 0) {
+        transportConfig.proxy = {
+          host: smtpProxyHost,
+          port: smtpProxyPort,
+          ...(smtpProxyUser && smtpProxyPassword ? {
+            user: smtpProxyUser,
+            pass: smtpProxyPassword,
+          } : {}),
+        };
+        this.logger.log(`Proxy configured: ${smtpProxyHost}:${smtpProxyPort}`);
+      }
+
+      this.transporter = nodemailer.createTransport(transportConfig);
+
+      // Test connection on startup
+      this.transporter.verify()
+        .then(() => this.logger.log('SMTP connection verified successfully'))
+        .catch((error) => this.logger.error(`SMTP connection verification failed: ${error.message}`));
     }
   }
 

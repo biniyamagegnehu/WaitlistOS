@@ -27,6 +27,15 @@ export const appConfig = registerAs('app', () => ({
   smtpConnectionTimeout: parseInt(process.env.SMTP_CONNECTION_TIMEOUT ?? '60000', 10),
   smtpGreetingTimeout: parseInt(process.env.SMTP_GREETING_TIMEOUT ?? '15000', 10),
   smtpSocketTimeout: parseInt(process.env.SMTP_SOCKET_TIMEOUT ?? '15000', 10),
+  smtpRequireTLS: process.env.SMTP_REQUIRE_TLS === 'true',
+  smtpIgnoreTLS: process.env.SMTP_IGNORE_TLS === 'true',
+  smtpDisablePooling: process.env.SMTP_DISABLE_POOLING === 'true',
+  smtpDisableIPv6: process.env.SMTP_DISABLE_IPV6 !== 'false', // Default to true (disable IPv6)
+  smtpTlsVersion: process.env.SMTP_TLS_VERSION ?? '', // e.g., 'TLSv1.2', 'TLSv1.3'
+  smtpProxyHost: process.env.SMTP_PROXY_HOST ?? '',
+  smtpProxyPort: parseInt(process.env.SMTP_PROXY_PORT ?? '0', 10),
+  smtpProxyUser: process.env.SMTP_PROXY_USER ?? '',
+  smtpProxyPassword: process.env.SMTP_PROXY_PASSWORD ?? '',
 
   // ── Token Expiry ─────────────────────────────────────────────────
   emailVerificationExpiresInMs: 24 * 60 * 60 * 1000,   // 24 hours
