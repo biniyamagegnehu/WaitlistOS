@@ -97,6 +97,11 @@ export default function RewardsPage() {
       return;
     }
     
+    if ((type === 'POSITION_BOOST' || type === 'DISCOUNT') && !value) {
+      alert("Please provide a value for this reward type.");
+      return;
+    }
+    
     setIsSubmitting(true);
     try {
       const payload: CreateRewardDto = {
@@ -286,17 +291,24 @@ export default function RewardsPage() {
               />
             </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Value <span className="text-muted-foreground font-normal">(Optional)</span>
-              </label>
-              <Input
-                type="number"
-                value={value}
-                onChange={(e) => setValue(e.target.value)}
-                placeholder="e.g. 100 for Position Boost or 50 for 50% discount"
-              />
-            </div>
+            {(type === 'POSITION_BOOST' || type === 'DISCOUNT' || type === 'CUSTOM') && (
+              <div className="space-y-2">
+                <label className="text-sm font-medium">
+                  Value {type === 'CUSTOM' && <span className="text-muted-foreground font-normal">(Optional)</span>}
+                </label>
+                <Input
+                  type="number"
+                  value={value}
+                  onChange={(e) => setValue(e.target.value)}
+                  placeholder={
+                    type === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
+                    type === 'DISCOUNT' ? 'e.g. 50 (percentage discount)' :
+                    'e.g. custom value'
+                  }
+                  required={type === 'POSITION_BOOST' || type === 'DISCOUNT'}
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium">
