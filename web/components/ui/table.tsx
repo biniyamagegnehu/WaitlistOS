@@ -6,7 +6,7 @@ export function Table({
   ...props
 }: React.HTMLAttributes<HTMLTableElement>) {
   return (
-    <div className="w-full overflow-x-auto rounded-md border border-border bg-surface shadow-sm">
+    <div className="w-full overflow-x-auto bg-surface">
       <table
         className={cn("w-full border-collapse text-sm", className)}
         {...props}
@@ -21,7 +21,7 @@ export function TableHead({
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <thead
-      className={cn("border-b border-divider bg-surface-muted", className)}
+      className={cn("bg-surface-muted", className)}
       {...props}
     />
   );
@@ -31,7 +31,7 @@ export function TableBody({
   className,
   ...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn("divide-y divide-divider", className)} {...props} />;
+  return <tbody className={cn("divide-y", className)} {...props} />;
 }
 
 interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
@@ -88,7 +88,7 @@ export function TableFooter({
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
   return (
     <tfoot
-      className={cn("border-t border-divider bg-surface-muted", className)}
+      className={cn("bg-surface-muted", className)}
       {...props}
     />
   );

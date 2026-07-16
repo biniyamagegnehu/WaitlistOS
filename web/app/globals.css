@@ -4,28 +4,28 @@
 
 /* ─── Light theme (default) ─── */
 :root {
-  --background: #faf8f2;
-  --foreground: #1f2937;
-  --muted-foreground: #6b7280;
+  --background: #f5f5f5;
+  --foreground: #1a1a1a;
+  --muted-foreground: #666666;
 
   --surface: #ffffff;
-  --surface-muted: #f3f4f6;
+  --surface-muted: #f8f8f8;
 
-  --border: #e5e7eb;
-  --divider: #f3f4f6;
+  --border: #f0f0f0;
+  --divider: #f0f0f0;
 
   --primary: #1f5c42;
   --primary-hover: #174b36;
   --primary-foreground: #ffffff;
 
   --accent: #d8a75b;
-  --accent-foreground: #1f2937;
+  --accent-foreground: #1a1a1a;
 
   --success: #16a34a;
   --success-foreground: #ffffff;
 
   --warning: #f59e0b;
-  --warning-foreground: #1f2937;
+  --warning-foreground: #1a1a1a;
 
   --destructive: #dc2626;
   --destructive-hover: #b91c1c;
@@ -34,49 +34,49 @@
   --info: #2563eb;
   --info-foreground: #ffffff;
 
-  --radius-sm: 0.375rem;
-  --radius-md: 0.5rem;
-  --radius-lg: 0.625rem;
-  --radius-xl: 0.75rem;
+  --radius-sm: 0rem;
+  --radius-md: 0rem;
+  --radius-lg: 0rem;
+  --radius-xl: 0rem;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.04);
-  --shadow-md: 0 1px 3px 0 rgb(0 0 0 / 0.06), 0 1px 2px -1px rgb(0 0 0 / 0.06);
+  --shadow-sm: none;
+  --shadow-md: none;
 }
 
 /* ─── Dark theme ─── */
 .dark {
-  --background: #101816;
+  --background: #0d1210;
   --foreground: #f5f4ef;
   --muted-foreground: #a3aea8;
 
-  --surface: #182420;
-  --surface-muted: #24312d;
+  --surface: #141a18;
+  --surface-muted: #1a2220;
 
-  --border: #2d3b36;
-  --divider: #24312d;
+  --border: #24312d;
+  --divider: #1a2220;
 
   --primary: #5fa57f;
   --primary-hover: #74b892;
-  --primary-foreground: #101816;
+  --primary-foreground: #0d1210;
 
   --accent: #d8a75b;
-  --accent-foreground: #101816;
+  --accent-foreground: #0d1210;
 
   --success: #34d399;
-  --success-foreground: #101816;
+  --success-foreground: #0d1210;
 
   --warning: #fbbf24;
-  --warning-foreground: #101816;
+  --warning-foreground: #0d1210;
 
   --destructive: #f87171;
   --destructive-hover: #ef4444;
-  --destructive-foreground: #101816;
+  --destructive-foreground: #0d1210;
 
   --info: #60a5fa;
-  --info-foreground: #101816;
+  --info-foreground: #0d1210;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.2);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.25), 0 2px 4px -2px rgb(0 0 0 / 0.2);
+  --shadow-sm: none;
+  --shadow-md: none;
 }
 
 @theme inline {

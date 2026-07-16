@@ -7,13 +7,13 @@ export interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
 }
 
 const variantClasses: Record<NonNullable<BadgeProps["variant"]>, string> = {
-  default: "bg-surface-muted text-foreground border-border",
-  success: "bg-success/10 text-success border-success/25",
-  warning: "bg-warning/10 text-warning border-warning/25",
-  danger: "bg-destructive/10 text-destructive border-destructive/25",
-  info: "bg-info/10 text-info border-info/25",
-  accent: "bg-accent/15 text-accent border-accent/30",
-  outline: "bg-transparent text-muted-foreground border-border",
+  default: "bg-surface-muted text-foreground",
+  success: "bg-success/10 text-success",
+  warning: "bg-warning/10 text-warning",
+  danger: "bg-destructive/10 text-destructive",
+  info: "bg-info/10 text-info",
+  accent: "bg-accent/15 text-accent",
+  outline: "bg-transparent text-muted-foreground",
 };
 
 const sizeClasses: Record<NonNullable<BadgeProps["size"]>, string> = {
@@ -30,7 +30,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-md border font-medium leading-none",
+        "inline-flex items-center gap-1 font-medium leading-none",
         variantClasses[variant],
         sizeClasses[size],
         className

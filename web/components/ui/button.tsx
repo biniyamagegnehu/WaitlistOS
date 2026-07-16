@@ -15,23 +15,23 @@ const variantClasses: Record<
   string
 > = {
   primary:
-    "bg-primary text-primary-foreground border border-transparent hover:bg-primary-hover shadow-sm",
+    "bg-primary text-primary-foreground hover:bg-primary-hover",
   secondary:
-    "bg-surface text-foreground border border-border hover:bg-surface-muted shadow-sm",
+    "bg-surface text-foreground hover:bg-surface-muted",
   outline:
-    "bg-transparent text-foreground border border-border hover:bg-surface-muted",
+    "bg-transparent text-foreground hover:bg-surface-muted",
   ghost:
-    "bg-transparent text-muted-foreground border border-transparent hover:bg-surface-muted hover:text-foreground",
+    "bg-transparent text-muted-foreground hover:bg-surface-muted hover:text-foreground",
   accent:
-    "bg-accent text-accent-foreground border border-transparent hover:opacity-90 shadow-sm",
+    "bg-accent text-accent-foreground hover:opacity-90",
   destructive:
-    "bg-destructive text-destructive-foreground border border-transparent hover:bg-destructive-hover shadow-sm",
+    "bg-destructive text-destructive-foreground hover:bg-destructive-hover",
 };
 
 const sizeClasses: Record<NonNullable<ButtonProps["size"]>, string> = {
-  sm: "h-8 px-3 text-xs rounded-md gap-1.5",
-  md: "h-10 px-4 text-sm rounded-md gap-2",
-  lg: "h-11 px-5 text-sm rounded-md gap-2",
+  sm: "h-8 px-3 text-xs gap-1.5",
+  md: "h-10 px-4 text-sm gap-2",
+  lg: "h-11 px-5 text-sm gap-2",
 };
 
 export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(

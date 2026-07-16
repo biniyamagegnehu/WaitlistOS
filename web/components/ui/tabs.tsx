@@ -55,7 +55,7 @@ export function TabsList({
     <div
       role="tablist"
       className={cn(
-        "flex gap-1 rounded-md border border-border bg-surface-muted p-1",
+        "flex gap-1 bg-surface-muted p-1",
         className
       )}
       {...props}
@@ -82,10 +82,10 @@ export function TabsTrigger({
       aria-selected={isActive}
       onClick={() => onChange(value)}
       className={cn(
-        "flex-1 rounded-md px-3 py-2 text-sm font-medium transition-colors duration-150",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+        "flex-1 px-3 py-2 text-sm font-medium transition-colors duration-150",
+        "focus-visible:outline-none",
         isActive
-          ? "bg-surface text-foreground shadow-sm"
+          ? "bg-surface text-foreground"
           : "text-muted-foreground hover:bg-surface hover:text-foreground",
         className
       )}

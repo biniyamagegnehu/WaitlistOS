@@ -29,10 +29,10 @@ const icons: Record<AlertVariant, React.ReactNode> = {
 };
 
 const variantStyles: Record<AlertVariant, string> = {
-  success: "border-success/25 bg-success/5",
-  error: "border-destructive/25 bg-destructive/5",
-  warning: "border-warning/25 bg-warning/5",
-  info: "border-info/25 bg-info/5",
+  success: "bg-success/5",
+  error: "bg-destructive/5",
+  warning: "bg-warning/5",
+  info: "bg-info/5",
 };
 
 export function Alert({
@@ -47,7 +47,7 @@ export function Alert({
     <div
       role="alert"
       className={cn(
-        "flex items-start gap-3 rounded-md border px-4 py-3",
+        "flex items-start gap-3 px-4 py-3",
         variantStyles[variant],
         className
       )}

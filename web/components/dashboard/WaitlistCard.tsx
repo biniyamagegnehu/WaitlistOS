@@ -75,7 +75,7 @@ export function WaitlistCard({ waitlist, onDelete }: WaitlistCardProps) {
               </Button>
 
               {showMenu && (
-                <div className="absolute right-0 top-full z-10 mt-1 w-36 rounded-md border border-border bg-surface shadow-md">
+                <div className="absolute right-0 top-full z-10 mt-1 w-36 bg-surface">
                   <Link
                     href={routes.waitlistEdit(waitlist.id)}
                     className="flex w-full items-center gap-2 px-3 py-2 text-sm text-foreground transition-colors hover:bg-surface-muted"

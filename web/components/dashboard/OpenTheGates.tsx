@@ -148,9 +148,9 @@ export function OpenTheGates({ waitlistId }: OpenTheGatesProps) {
               <span className="text-muted-foreground">Invitation Progress</span>
               <span className="font-medium">{analytics.progress.toFixed(1)}%</span>
             </div>
-            <div className="w-full bg-muted rounded-full h-2">
+            <div className="w-full bg-muted h-2">
               <div
-                className="bg-primary h-2 rounded-full transition-all"
+                className="bg-primary h-2 transition-all"
                 style={{ width: `${analytics.progress}%` }}
               />
             </div>
@@ -229,7 +229,7 @@ export function OpenTheGates({ waitlistId }: OpenTheGatesProps) {
               ) : (
                 <div className="space-y-3">
                   {cohorts.map((cohort) => (
-                    <div key={cohort.id} className="flex items-center justify-between p-4 border rounded-lg">
+                    <div key={cohort.id} className="flex items-center justify-between p-4">
                       <div className="space-y-1">
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">Cohort #{cohort.batchNumber}</Badge>
@@ -258,7 +258,7 @@ export function OpenTheGates({ waitlistId }: OpenTheGatesProps) {
                         {new Date(cohort.createdAt).toLocaleString()}
                       </span>
                     </div>
-                    <div className="border rounded-lg divide-y">
+                    <div className="divide-y">
                       {cohort.invitations.map((invitation) => (
                         <div key={invitation.id} className="flex items-center justify-between p-3">
                           <div className="space-y-1">

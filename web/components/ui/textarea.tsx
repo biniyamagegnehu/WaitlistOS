@@ -27,10 +27,9 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           ref={ref}
           id={textareaId}
           className={cn(
-            "block w-full rounded-md border bg-surface px-3 py-2.5 text-sm text-foreground",
+            "block w-full bg-surface px-3 py-2.5 text-sm text-foreground",
             "placeholder:text-muted-foreground transition-colors duration-150",
-            "focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary",
-            error ? "border-destructive focus:ring-destructive/20" : "border-border",
+            "focus:outline-none",
             className
           )}
           aria-invalid={!!error}

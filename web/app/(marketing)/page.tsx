@@ -15,7 +15,7 @@ export default function HomePage() {
         className="mx-auto max-w-4xl px-4 py-24 text-center sm:py-32"
         id="hero"
       >
-        <div className="mb-8 inline-flex items-center gap-2 rounded-full border border-accent/30 bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent">
+        <div className="mb-8 inline-flex items-center gap-2 bg-accent/10 px-4 py-1.5 text-xs font-medium text-accent">
           Early access — now live
         </div>
 
@@ -32,13 +32,13 @@ export default function HomePage() {
         <div className="flex flex-col items-center justify-center gap-3 sm:flex-row">
           <Link
             href={routes.register}
-            className="inline-flex h-11 items-center rounded-md bg-primary px-6 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover"
+            className="inline-flex h-11 items-center bg-primary px-6 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
           >
             Start for Free
           </Link>
           <Link
             href={routes.login}
-            className="inline-flex h-11 items-center rounded-md border border-border bg-surface px-6 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
+            className="inline-flex h-11 items-center bg-surface px-6 text-sm font-medium text-foreground transition-colors hover:bg-surface-muted"
           >
             Sign In
           </Link>
@@ -47,7 +47,7 @@ export default function HomePage() {
 
       <section
         id="features"
-        className="border-t border-divider bg-surface py-16 sm:py-24"
+        className="bg-surface py-16 sm:py-24"
       >
         <div className="mx-auto max-w-5xl px-4">
           <div className="mb-14 text-center">
@@ -64,9 +64,9 @@ export default function HomePage() {
             {features.map((feature) => (
               <div
                 key={feature.title}
-                className="rounded-md border border-border bg-background p-6 shadow-sm"
+                className="bg-background p-6"
               >
-                <div className="mb-4 flex h-10 w-10 items-center justify-center rounded-md bg-primary/10 text-lg text-primary">
+                <div className="mb-4 flex h-10 w-10 items-center justify-center bg-primary/10 text-lg text-primary">
                   {feature.icon}
                 </div>
                 <h3 className="mb-2 text-base font-semibold text-foreground">

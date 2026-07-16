@@ -9,8 +9,7 @@ export function Card({ className, hover = false, ...props }: CardProps) {
   return (
     <div
       className={cn(
-        "rounded-lg border border-border bg-surface shadow-sm",
-        hover && "transition-shadow duration-150 hover:shadow-md",
+        "bg-surface",
         className
       )}
       {...props}
@@ -25,7 +24,7 @@ export function CardHeader({
   return (
     <div
       className={cn(
-        "flex flex-col space-y-1 border-b border-divider px-6 py-4",
+        "flex flex-col space-y-1 px-6 py-4",
         className
       )}
       {...props}
@@ -68,7 +67,7 @@ export function CardFooter({
   return (
     <div
       className={cn(
-        "flex items-center border-t border-divider px-6 py-4",
+        "flex items-center px-6 py-4",
         className
       )}
       {...props}

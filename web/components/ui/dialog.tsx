@@ -67,7 +67,7 @@ export function DialogContent({
   return (
     <div
       className={cn(
-        "relative z-10 w-full max-w-lg rounded-md border border-border bg-surface shadow-md",
+        "relative z-10 w-full max-w-lg bg-surface",
         className
       )}
       {...props}
@@ -90,7 +90,7 @@ export function DialogHeader({
 }: React.HTMLAttributes<HTMLDivElement>) {
   return (
     <div
-      className={cn("border-b border-border px-6 pb-4 pt-6", className)}
+      className={cn("px-6 pb-4 pt-6", className)}
       {...props}
     />
   );
@@ -122,7 +122,7 @@ export function DialogFooter({
   return (
     <div
       className={cn(
-        "flex items-center justify-end gap-3 border-t border-border px-6 py-4",
+        "flex items-center justify-end gap-3 px-6 py-4",
         className
       )}
       {...props}

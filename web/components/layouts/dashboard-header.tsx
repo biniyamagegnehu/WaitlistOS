@@ -15,11 +15,11 @@ interface DashboardHeaderProps {
 
 export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
   return (
-    <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border bg-surface px-4 sm:px-6">
+    <header className="flex h-16 shrink-0 items-center gap-4 bg-surface px-4 sm:px-6">
       <button
         onClick={onMobileMenuToggle}
         aria-label="Open navigation"
-        className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 lg:hidden"
+        className="inline-flex items-center justify-center p-2 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none lg:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -33,7 +33,7 @@ export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
 
         <button
           aria-label="Notifications"
-          className="inline-flex items-center justify-center rounded-md p-2 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="inline-flex items-center justify-center p-2 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none"
         >
           <Bell className="h-4 w-4" />
         </button>
@@ -41,8 +41,8 @@ export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
         <Link
           href={routes.create}
           className={cn(
-            "hidden sm:inline-flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover",
-            "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            "hidden sm:inline-flex h-8 items-center gap-1.5 bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover",
+            "focus-visible:outline-none"
           )}
         >
           <Plus className="h-3.5 w-3.5" />
