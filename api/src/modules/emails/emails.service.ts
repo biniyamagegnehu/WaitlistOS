@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
+import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { getWelcomeEmailTemplate } from './templates/welcome';
 import { getEmailVerificationTemplate } from './templates/email-verification';
@@ -28,34 +29,45 @@ export class EmailsService {
   constructor(
     @InjectQueue('emails') private emailsQueue: Queue,
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
   ) {
-    this.fromEmail = process.env.EMAIL_FROM || process.env.SMTP_USER || 'noreply@waitlistos.com';
+    const appConfig = this.configService.get('app');
+    this.fromEmail = appConfig.smtpFrom;
 
-    const smtpHost = process.env.SMTP_HOST;
-    const smtpPort = process.env.SMTP_PORT || '587';
-    const smtpSecure = process.env.SMTP_SECURE === 'true';
-    const smtpUser = process.env.SMTP_USER;
-    const smtpPassword = process.env.SMTP_PASSWORD;
+    const smtpHost = appConfig.smtpHost;
+    const smtpPort = appConfig.smtpPort;
+    const smtpSecure = appConfig.smtpSecure;
+    const smtpUser = appConfig.smtpUser;
+    const smtpPassword = appConfig.smtpPassword;
+    const connectionTimeout = appConfig.smtpConnectionTimeout;
+    const greetingTimeout = appConfig.smtpGreetingTimeout;
+    const socketTimeout = appConfig.smtpSocketTimeout;
 
     if (!smtpHost || !smtpUser || !smtpPassword) {
       this.logger.warn('SMTP credentials are not configured. Emails will not be sent.');
       this.transporter = nodemailer.createTransport({
         host: smtpHost || 'localhost',
-        port: parseInt(smtpPort),
+        port: smtpPort,
         secure: smtpSecure,
       } as any);
     } else {
       this.transporter = nodemailer.createTransport({
         host: smtpHost,
-        port: parseInt(smtpPort),
+        port: smtpPort,
         secure: smtpSecure,
         auth: {
           user: smtpUser,
           pass: smtpPassword,
         },
-        connectionTimeout: 30000,
-        greetingTimeout: 10000,
-        socketTimeout: 10000,
+        connectionTimeout,
+        greetingTimeout,
+        socketTimeout,
+        tls: {
+          rejectUnauthorized: false, // Allow self-signed certificates
+        },
+        pool: true, // Use connection pooling
+        maxConnections: 5,
+        maxMessages: 100,
       } as any);
     }
   }
@@ -173,19 +185,20 @@ export class EmailsService {
   // ── Direct Sending Methods (Called by Processor) ────────────────────────────
 
   private async executeSend(email: string, subject: string, html: string) {
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+    const appConfig = this.configService.get('app');
+    if (!appConfig.smtpHost || !appConfig.smtpUser || !appConfig.smtpPassword) {
       this.logger.warn(`Skipping email "${subject}" to ${email} - SMTP not configured.`);
       return;
     }
 
-    try {
-      const mailOptions = {
-        from: `"WaitlistOS" <${this.fromEmail}>`,
-        to: email,
-        subject,
-        html,
-      };
+    const mailOptions = {
+      from: `"WaitlistOS" <${this.fromEmail}>`,
+      to: email,
+      subject,
+      html,
+    };
 
+    try {
       this.logger.debug(`Sending email: ${JSON.stringify({ to: email, from: this.fromEmail, subject })}`);
 
       const info = await this.transporter.sendMail(mailOptions);
@@ -195,6 +208,21 @@ export class EmailsService {
     } catch (error: any) {
       this.logger.error(`Failed to send email to ${email}: ${error.message}`);
       this.logger.error(`Error details: ${JSON.stringify(error)}`);
+      this.logger.error(`SMTP Config: host=${appConfig.smtpHost}, port=${appConfig.smtpPort}, secure=${appConfig.smtpSecure}`);
+
+      // Retry logic for timeout errors
+      if (error.code === 'ETIMEDOUT' || error.code === 'ECONNECTION') {
+        this.logger.warn(`Connection error, retrying once...`);
+        try {
+          await new Promise(resolve => setTimeout(resolve, 2000)); // Wait 2 seconds before retry
+          const info = await this.transporter.sendMail(mailOptions);
+          this.logger.log(`Email "${subject}" sent successfully to ${email} on retry [Message ID: ${info.messageId}]`);
+          return;
+        } catch (retryError: any) {
+          this.logger.error(`Retry failed for email to ${email}: ${retryError.message}`);
+          throw retryError;
+        }
+      }
       throw error;
     }
   }
