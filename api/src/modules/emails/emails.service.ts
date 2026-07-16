@@ -49,12 +49,14 @@ export class EmailsService {
         host: smtpHost || 'localhost',
         port: smtpPort,
         secure: smtpSecure,
+        family: 4, // Force IPv4 to prevent connection timeouts on some cloud providers
       } as any);
     } else {
       this.transporter = nodemailer.createTransport({
         host: smtpHost,
         port: smtpPort,
         secure: smtpSecure,
+        family: 4, // Force IPv4 to prevent connection timeouts on some cloud providers
         auth: {
           user: smtpUser,
           pass: smtpPassword,
