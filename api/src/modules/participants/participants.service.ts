@@ -10,7 +10,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
 import { PaymentService } from '../payments/payment.service';
-import type { Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -43,39 +43,22 @@ export class ParticipantsService {
     waitlistId: string,
     tx: TransactionClient,
   ): Promise<void> {
-    const participants = await tx.participant.findMany({
-      where: { waitlistId },
-      orderBy: [
-        // Prisma doesn't support expressions in orderBy directly, so we fetch
-        // and sort in application memory — safe for typical waitlist sizes.
-        { referralCount: 'desc' },
-        { createdAt: 'asc' },
-      ],
-    });
-
-    // Sort by effective score (referralCount + positionBoostBonus) DESC, then createdAt ASC
-    participants.sort((a, b) => {
-      const scoreA = a.referralCount + a.positionBoostBonus;
-      const scoreB = b.referralCount + b.positionBoostBonus;
-      if (scoreB !== scoreA) return scoreB - scoreA;
-      return a.createdAt.getTime() - b.createdAt.getTime();
-    });
-
-    // Bulk update only participants whose position changed
-    const updates: Promise<any>[] = [];
-    for (let i = 0; i < participants.length; i++) {
-      const newPosition = i + 1;
-      if (participants[i].position !== newPosition) {
-        updates.push(
-          tx.participant.update({
-            where: { id: participants[i].id },
-            data: { position: newPosition },
-          }),
-        );
-      }
-    }
-
-    await Promise.all(updates);
+    await tx.$executeRaw(
+      Prisma.sql`
+        UPDATE "participants"
+        SET position = ranked.new_pos
+        FROM (
+          SELECT id, 
+                 ROW_NUMBER() OVER (
+                   ORDER BY ("referralCount" + COALESCE("positionBoostBonus", 0)) DESC, "createdAt" ASC
+                 ) as new_pos
+          FROM "participants"
+          WHERE "waitlistId" = ${waitlistId}
+        ) as ranked
+        WHERE "participants".id = ranked.id
+          AND "participants".position IS DISTINCT FROM ranked.new_pos;
+      `
+    );
   }
 
   // ── Create participant ────────────────────────────────────
