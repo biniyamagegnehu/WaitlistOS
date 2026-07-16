@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { ConfigService } from '@nestjs/config';
@@ -21,7 +21,7 @@ import { getInvitationTemplate } from './templates/invitation';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
-export class EmailsService {
+export class EmailsService implements OnModuleInit {
   private readonly logger = new Logger(EmailsService.name);
   private transporter: nodemailer.Transporter;
   private readonly fromEmail: string;
@@ -33,6 +33,35 @@ export class EmailsService {
   ) {
     const appConfig = this.configService.get('app');
     this.fromEmail = appConfig.smtpFrom;
+    this.initializeTransporter();
+  }
+
+  async onModuleInit() {
+    // Test connection on startup after module is initialized
+    this.logger.log('onModuleInit called - checking SMTP configuration...');
+    if (this.transporter) {
+      this.logger.log('Starting SMTP connection verification...');
+      try {
+        await Promise.race([
+          this.transporter.verify(),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error('Connection verification timeout')), 30000)
+          ),
+        ]);
+        this.logger.log('SMTP connection verified successfully');
+      } catch (error: any) {
+        this.logger.error(`SMTP connection verification failed: ${error.message}`);
+        this.logger.error(`Connection error code: ${error.code}`);
+        this.logger.error(`Connection error command: ${error.command}`);
+        this.logger.error(`Full error: ${JSON.stringify(error)}`);
+      }
+    } else {
+      this.logger.warn('SMTP transporter not initialized - skipping connection verification');
+    }
+  }
+
+  private initializeTransporter() {
+    const appConfig = this.configService.get('app');
 
     const smtpHost = appConfig.smtpHost;
     const smtpPort = appConfig.smtpPort;
@@ -126,11 +155,6 @@ export class EmailsService {
       }
 
       this.transporter = nodemailer.createTransport(transportConfig);
-
-      // Test connection on startup
-      this.transporter.verify()
-        .then(() => this.logger.log('SMTP connection verified successfully'))
-        .catch((error) => this.logger.error(`SMTP connection verification failed: ${error.message}`));
     }
   }
 
