@@ -27,6 +27,7 @@ const rewardSchema = z.object({
   type: z.enum(["POSITION_BOOST", "EARLY_ACCESS", "VIP_ACCESS", "DISCOUNT", "CUSTOM"]),
   title: z.string().min(1, "Title is required"),
   value: z.string().optional(),
+  valueType: z.enum(["fixed", "percent"]).optional(),
   description: z.string().optional(),
 }).refine((data) => {
   if (data.type === "POSITION_BOOST" || data.type === "DISCOUNT") {
@@ -44,6 +45,15 @@ const rewardSchema = z.object({
   return true;
 }, {
   message: "Discount must be a percentage between 0 and 100",
+  path: ["value"],
+}).refine((data) => {
+  if (data.type === "CUSTOM" && data.valueType === "percent" && data.value) {
+    const numValue = parseFloat(data.value);
+    return !isNaN(numValue) && numValue >= 0 && numValue <= 100;
+  }
+  return true;
+}, {
+  message: "Percentage value must be between 0 and 100",
   path: ["value"],
 });
 
@@ -69,12 +79,14 @@ export default function RewardsPage() {
       type: "POSITION_BOOST",
       title: "",
       value: "",
+      valueType: "fixed",
       description: "",
     },
   });
 
   const { watch } = form;
   const rewardType = watch("type");
+  const valueType = watch("valueType");
 
   const loadData = React.useCallback(async () => {
     try {
@@ -106,6 +118,7 @@ export default function RewardsPage() {
       type: "POSITION_BOOST",
       title: "",
       value: "",
+      valueType: "fixed",
       description: "",
     });
     setIsDialogOpen(true);
@@ -118,6 +131,7 @@ export default function RewardsPage() {
       type: reward.type,
       title: reward.title,
       value: reward.value ? reward.value.toString() : "",
+      valueType: (reward as any).valueType || "fixed",
       description: reward.description || "",
     });
     setIsDialogOpen(true);
@@ -340,26 +354,38 @@ export default function RewardsPage() {
                   <label className="text-sm font-medium">
                     Value {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT') && <span className="text-destructive">*</span>}
                   </label>
-                  <div className="relative">
-                    <Input
-                      type="number"
-                      {...form.register("value")}
-                      placeholder={
-                        rewardType === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
-                        rewardType === 'DISCOUNT' ? 'e.g. 50' :
-                        'e.g. custom value'
-                    }
-                      required={rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT'}
-                      className={rewardType === 'DISCOUNT' ? 'pr-8' : ''}
-                    />
-                    {rewardType === 'DISCOUNT' && (
-                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                  <div className="flex gap-2">
+                    {rewardType === 'CUSTOM' && (
+                      <select
+                        {...form.register("valueType")}
+                        className="flex h-10 w-32 rounded-xl border border-border/60 bg-surface px-3 py-2 text-sm ring-offset-background shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                      >
+                        <option value="fixed">Fixed</option>
+                        <option value="percent">Percent</option>
+                      </select>
                     )}
+                    <div className="relative flex-1">
+                      <Input
+                        type="number"
+                        {...form.register("value")}
+                        placeholder={
+                          rewardType === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
+                          rewardType === 'DISCOUNT' ? 'e.g. 50' :
+                          valueType === 'percent' ? 'e.g. 50' :
+                          'e.g. custom value'
+                      }
+                        required={rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT'}
+                        className={(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) ? 'pr-8' : ''}
+                      />
+                      {(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) && (
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                      )}
+                    </div>
                   </div>
                   {form.formState.errors.value && (
                     <p className="text-sm text-destructive">{form.formState.errors.value.message}</p>
                   )}
-                  {rewardType === 'DISCOUNT' && !form.formState.errors.value && (
+                  {(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) && !form.formState.errors.value && (
                     <p className="text-xs text-muted-foreground">Enter a percentage between 0 and 100</p>
                   )}
                 </div>
