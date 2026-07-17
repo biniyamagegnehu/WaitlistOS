@@ -76,6 +76,7 @@ export default function LoginContent() {
               leftIcon={<Mail className="h-4 w-4" />}
               error={errors.email?.message as string | undefined}
               {...register("email")}
+              required
             />
 
             <PasswordInput
@@ -83,6 +84,7 @@ export default function LoginContent() {
               placeholder="••••••••"
               error={errors.password?.message as string | undefined}
               {...register("password")}
+              required
             />
 
             <div className="flex items-center justify-between">

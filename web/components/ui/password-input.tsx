@@ -11,6 +11,7 @@ export interface PasswordInputProps
   error?: string;
   helper?: string;
   showStrength?: boolean;
+  required?: boolean;
 }
 
 export function PasswordInput({
@@ -18,6 +19,7 @@ export function PasswordInput({
   error,
   helper,
   showStrength = false,
+  required,
   className,
   ...props
 }: PasswordInputProps) {
@@ -62,6 +64,7 @@ export function PasswordInput({
       {label && (
         <label className="block text-sm font-medium text-foreground">
           {label}
+          {required && <span className="ml-1 text-destructive">*</span>}
         </label>
       )}
       <div className="relative">
@@ -74,7 +77,7 @@ export function PasswordInput({
             <button
               type="button"
               onClick={togglePassword}
-              className="text-muted-foreground transition-colors hover:text-foreground"
+              className="text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? (

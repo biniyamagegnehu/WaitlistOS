@@ -131,6 +131,7 @@ export function WaitlistForm({
             placeholder="My Awesome Product"
             error={errors.name?.message}
             {...register("name")}
+            required
           />
 
           <Input
@@ -138,10 +139,11 @@ export function WaitlistForm({
             placeholder="Join the waitlist for early access"
             error={errors.tagline?.message}
             {...register("tagline")}
+            required
           />
 
           <Textarea
-            label="Description (optional)"
+            label="Description"
             rows={4}
             placeholder="Tell visitors what your product is about"
             error={errors.description?.message}
@@ -150,7 +152,7 @@ export function WaitlistForm({
 
           {mode === "edit" && (
             <Input
-              label="Slug (optional)"
+              label="Slug"
               placeholder={initialValues?.slug}
               error={errors.slug?.message}
               {...register("slug")}

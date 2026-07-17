@@ -64,6 +64,7 @@ export default function RegisterPage() {
                 leftIcon={<User className="h-4 w-4" />}
                 error={errors.firstName?.message as string | undefined}
                 {...register("firstName")}
+                required
               />
               <Input
                 label="Last name"
@@ -72,6 +73,7 @@ export default function RegisterPage() {
                 leftIcon={<User className="h-4 w-4" />}
                 error={errors.lastName?.message as string | undefined}
                 {...register("lastName")}
+                required
               />
             </div>
 
@@ -82,6 +84,7 @@ export default function RegisterPage() {
               leftIcon={<Mail className="h-4 w-4" />}
               error={errors.email?.message as string | undefined}
               {...register("email")}
+              required
             />
 
             <PasswordInput
@@ -91,6 +94,7 @@ export default function RegisterPage() {
               error={errors.password?.message as string | undefined}
               helper="Must be at least 8 characters"
               {...register("password")}
+              required
             />
 
             <PasswordInput
@@ -98,6 +102,7 @@ export default function RegisterPage() {
               placeholder="••••••••"
               error={errors.confirmPassword?.message as string | undefined}
               {...register("confirmPassword")}
+              required
             />
           </>
         )}

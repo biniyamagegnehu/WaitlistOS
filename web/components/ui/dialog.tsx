@@ -67,7 +67,7 @@ export function DialogContent({
   return (
     <div
       className={cn(
-        "relative z-10 w-full max-w-lg bg-surface",
+        "relative z-10 w-full max-w-lg bg-surface rounded-xl border border-border/50 shadow-md overflow-hidden",
         className
       )}
       {...props}

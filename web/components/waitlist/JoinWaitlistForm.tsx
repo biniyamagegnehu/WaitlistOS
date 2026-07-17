@@ -90,6 +90,7 @@ export default function JoinWaitlistForm({
         disabled={isSubmitting}
         error={errors.email?.message}
         {...register("email")}
+        required
       />
 
       {/* Hidden referral code field - automatically applied from URL parameter */}

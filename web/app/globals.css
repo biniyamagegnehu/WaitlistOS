@@ -4,28 +4,28 @@
 
 /* ─── Light theme (default) ─── */
 :root {
-  --background: #f5f5f5;
-  --foreground: #1a1a1a;
-  --muted-foreground: #666666;
+  --background: #fafafa;
+  --foreground: #171717;
+  --muted-foreground: #737373;
 
   --surface: #ffffff;
-  --surface-muted: #f8f8f8;
+  --surface-muted: #f5f5f5;
 
-  --border: #f0f0f0;
-  --divider: #f0f0f0;
+  --border: #e5e5e5;
+  --divider: #e5e5e5;
 
   --primary: #1f5c42;
   --primary-hover: #174b36;
   --primary-foreground: #ffffff;
 
   --accent: #d8a75b;
-  --accent-foreground: #1a1a1a;
+  --accent-foreground: #171717;
 
   --success: #16a34a;
   --success-foreground: #ffffff;
 
   --warning: #f59e0b;
-  --warning-foreground: #1a1a1a;
+  --warning-foreground: #171717;
 
   --destructive: #dc2626;
   --destructive-hover: #b91c1c;
@@ -34,49 +34,49 @@
   --info: #2563eb;
   --info-foreground: #ffffff;
 
-  --radius-sm: 0rem;
-  --radius-md: 0rem;
-  --radius-lg: 0rem;
-  --radius-xl: 0rem;
+  --radius-sm: 0.5rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
 
-  --shadow-sm: none;
-  --shadow-md: none;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.05), 0 2px 4px -2px rgb(0 0 0 / 0.05);
 }
 
 /* ─── Dark theme ─── */
 .dark {
-  --background: #0d1210;
-  --foreground: #f5f4ef;
-  --muted-foreground: #a3aea8;
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --muted-foreground: #a3a3a3;
 
-  --surface: #141a18;
-  --surface-muted: #1a2220;
+  --surface: #121212;
+  --surface-muted: #171717;
 
-  --border: #24312d;
-  --divider: #1a2220;
+  --border: #262626;
+  --divider: #262626;
 
   --primary: #5fa57f;
   --primary-hover: #74b892;
-  --primary-foreground: #0d1210;
+  --primary-foreground: #0a0a0a;
 
   --accent: #d8a75b;
-  --accent-foreground: #0d1210;
+  --accent-foreground: #0a0a0a;
 
   --success: #34d399;
-  --success-foreground: #0d1210;
+  --success-foreground: #0a0a0a;
 
   --warning: #fbbf24;
-  --warning-foreground: #0d1210;
+  --warning-foreground: #0a0a0a;
 
   --destructive: #f87171;
   --destructive-hover: #ef4444;
-  --destructive-foreground: #0d1210;
+  --destructive-foreground: #0a0a0a;
 
   --info: #60a5fa;
-  --info-foreground: #0d1210;
+  --info-foreground: #0a0a0a;
 
-  --shadow-sm: none;
-  --shadow-md: none;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.3), 0 2px 4px -2px rgb(0 0 0 / 0.3);
 }
 
 @theme inline {
@@ -105,6 +105,8 @@
   --radius-md: var(--radius-md);
   --radius-lg: var(--radius-lg);
   --radius-xl: var(--radius-xl);
+  --shadow-sm: var(--shadow-sm);
+  --shadow-md: var(--shadow-md);
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
 }
 

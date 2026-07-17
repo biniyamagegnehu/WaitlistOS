@@ -284,22 +284,23 @@ export default function RewardsPage() {
             <DialogBody className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Milestone (Referrals)</label>
+                  <label className="text-sm font-medium">Milestone <span className="text-destructive">*</span></label>
                   <Input
                     type="number"
                     min="1"
                     {...form.register("milestone")}
                     placeholder="e.g. 5"
+                    required
                   />
                   {form.formState.errors.milestone && (
                     <p className="text-sm text-destructive">{form.formState.errors.milestone.message}</p>
                   )}
                 </div>
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Reward Type</label>
+                  <label className="text-sm font-medium">Reward Type <span className="text-destructive">*</span></label>
                   <select
                     {...form.register("type")}
-                    className="flex h-10 w-full rounded-md border border-input bg-surface px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="flex h-10 w-full rounded-lg border border-border/60 bg-surface px-3 py-2 text-sm ring-offset-background shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 hover:border-border"
                   >
                     <option value="POSITION_BOOST">Position Boost</option>
                     <option value="EARLY_ACCESS">Early Access</option>
@@ -314,10 +315,11 @@ export default function RewardsPage() {
               </div>
 
               <div className="space-y-2">
-                <label className="text-sm font-medium">Title</label>
+                <label className="text-sm font-medium">Title <span className="text-destructive">*</span></label>
                 <Input
                   {...form.register("title")}
                   placeholder="e.g. Skip 100 spots"
+                  required
                 />
                 {form.formState.errors.title && (
                   <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
@@ -327,7 +329,7 @@ export default function RewardsPage() {
               {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT' || rewardType === 'CUSTOM') && (
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Value {rewardType === 'CUSTOM' && <span className="text-muted-foreground font-normal">(Optional)</span>}
+                    Value {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT') && <span className="text-destructive">*</span>}
                   </label>
                   <Input
                     type="number"
@@ -337,6 +339,7 @@ export default function RewardsPage() {
                       rewardType === 'DISCOUNT' ? 'e.g. 50 (percentage discount)' :
                       'e.g. custom value'
                   }
+                  required={rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT'}
                   />
                   {form.formState.errors.value && (
                     <p className="text-sm text-destructive">{form.formState.errors.value.message}</p>
@@ -346,7 +349,7 @@ export default function RewardsPage() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  Description <span className="text-muted-foreground font-normal">(Optional)</span>
+                  Description
                 </label>
                 <Textarea
                   {...form.register("description")}
