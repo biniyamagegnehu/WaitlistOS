@@ -691,8 +691,15 @@ export class DashboardService {
       where: { founderId },
       orderBy: { createdAt: 'desc' },
       include: {
-        _count: {
-          select: { participants: true },
+        participants: {
+          orderBy: { position: 'asc' },
+          select: {
+            email: true,
+            position: true,
+            referralCount: true,
+            createdAt: true,
+            status: true,
+          },
         },
         logo: true,
       },
@@ -703,8 +710,9 @@ export class DashboardService {
       Tagline: w.tagline,
       Slug: w.slug,
       Description: w.description || '',
-      TotalParticipants: w._count.participants,
+      TotalParticipants: w.participants.length,
       CreatedAt: w.createdAt.toISOString(),
+      Participants: w.participants,
     }));
 
     switch (format) {
@@ -745,36 +753,67 @@ export class DashboardService {
   }
 
   private exportWaitlistsToXlsx(data: any[]): { data: Buffer; filename: string; contentType: string } {
-    const worksheet = XLSX.utils.json_to_sheet(data);
-    
-    // Calculate appropriate column widths based on content
-    const headers = Object.keys(data[0]);
-    const colWidths = headers.map((header, index) => {
-      let maxWidth = header.length;
-      data.forEach((row) => {
-        const cellValue = String(row[header] || '');
-        maxWidth = Math.max(maxWidth, cellValue.length);
-      });
-      
-      // Give more space to Description column
-      if (header === 'Description') {
-        return { wch: Math.min(Math.max(maxWidth + 5, 40), 80) };
-      }
-      if (header === 'Name') {
-        return { wch: Math.min(Math.max(maxWidth + 2, 25), 50) };
-      }
-      if (header === 'Tagline') {
-        return { wch: Math.min(Math.max(maxWidth + 2, 20), 40) };
-      }
-      return { wch: Math.min(Math.max(maxWidth + 2, 15), 30) };
-    });
-    worksheet['!cols'] = colWidths;
-    
-    // Freeze header row
-    worksheet['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2' };
-    
     const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'Waitlists');
+
+    // Create summary sheet with all waitlists
+    const summaryData = data.map((waitlist) => ({
+      Name: waitlist.Name,
+      Tagline: waitlist.Tagline,
+      Slug: waitlist.Slug,
+      Description: waitlist.Description,
+      TotalParticipants: waitlist.TotalParticipants,
+      CreatedAt: waitlist.CreatedAt,
+    }));
+
+    const summaryWorksheet = XLSX.utils.json_to_sheet(summaryData);
+    
+    // Calculate appropriate column widths for summary
+    const summaryColWidths = [
+      { wch: 30 }, // Name
+      { wch: 40 }, // Tagline
+      { wch: 25 }, // Slug
+      { wch: 50 }, // Description
+      { wch: 20 }, // TotalParticipants
+      { wch: 25 }, // CreatedAt
+    ];
+    summaryWorksheet['!cols'] = summaryColWidths;
+    summaryWorksheet['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2' };
+    
+    XLSX.utils.book_append_sheet(workbook, summaryWorksheet, 'Waitlists Summary');
+
+    // Create a separate sheet for each waitlist's participants
+    data.forEach((waitlist, index) => {
+      if (waitlist.Participants && waitlist.Participants.length > 0) {
+        const participantData = waitlist.Participants.map((p: any) => ({
+          Email: p.email,
+          Position: p.position,
+          ReferralCount: p.referralCount,
+          CreatedAt: p.createdAt,
+          Status: p.status,
+        }));
+
+        const participantWorksheet = XLSX.utils.json_to_sheet(participantData);
+        
+        // Calculate appropriate column widths for participants
+        const participantColWidths = [
+          { wch: 35 }, // Email
+          { wch: 15 }, // Position
+          { wch: 18 }, // ReferralCount
+          { wch: 25 }, // CreatedAt
+          { wch: 15 }, // Status
+        ];
+        participantWorksheet['!cols'] = participantColWidths;
+        participantWorksheet['!freeze'] = { xSplit: 0, ySplit: 1, topLeftCell: 'A2' };
+        
+        // Create a safe sheet name (max 31 chars, no special characters)
+        const safeSheetName = `${waitlist.Name}_Participants`
+          .replace(/[^a-zA-Z0-9]/g, '_')
+          .substring(0, 31);
+        
+        XLSX.utils.book_append_sheet(workbook, participantWorksheet, safeSheetName);
+      }
+    });
+
     const excelBuffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
 
     return {
