@@ -36,6 +36,15 @@ const rewardSchema = z.object({
 }, {
   message: "Value is required for Position Boost and Discount rewards",
   path: ["value"],
+}).refine((data) => {
+  if (data.type === "DISCOUNT" && data.value) {
+    const numValue = parseFloat(data.value);
+    return !isNaN(numValue) && numValue >= 0 && numValue <= 100;
+  }
+  return true;
+}, {
+  message: "Discount must be a percentage between 0 and 100",
+  path: ["value"],
 });
 
 type RewardFormData = z.infer<typeof rewardSchema>;
@@ -331,18 +340,27 @@ export default function RewardsPage() {
                   <label className="text-sm font-medium">
                     Value {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT') && <span className="text-destructive">*</span>}
                   </label>
-                  <Input
-                    type="number"
-                    {...form.register("value")}
-                    placeholder={
-                      rewardType === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
-                      rewardType === 'DISCOUNT' ? 'e.g. 50 (percentage discount)' :
-                      'e.g. custom value'
-                  }
-                  required={rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT'}
-                  />
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      {...form.register("value")}
+                      placeholder={
+                        rewardType === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
+                        rewardType === 'DISCOUNT' ? 'e.g. 50' :
+                        'e.g. custom value'
+                    }
+                      required={rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT'}
+                      className={rewardType === 'DISCOUNT' ? 'pr-8' : ''}
+                    />
+                    {rewardType === 'DISCOUNT' && (
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                    )}
+                  </div>
                   {form.formState.errors.value && (
                     <p className="text-sm text-destructive">{form.formState.errors.value.message}</p>
+                  )}
+                  {rewardType === 'DISCOUNT' && !form.formState.errors.value && (
+                    <p className="text-xs text-muted-foreground">Enter a percentage between 0 and 100</p>
                   )}
                 </div>
               )}
