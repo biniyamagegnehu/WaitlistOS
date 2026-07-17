@@ -9,7 +9,7 @@ import type { PublicPlan, SubscriptionPlanCode } from "@/types/billing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/loader";
-import { useToast } from "@/components/ui/toast";
+import toast from "react-hot-toast";
 
 function formatPrice(plan: PublicPlan) {
   if (plan.price <= 0) {
@@ -34,7 +34,6 @@ function planFeatures(plan: PublicPlan): string[] {
 
 export default function PricingPageClient() {
   const { isAuthenticated } = useAuth();
-  const { toast } = useToast();
   const { data: plans, isLoading, isError } = usePublicPlans();
   const initializePayment = useInitializePayment();
 
@@ -51,11 +50,7 @@ export default function PricingPageClient() {
 
     initializePayment.mutate(plan.code as SubscriptionPlanCode, {
       onError: (error) => {
-        toast({
-          title: "Payment could not start",
-          description: getApiErrorMessage(error, "Unable to connect to Chapa. Try again."),
-          variant: "error",
-        });
+        toast.error(getApiErrorMessage(error, "Unable to connect to Chapa. Try again."));
       },
     });
   };

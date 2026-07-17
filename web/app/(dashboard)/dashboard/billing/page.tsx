@@ -13,10 +13,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/loader";
-import { useToast } from "@/components/ui/toast";
+import toast from "react-hot-toast";
 
 export default function BillingPage() {
-  const { toast } = useToast();
   const { data: subscription, isLoading: subscriptionLoading } = useSubscription();
   const { data: history, isLoading: historyLoading } = usePaymentHistory();
   const initializePayment = useInitializePayment();
@@ -24,11 +23,7 @@ export default function BillingPage() {
   const startCheckout = (plan: SubscriptionPlanCode) => {
     initializePayment.mutate(plan, {
       onError: (error) => {
-        toast({
-          title: "Payment could not start",
-          description: getApiErrorMessage(error, "Unable to connect to Chapa. Try again."),
-          variant: "error",
-        });
+        toast.error(getApiErrorMessage(error, "Unable to connect to Chapa. Try again."));
       },
     });
   };

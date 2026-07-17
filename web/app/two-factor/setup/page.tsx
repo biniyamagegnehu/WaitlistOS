@@ -9,7 +9,7 @@ import { OTPInput } from "@/components/ui/otp-input";
 import { Button } from "@/components/ui/button";
 import { twoFactorSchema, type TwoFactorFormData } from "@/lib/validations/auth";
 import { setupTwoFactor, enableTwoFactor } from "@/services/auth";
-import { useToast } from "@/components/ui/toast";
+import toast from "react-hot-toast";
 import { Alert } from "@/components/ui/alert";
 import { getApiErrorMessage } from "@/lib/errors";
 import { useAuth } from "@/contexts/auth-context";
@@ -17,7 +17,6 @@ import { routes } from "@/lib/routes";
 
 export default function TwoFactorSetupPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const { refreshUser, patchUser } = useAuth();
   const [qrCode, setQrCode] = React.useState<string>("");
   const [secret, setSecret] = React.useState<string>("");
@@ -33,12 +32,9 @@ export default function TwoFactorSetupPage() {
       setSecret(data.secret);
       setBackupCodes(data.backupCodes);
     } catch (error: unknown) {
-      toast({
-        title: getApiErrorMessage(error, "Failed to setup 2FA"),
-        variant: "error",
-      });
+      toast.error(getApiErrorMessage(error, "Failed to setup 2FA"));
     }
-  }, [toast]);
+  }, []);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -59,16 +55,10 @@ export default function TwoFactorSetupPage() {
       await enableTwoFactor(data);
       patchUser({ isTwoFactorEnabled: true });
       await refreshUser();
-      toast({
-        title: "Two-factor authentication enabled successfully",
-        variant: "success",
-      });
+      toast.success("Two-factor authentication enabled successfully");
       router.replace(routes.settingsTab("security"));
     } catch (error: unknown) {
-      toast({
-        title: getApiErrorMessage(error, "Failed to enable 2FA"),
-        variant: "error",
-      });
+      toast.error(getApiErrorMessage(error, "Failed to enable 2FA"));
     }
   };
 

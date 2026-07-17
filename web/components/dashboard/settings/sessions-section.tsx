@@ -10,14 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getSessions, revokeSession, revokeAllSessions } from "@/services/auth";
 import { Session } from "@/types/auth";
-import { useToast } from "@/components/ui/toast";
+import toast from "react-hot-toast";
 import { getApiErrorMessage } from "@/lib/errors";
 import { useAuth } from "@/contexts/auth-context";
 import { routes } from "@/lib/routes";
 
 export function SessionsSettingsSection() {
   const router = useRouter();
-  const { toast } = useToast();
   const { logout } = useAuth();
   const [sessions, setSessions] = React.useState<Session[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
@@ -29,14 +28,11 @@ export function SessionsSettingsSection() {
       const data = await getSessions();
       setSessions(data);
     } catch (error: unknown) {
-      toast({
-        title: getApiErrorMessage(error, "Failed to fetch sessions"),
-        variant: "error",
-      });
+      toast.error(getApiErrorMessage(error, "Failed to fetch sessions"));
     } finally {
       setIsLoading(false);
     }
-  }, [toast]);
+  }, []);
 
   React.useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -50,13 +46,10 @@ export function SessionsSettingsSection() {
     try {
       setIsRevoking(true);
       await revokeSession(sessionId);
-      toast({ title: "Session revoked successfully", variant: "success" });
+      toast.success("Session revoked successfully");
       await fetchSessions();
     } catch (error: unknown) {
-      toast({
-        title: getApiErrorMessage(error, "Failed to revoke session"),
-        variant: "error",
-      });
+      toast.error(getApiErrorMessage(error, "Failed to revoke session"));
     } finally {
       setIsRevoking(false);
     }
@@ -74,13 +67,10 @@ export function SessionsSettingsSection() {
     try {
       setIsRevoking(true);
       await revokeAllSessions();
-      toast({ title: "All sessions revoked successfully", variant: "success" });
+      toast.success("All sessions revoked successfully");
       await fetchSessions();
     } catch (error: unknown) {
-      toast({
-        title: getApiErrorMessage(error, "Failed to revoke sessions"),
-        variant: "error",
-      });
+      toast.error(getApiErrorMessage(error, "Failed to revoke sessions"));
     } finally {
       setIsRevoking(false);
     }
@@ -211,9 +201,13 @@ export function SessionsSettingsSection() {
                 className="mt-4"
                 onClick={async () => {
                   if (confirm("Are you sure you want to sign out from all devices?")) {
-                    await revokeAllSessions();
-                    await logout();
-                    router.replace(routes.login);
+                    try {
+                      await revokeAllSessions();
+                      await logout();
+                      router.replace(routes.login);
+                    } catch (error: unknown) {
+                      toast.error(getApiErrorMessage(error, "Failed to sign out"));
+                    }
                   }
                 }}
               >

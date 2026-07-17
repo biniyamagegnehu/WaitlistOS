@@ -5,7 +5,7 @@ import { useForm, type DefaultValues, type FieldValues, type Resolver } from "re
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
-import { useToast } from "@/components/ui/toast";
+import toast from "react-hot-toast";
 import { getApiErrorMessage } from "@/lib/errors";
 
 interface AuthFormProps<T extends FieldValues> {
@@ -29,7 +29,6 @@ export function AuthForm<T extends FieldValues>({
   onSuccess,
   onSuccessMessage = "Success",
 }: AuthFormProps<T>) {
-  const { toast } = useToast();
   const [internalSubmitting, setInternalSubmitting] = React.useState(false);
 
   const methods = useForm<T>({
@@ -41,18 +40,12 @@ export function AuthForm<T extends FieldValues>({
     try {
       setInternalSubmitting(true);
       await onSubmit(data);
-      toast({
-        title: onSuccessMessage,
-        variant: "success",
-      });
+      toast.success(onSuccessMessage);
       onSuccess?.();
       methods.reset();
     } catch (error: unknown) {
       const message = getApiErrorMessage(error, "An error occurred");
-      toast({
-        title: message,
-        variant: "error",
-      });
+      toast.error(message);
     } finally {
       setInternalSubmitting(false);
     }

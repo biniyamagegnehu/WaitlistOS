@@ -9,6 +9,7 @@ import { useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
+import toast from "react-hot-toast";
 
 const joinSchema = z.object({
   email: z
@@ -64,11 +65,14 @@ export default function JoinWaitlistForm({
         email: data.email,
         ...(data.referralCode ? { referralCode: data.referralCode } : {}),
       });
+      toast.success("Successfully joined the waitlist!");
       onSuccess(result);
     } catch (err) {
       if (err instanceof JoinWaitlistError) {
+        toast.error(ERROR_MESSAGES[err.code]);
         setServerError(ERROR_MESSAGES[err.code]);
       } else {
+        toast.error(ERROR_MESSAGES.SERVER_ERROR);
         setServerError(ERROR_MESSAGES.SERVER_ERROR);
       }
     }

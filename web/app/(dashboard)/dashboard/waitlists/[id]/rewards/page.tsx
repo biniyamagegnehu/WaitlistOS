@@ -17,6 +17,28 @@ import { getWaitlistRewards, getWaitlistRewardAnalytics, createReward, updateRew
 import type { Reward, RewardAnalytics, CreateRewardDto, RewardType } from "@/types/reward";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import toast from "react-hot-toast";
+
+const rewardSchema = z.object({
+  milestone: z.string().min(1, "Milestone is required"),
+  type: z.enum(["POSITION_BOOST", "EARLY_ACCESS", "VIP_ACCESS", "DISCOUNT", "CUSTOM"]),
+  title: z.string().min(1, "Title is required"),
+  value: z.string().optional(),
+  description: z.string().optional(),
+}).refine((data) => {
+  if (data.type === "POSITION_BOOST" || data.type === "DISCOUNT") {
+    return !!data.value;
+  }
+  return true;
+}, {
+  message: "Value is required for Position Boost and Discount rewards",
+  path: ["value"],
+});
+
+type RewardFormData = z.infer<typeof rewardSchema>;
 
 export default function RewardsPage() {
   const params = useParams();
@@ -30,13 +52,20 @@ export default function RewardsPage() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [editingReward, setEditingReward] = React.useState<Reward | null>(null);
-  
-  // Form State
-  const [milestone, setMilestone] = React.useState("");
-  const [type, setType] = React.useState<RewardType>("POSITION_BOOST");
-  const [value, setValue] = React.useState("");
-  const [title, setTitle] = React.useState("");
-  const [description, setDescription] = React.useState("");
+
+  const form = useForm<RewardFormData>({
+    resolver: zodResolver(rewardSchema),
+    defaultValues: {
+      milestone: "",
+      type: "POSITION_BOOST",
+      title: "",
+      value: "",
+      description: "",
+    },
+  });
+
+  const { watch } = form;
+  const rewardType = watch("type");
 
   const loadData = React.useCallback(async () => {
     try {
@@ -63,21 +92,25 @@ export default function RewardsPage() {
 
   const openNewDialog = () => {
     setEditingReward(null);
-    setMilestone("");
-    setType("POSITION_BOOST");
-    setValue("");
-    setTitle("");
-    setDescription("");
+    form.reset({
+      milestone: "",
+      type: "POSITION_BOOST",
+      title: "",
+      value: "",
+      description: "",
+    });
     setIsDialogOpen(true);
   };
 
   const openEditDialog = (reward: Reward) => {
     setEditingReward(reward);
-    setMilestone(reward.milestone.toString());
-    setType(reward.type);
-    setValue(reward.value ? reward.value.toString() : "");
-    setTitle(reward.title);
-    setDescription(reward.description || "");
+    form.reset({
+      milestone: reward.milestone.toString(),
+      type: reward.type,
+      title: reward.title,
+      value: reward.value ? reward.value.toString() : "",
+      description: reward.description || "",
+    });
     setIsDialogOpen(true);
   };
 
@@ -85,42 +118,35 @@ export default function RewardsPage() {
     if (!confirm("Are you sure you want to delete this reward?")) return;
     try {
       await deleteReward(waitlistId, id);
+      toast.success("Reward deleted successfully");
       loadData();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Failed to delete reward"));
+      toast.error(getApiErrorMessage(err, "Failed to delete reward"));
     }
   };
 
-  const handleSave = async () => {
-    if (!milestone || !title || !type) {
-      alert("Please fill in all required fields.");
-      return;
-    }
-    
-    if ((type === 'POSITION_BOOST' || type === 'DISCOUNT') && !value) {
-      alert("Please provide a value for this reward type.");
-      return;
-    }
-    
+  const handleSave = async (data: RewardFormData) => {
     setIsSubmitting(true);
     try {
       const payload: CreateRewardDto = {
-        milestone: parseInt(milestone, 10),
-        type,
-        title,
-        value: value ? parseInt(value, 10) : undefined,
-        description: description || undefined,
+        milestone: parseInt(data.milestone, 10),
+        type: data.type,
+        title: data.title,
+        value: data.value ? parseInt(data.value, 10) : undefined,
+        description: data.description || undefined,
       };
 
       if (editingReward) {
         await updateReward(waitlistId, editingReward.id, payload);
+        toast.success("Reward updated successfully");
       } else {
         await createReward(waitlistId, payload);
+        toast.success("Reward created successfully");
       }
       setIsDialogOpen(false);
       loadData();
     } catch (err) {
-      alert(getApiErrorMessage(err, "Failed to save reward"));
+      toast.error(getApiErrorMessage(err, "Failed to save reward"));
     } finally {
       setIsSubmitting(false);
     }
@@ -254,82 +280,90 @@ export default function RewardsPage() {
           <DialogHeader>
             <DialogTitle>{editingReward ? "Edit Reward" : "Create Reward"}</DialogTitle>
           </DialogHeader>
-          <DialogBody className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+          <form onSubmit={form.handleSubmit(handleSave)}>
+            <DialogBody className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Milestone (Referrals)</label>
+                  <Input
+                    type="number"
+                    min="1"
+                    {...form.register("milestone")}
+                    placeholder="e.g. 5"
+                  />
+                  {form.formState.errors.milestone && (
+                    <p className="text-sm text-destructive">{form.formState.errors.milestone.message}</p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Reward Type</label>
+                  <select
+                    {...form.register("type")}
+                    className="flex h-10 w-full rounded-md border border-input bg-surface px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    <option value="POSITION_BOOST">Position Boost</option>
+                    <option value="EARLY_ACCESS">Early Access</option>
+                    <option value="VIP_ACCESS">VIP Access</option>
+                    <option value="DISCOUNT">Discount</option>
+                    <option value="CUSTOM">Custom Reward</option>
+                  </select>
+                  {form.formState.errors.type && (
+                    <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>
+                  )}
+                </div>
+              </div>
+
               <div className="space-y-2">
-                <label className="text-sm font-medium">Milestone (Referrals)</label>
+                <label className="text-sm font-medium">Title</label>
                 <Input
-                  type="number"
-                  min="1"
-                  value={milestone}
-                  onChange={(e) => setMilestone(e.target.value)}
-                  placeholder="e.g. 5"
+                  {...form.register("title")}
+                  placeholder="e.g. Skip 100 spots"
                 />
+                {form.formState.errors.title && (
+                  <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+                )}
               </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Reward Type</label>
-                <select
-                  value={type}
-                  onChange={(e) => setType(e.target.value as RewardType)}
-                  className="flex h-10 w-full rounded-md border border-input bg-surface px-3 py-2 text-sm text-foreground ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  <option value="POSITION_BOOST">Position Boost</option>
-                  <option value="EARLY_ACCESS">Early Access</option>
-                  <option value="VIP_ACCESS">VIP Access</option>
-                  <option value="DISCOUNT">Discount</option>
-                  <option value="CUSTOM">Custom Reward</option>
-                </select>
-              </div>
-            </div>
 
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Title</label>
-              <Input
-                value={title}
-                onChange={(e) => setTitle(e.target.value)}
-                placeholder="e.g. Skip 100 spots"
-              />
-            </div>
+              {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT' || rewardType === 'CUSTOM') && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">
+                    Value {rewardType === 'CUSTOM' && <span className="text-muted-foreground font-normal">(Optional)</span>}
+                  </label>
+                  <Input
+                    type="number"
+                    {...form.register("value")}
+                    placeholder={
+                      rewardType === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
+                      rewardType === 'DISCOUNT' ? 'e.g. 50 (percentage discount)' :
+                      'e.g. custom value'
+                  }
+                  />
+                  {form.formState.errors.value && (
+                    <p className="text-sm text-destructive">{form.formState.errors.value.message}</p>
+                  )}
+                </div>
+              )}
 
-            {(type === 'POSITION_BOOST' || type === 'DISCOUNT' || type === 'CUSTOM') && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">
-                  Value {type === 'CUSTOM' && <span className="text-muted-foreground font-normal">(Optional)</span>}
+                  Description <span className="text-muted-foreground font-normal">(Optional)</span>
                 </label>
-                <Input
-                  type="number"
-                  value={value}
-                  onChange={(e) => setValue(e.target.value)}
-                  placeholder={
-                    type === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
-                    type === 'DISCOUNT' ? 'e.g. 50 (percentage discount)' :
-                    'e.g. custom value'
-                  }
-                  required={type === 'POSITION_BOOST' || type === 'DISCOUNT'}
+                <Textarea
+                  {...form.register("description")}
+                  placeholder="Details about the reward"
+                  rows={3}
                 />
               </div>
-            )}
-
-            <div className="space-y-2">
-              <label className="text-sm font-medium">
-                Description <span className="text-muted-foreground font-normal">(Optional)</span>
-              </label>
-              <Textarea
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Details about the reward"
-                rows={3}
-              />
-            </div>
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting}>
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={isSubmitting}>
-              {isSubmitting ? "Saving..." : "Save Reward"}
-            </Button>
-          </DialogFooter>
+            </DialogBody>
+            <DialogFooter>
+              <Button variant="secondary" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting} type="button">
+                Cancel
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Saving..." : "Save Reward"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>

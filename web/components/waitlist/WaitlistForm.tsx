@@ -7,6 +7,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { Upload } from "lucide-react";
 import { uploadFile } from "@/services/files";
 import { getApiErrorMessage } from "@/lib/errors";
+import toast from "react-hot-toast";
 import {
   createWaitlistSchema,
   validateLogoFile,
@@ -87,23 +88,37 @@ export function WaitlistForm({
       const validationError = validateLogoFile(logoFile);
       if (validationError) {
         setLogoError(validationError);
+        toast.error(validationError);
         return;
       }
 
       try {
         const uploaded = await uploadFile(logoFile as File);
         await onSubmit({ ...data, logoId: uploaded.id });
+        toast.success(mode === "create" ? "Waitlist created successfully" : "Waitlist updated successfully");
       } catch (error: unknown) {
+        toast.error(getApiErrorMessage(error, "Failed to upload logo"));
         throw error;
       }
     } else {
       // For edit mode, logo is optional
       let logoId = undefined;
       if (logoFile) {
-        const uploaded = await uploadFile(logoFile);
-        logoId = uploaded.id;
+        try {
+          const uploaded = await uploadFile(logoFile);
+          logoId = uploaded.id;
+        } catch (error: unknown) {
+          toast.error(getApiErrorMessage(error, "Failed to upload logo"));
+          throw error;
+        }
       }
-      await onSubmit({ ...data, logoId });
+      try {
+        await onSubmit({ ...data, logoId });
+        toast.success("Waitlist updated successfully");
+      } catch (error: unknown) {
+        toast.error(getApiErrorMessage(error, "Failed to update waitlist"));
+        throw error;
+      }
     }
   };
 

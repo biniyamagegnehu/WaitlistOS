@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
 import "./globals.css";
-import { ToastProvider } from "@/components/ui/toast";
+import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { QueryProvider } from "@/providers/query-provider";
@@ -36,7 +36,26 @@ export default function RootLayout({
         <ThemeProvider>
           <QueryProvider>
             <AuthProvider>
-              <ToastProvider>{children}</ToastProvider>
+              {children}
+              <Toaster position="bottom-right" toastOptions={{
+                style: {
+                  background: 'var(--surface)',
+                  color: 'var(--foreground)',
+                  border: '1px solid var(--border)',
+                },
+                success: {
+                  iconTheme: {
+                    primary: 'var(--success)',
+                    secondary: 'var(--surface)',
+                  },
+                },
+                error: {
+                  iconTheme: {
+                    primary: 'var(--destructive)',
+                    secondary: 'var(--surface)',
+                  },
+                },
+              }} />
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

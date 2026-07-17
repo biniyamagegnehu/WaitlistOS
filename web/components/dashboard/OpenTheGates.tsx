@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, Users, Send, Clock, CheckCircle } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 interface OpenTheGatesProps {
   waitlistId: string;
@@ -44,12 +45,12 @@ export function OpenTheGates({ waitlistId }: OpenTheGatesProps) {
     const size = parseInt(batchSize);
 
     if (!size || size <= 0) {
-      alert('Please enter a valid batch size');
+      toast.error('Please enter a valid batch size');
       return;
     }
 
     if (size > (analytics?.waitingParticipants || 0)) {
-      alert(`Cannot invite more than ${analytics?.waitingParticipants} waiting participants`);
+      toast.error(`Cannot invite more than ${analytics?.waitingParticipants} waiting participants`);
       return;
     }
 
@@ -60,10 +61,10 @@ export function OpenTheGates({ waitlistId }: OpenTheGatesProps) {
         batchSize: size,
       });
 
-      alert(`Successfully invited ${result.data.invitedCount} participants!`);
+      toast.success(`Successfully invited ${result.data.invitedCount} participants!`);
       await loadData();
     } catch (error: any) {
-      alert(error.response?.data?.message || 'Failed to open gates');
+      toast.error(error.response?.data?.message || 'Failed to open gates');
     } finally {
       setOpening(false);
     }

@@ -15,12 +15,11 @@ import { useCurrentUser } from "@/contexts/auth-context";
 import { changePassword, changeEmail } from "@/services/auth";
 import { changePasswordSchema, changeEmailSchema } from "@/lib/validations/auth";
 import type { ChangePasswordFormData, ChangeEmailFormData } from "@/lib/validations/auth";
-import { useToast } from "@/components/ui/toast";
+import toast from "react-hot-toast";
 import { routes } from "@/lib/routes";
 
 export function SecuritySettingsSection() {
   const router = useRouter();
-  const { toast } = useToast();
   const { user, isLoading, refreshUser } = useCurrentUser();
   const [showChangePassword, setShowChangePassword] = React.useState(false);
   const [showChangeEmail, setShowChangeEmail] = React.useState(false);
