@@ -53,10 +53,7 @@ export function SecuritySettingsSection() {
     await changeEmail(data);
     setShowChangeEmail(false);
     await refreshUser();
-    toast({
-      title: "Verification email sent to your new email address",
-      variant: "success",
-    });
+    toast.success("Verification email sent to your new email address");
   };
 
   return (
