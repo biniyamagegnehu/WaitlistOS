@@ -739,8 +739,17 @@ export class DashboardService {
       return stringified;
     };
 
-    const header = Object.keys(data[0]).join(',');
-    const rows = data.map((row) =>
+    // Remove TotalParticipants and Participants from CSV export
+    const csvData = data.map((row) => ({
+      Name: row.Name,
+      Tagline: row.Tagline,
+      Slug: row.Slug,
+      Description: row.Description,
+      CreatedAt: row.CreatedAt,
+    }));
+
+    const header = Object.keys(csvData[0]).join(',');
+    const rows = csvData.map((row) =>
       Object.values(row).map((val) => escapeCsvValue(val)).join(','),
     );
     const csv = [header, ...rows].join('\n');
@@ -824,21 +833,16 @@ export class DashboardService {
   }
 
   private async exportWaitlistsToDoc(data: any[]): Promise<{ data: Buffer; filename: string; contentType: string }> {
-    const headers = Object.keys(data[0]);
+    // Remove TotalParticipants from headers
+    const headers = ['Name', 'Tagline', 'Slug', 'Description', 'CreatedAt'];
     
     // Calculate column widths - give more space to Description
-    const colWidths = headers.map((header) => {
-      if (header === 'Description') return 35;
-      if (header === 'Name') return 25;
-      if (header === 'Tagline') return 20;
-      if (header === 'Slug') return 15;
-      return 10;
-    });
-    
+    const colWidths = [25, 20, 15, 35, 20];
     const totalWidth = colWidths.reduce((sum, width) => sum + width, 0);
     const normalizedWidths = colWidths.map(width => (width / totalWidth) * 100);
 
-    const tableRows = [
+    // Create waitlist table rows (without TotalParticipants)
+    const waitlistTableRows = [
       new TableRow({
         tableHeader: true,
         children: headers.map(
@@ -873,14 +877,14 @@ export class DashboardService {
       ...data.map(
         (row) =>
           new TableRow({
-            children: Object.values(row).map(
-              (val, index) =>
+            children: headers.map(
+              (header, index) =>
                 new TableCell({
                   children: [
                     new Paragraph({
                       children: [
                         new TextRun({
-                          text: String(val),
+                          text: String(row[header]),
                           size: 20, // 10pt
                         }),
                       ],
@@ -901,6 +905,134 @@ export class DashboardService {
       ),
     ];
 
+    // Build document children
+    const children: any[] = [
+      new Paragraph({
+        text: 'Waitlists',
+        heading: HeadingLevel.HEADING_1,
+        spacing: { before: 200, after: 400 },
+        alignment: "center",
+      }),
+      new Table({
+        rows: waitlistTableRows,
+        width: { size: 100, type: WidthType.PERCENTAGE },
+        borders: {
+          top: { style: "single", size: 1, color: "000000" },
+          bottom: { style: "single", size: 1, color: "000000" },
+          left: { style: "single", size: 1, color: "000000" },
+          right: { style: "single", size: 1, color: "000000" },
+          insideHorizontal: { style: "single", size: 1, color: "000000" },
+          insideVertical: { style: "single", size: 1, color: "000000" },
+        },
+      }),
+    ];
+
+    // Add participant tables for each waitlist
+    data.forEach((waitlist) => {
+      if (waitlist.Participants && waitlist.Participants.length > 0) {
+        // Add heading for this waitlist's participants
+        children.push(
+          new Paragraph({
+            text: `Participants - ${waitlist.Name}`,
+            heading: HeadingLevel.HEADING_2,
+            spacing: { before: 600, after: 300 },
+          }),
+        );
+
+        // Participant table headers
+        const participantHeaders = ['Email', 'Position', 'ReferralCount', 'CreatedAt', 'Status'];
+        const participantColWidths = [35, 15, 18, 25, 15];
+        const participantTotalWidth = participantColWidths.reduce((sum, width) => sum + width, 0);
+        const participantNormalizedWidths = participantColWidths.map(width => (width / participantTotalWidth) * 100);
+
+        const participantTableRows = [
+          new TableRow({
+            tableHeader: true,
+            children: participantHeaders.map(
+              (header, index) =>
+                new TableCell({
+                  children: [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: header,
+                          bold: true,
+                          size: 24,
+                        }),
+                      ],
+                      spacing: { before: 100, after: 100 },
+                    }),
+                  ],
+                  width: { size: participantNormalizedWidths[index], type: WidthType.PERCENTAGE },
+                  shading: {
+                    fill: "D9D9D9",
+                  },
+                  verticalAlign: "center",
+                  margins: {
+                    top: 100,
+                    bottom: 100,
+                    left: 200,
+                    right: 200,
+                  },
+                }),
+            ),
+          }),
+          ...waitlist.Participants.map((participant: any) => {
+            const fieldMap: { [key: string]: string } = {
+              'Email': 'email',
+              'Position': 'position',
+              'ReferralCount': 'referralCount',
+              'CreatedAt': 'createdAt',
+              'Status': 'status',
+            };
+            return new TableRow({
+              children: participantHeaders.map(
+                (header, index) => {
+                  const fieldName = fieldMap[header] || header.toLowerCase();
+                  return new TableCell({
+                    children: [
+                      new Paragraph({
+                        children: [
+                          new TextRun({
+                            text: String(participant[fieldName] || ''),
+                            size: 20,
+                          }),
+                        ],
+                        spacing: { before: 50, after: 50 },
+                      }),
+                    ],
+                    width: { size: participantNormalizedWidths[index], type: WidthType.PERCENTAGE },
+                    verticalAlign: "center",
+                    margins: {
+                      top: 50,
+                      bottom: 50,
+                      left: 200,
+                      right: 200,
+                    },
+                  });
+                },
+              ),
+            });
+          }),
+        ];
+
+        children.push(
+          new Table({
+            rows: participantTableRows,
+            width: { size: 100, type: WidthType.PERCENTAGE },
+            borders: {
+              top: { style: "single", size: 1, color: "000000" },
+              bottom: { style: "single", size: 1, color: "000000" },
+              left: { style: "single", size: 1, color: "000000" },
+              right: { style: "single", size: 1, color: "000000" },
+              insideHorizontal: { style: "single", size: 1, color: "000000" },
+              insideVertical: { style: "single", size: 1, color: "000000" },
+            },
+          }),
+        );
+      }
+    });
+
     const doc = new Document({
       sections: [
         {
@@ -914,26 +1046,7 @@ export class DashboardService {
               },
             },
           },
-          children: [
-            new Paragraph({
-              text: 'Waitlists',
-              heading: HeadingLevel.HEADING_1,
-              spacing: { before: 200, after: 400 },
-              alignment: "center",
-            }),
-            new Table({
-              rows: tableRows,
-              width: { size: 100, type: WidthType.PERCENTAGE },
-              borders: {
-                top: { style: "single", size: 1, color: "000000" },
-                bottom: { style: "single", size: 1, color: "000000" },
-                left: { style: "single", size: 1, color: "000000" },
-                right: { style: "single", size: 1, color: "000000" },
-                insideHorizontal: { style: "single", size: 1, color: "000000" },
-                insideVertical: { style: "single", size: 1, color: "000000" },
-              },
-            }),
-          ],
+          children,
         },
       ],
     });
