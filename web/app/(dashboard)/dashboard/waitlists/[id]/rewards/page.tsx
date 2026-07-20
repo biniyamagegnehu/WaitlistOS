@@ -71,6 +71,8 @@ export default function RewardsPage() {
   const [isDialogOpen, setIsDialogOpen] = React.useState(false);
   const [isSubmitting, setIsSubmitting] = React.useState(false);
   const [editingReward, setEditingReward] = React.useState<Reward | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
+  const [rewardToDelete, setRewardToDelete] = React.useState<Reward | null>(null);
 
   const form = useForm<RewardFormData>({
     resolver: zodResolver(rewardSchema),
@@ -137,15 +139,22 @@ export default function RewardsPage() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this reward?")) return;
+  const handleDelete = async () => {
+    if (!rewardToDelete) return;
     try {
-      await deleteReward(waitlistId, id);
+      await deleteReward(waitlistId, rewardToDelete.id);
       toast.success("Reward deleted successfully");
+      setDeleteDialogOpen(false);
+      setRewardToDelete(null);
       loadData();
     } catch (err) {
       toast.error(getApiErrorMessage(err, "Failed to delete reward"));
     }
+  };
+
+  const openDeleteDialog = (reward: Reward) => {
+    setRewardToDelete(reward);
+    setDeleteDialogOpen(true);
   };
 
   const handleSave = async (data: RewardFormData) => {
@@ -287,7 +296,7 @@ export default function RewardsPage() {
                       <Button variant="ghost" size="sm" onClick={() => openEditDialog(reward)} className="h-8 w-8 p-0 mr-2">
                         <Edit2 className="h-4 w-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => handleDelete(reward.id)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+                      <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(reward)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </td>
@@ -412,6 +421,27 @@ export default function RewardsPage() {
               </Button>
             </DialogFooter>
           </form>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Reward</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to delete the reward "{rewardToDelete?.title}"? This action cannot be undone.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setDeleteDialogOpen(false)} type="button">
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete}>
+              Delete Reward
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>

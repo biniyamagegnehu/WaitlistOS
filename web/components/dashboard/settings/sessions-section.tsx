@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogBody, DialogFooter } from "@/components/ui/dialog";
 import { getSessions, revokeSession, revokeAllSessions } from "@/services/auth";
 import { Session } from "@/types/auth";
 import toast from "react-hot-toast";
@@ -21,6 +22,8 @@ export function SessionsSettingsSection() {
   const [sessions, setSessions] = React.useState<Session[]>([]);
   const [isLoading, setIsLoading] = React.useState(true);
   const [isRevoking, setIsRevoking] = React.useState(false);
+  const [revokeAllDialogOpen, setRevokeAllDialogOpen] = React.useState(false);
+  const [signOutEverywhereDialogOpen, setSignOutEverywhereDialogOpen] = React.useState(false);
 
   const fetchSessions = React.useCallback(async () => {
     try {
@@ -56,22 +59,28 @@ export function SessionsSettingsSection() {
   };
 
   const handleRevokeAll = async () => {
-    if (
-      !confirm(
-        "Are you sure you want to revoke all other sessions? This will sign you out from all other devices."
-      )
-    ) {
-      return;
-    }
-
     try {
       setIsRevoking(true);
       await revokeAllSessions();
       toast.success("All sessions revoked successfully");
+      setRevokeAllDialogOpen(false);
       await fetchSessions();
     } catch (error: unknown) {
       toast.error(getApiErrorMessage(error, "Failed to revoke sessions"));
     } finally {
+      setIsRevoking(false);
+    }
+  };
+
+  const handleSignOutEverywhere = async () => {
+    try {
+      setIsRevoking(true);
+      await revokeAllSessions();
+      await logout();
+      setSignOutEverywhereDialogOpen(false);
+      router.replace(routes.login);
+    } catch (error: unknown) {
+      toast.error(getApiErrorMessage(error, "Failed to sign out"));
       setIsRevoking(false);
     }
   };
@@ -105,7 +114,7 @@ export function SessionsSettingsSection() {
     <div className="space-y-6">
       {otherSessions.length > 0 && (
         <div className="flex justify-end">
-          <Button variant="danger" onClick={handleRevokeAll} loading={isRevoking}>
+          <Button variant="danger" onClick={() => setRevokeAllDialogOpen(true)} loading={isRevoking}>
             Revoke all other sessions
           </Button>
         </div>
@@ -199,17 +208,7 @@ export function SessionsSettingsSection() {
               <Button
                 variant="danger"
                 className="mt-4"
-                onClick={async () => {
-                  if (confirm("Are you sure you want to sign out from all devices?")) {
-                    try {
-                      await revokeAllSessions();
-                      await logout();
-                      router.replace(routes.login);
-                    } catch (error: unknown) {
-                      toast.error(getApiErrorMessage(error, "Failed to sign out"));
-                    }
-                  }
-                }}
+                onClick={() => setSignOutEverywhereDialogOpen(true)}
               >
                 Sign out everywhere
               </Button>
@@ -217,6 +216,48 @@ export function SessionsSettingsSection() {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={revokeAllDialogOpen} onClose={() => setRevokeAllDialogOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Revoke all other sessions</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to revoke all other sessions? This will sign you out from all other devices.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setRevokeAllDialogOpen(false)} disabled={isRevoking} type="button">
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleRevokeAll} loading={isRevoking}>
+              Revoke all sessions
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={signOutEverywhereDialogOpen} onClose={() => setSignOutEverywhereDialogOpen(false)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Sign out everywhere</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <p className="text-sm text-muted-foreground">
+              Are you sure you want to sign out from all devices? You will need to sign in again to access your account.
+            </p>
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setSignOutEverywhereDialogOpen(false)} disabled={isRevoking} type="button">
+              Cancel
+            </Button>
+            <Button variant="danger" onClick={handleSignOutEverywhere} loading={isRevoking}>
+              Sign out everywhere
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
