@@ -45,6 +45,7 @@ export function ProfileSettingsSection() {
 
   const getInitials = (firstName?: string, lastName?: string, email?: string) => {
     if (firstName && lastName) return `${firstName[0]}${lastName[0]}`.toUpperCase();
+    if (firstName) return firstName[0].toUpperCase();
     if (email) return email[0].toUpperCase();
     return "U";
   };
@@ -62,7 +63,7 @@ export function ProfileSettingsSection() {
               <h2 className="text-xl font-semibold text-foreground">
                 {user.firstName && user.lastName
                   ? `${user.firstName} ${user.lastName}`
-                  : user.email}
+                  : user.firstName || user.lastName || user.email}
               </h2>
               <p className="mt-1 text-muted-foreground">{user.email}</p>
               <div className="mt-3 flex flex-wrap items-center gap-2">
@@ -99,7 +100,7 @@ export function ProfileSettingsSection() {
               value={
                 user.firstName && user.lastName
                   ? `${user.firstName} ${user.lastName}`
-                  : "Not set"
+                  : user.firstName || user.lastName || "Not set"
               }
             />
             <InfoRow icon={<Mail className="h-4 w-4" />} label="Email" value={user.email} />
