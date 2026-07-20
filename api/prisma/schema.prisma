@@ -833,6 +833,7 @@ model Reward {
   milestone   Int
   type        RewardType
   value       Int?
+  valueType   String?    @default("fixed")
   title       String
   description String?
   createdAt   DateTime   @default(now())

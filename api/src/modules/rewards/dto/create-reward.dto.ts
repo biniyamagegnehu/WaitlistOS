@@ -13,6 +13,10 @@ export class CreateRewardDto {
   @IsInt()
   value?: number;
 
+  @IsOptional()
+  @IsEnum(['fixed', 'percent'])
+  valueType?: 'fixed' | 'percent';
+
   @IsString()
   @IsNotEmpty()
   title: string;

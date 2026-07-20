@@ -16,6 +16,10 @@ export class UpdateRewardDto {
   value?: number;
 
   @IsOptional()
+  @IsEnum(['fixed', 'percent'])
+  valueType?: 'fixed' | 'percent';
+
+  @IsOptional()
   @IsString()
   title?: string;
 

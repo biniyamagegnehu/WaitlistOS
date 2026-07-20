@@ -131,7 +131,7 @@ export default function RewardsPage() {
       type: reward.type,
       title: reward.title,
       value: reward.value ? reward.value.toString() : "",
-      valueType: (reward as any).valueType || "fixed",
+      valueType: reward.valueType || "fixed",
       description: reward.description || "",
     });
     setIsDialogOpen(true);
@@ -157,6 +157,7 @@ export default function RewardsPage() {
         title: data.title,
         value: data.value ? parseInt(data.value, 10) : undefined,
         description: data.description || undefined,
+        valueType: data.type === "CUSTOM" ? data.valueType : undefined,
       };
 
       if (editingReward) {
