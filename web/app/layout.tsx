@@ -37,7 +37,7 @@ export default function RootLayout({
           <QueryProvider>
             <AuthProvider>
               {children}
-              <Toaster position="bottom-right" toastOptions={{
+              <Toaster position="top-right" toastOptions={{
                 style: {
                   background: 'var(--surface)',
                   color: 'var(--foreground)',
