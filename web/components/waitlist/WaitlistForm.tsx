@@ -49,6 +49,7 @@ export function WaitlistForm({
   const {
     register,
     handleSubmit,
+    trigger,
     formState: { errors, isSubmitting },
   } = useForm<CreateWaitlistFormData & { slug?: string }>({
     resolver: zodResolver(createWaitlistSchema),
@@ -58,6 +59,7 @@ export function WaitlistForm({
       description: initialValues?.description || "",
       slug: initialValues?.slug || "",
     },
+    mode: "onSubmit",
   });
 
   React.useEffect(() => {
@@ -83,7 +85,7 @@ export function WaitlistForm({
   const onFormSubmit = async (data: CreateWaitlistFormData) => {
     setLogoError(null);
 
-    // For create mode, logo is required
+    // For create mode, logo is required - validate first before any other processing
     if (mode === "create") {
       const validationError = validateLogoFile(logoFile);
       if (validationError) {
@@ -122,10 +124,37 @@ export function WaitlistForm({
     }
   };
 
+  const handleFormSubmit = async () => {
+    // Validate logo first for create mode
+    if (mode === "create") {
+      const validationError = validateLogoFile(logoFile);
+      if (validationError) {
+        setLogoError(validationError);
+      }
+    }
+
+    // Trigger validation for all form fields
+    const isValid = await trigger();
+    
+    // Check if logo validation passed for create mode
+    if (mode === "create") {
+      const validationError = validateLogoFile(logoFile);
+      if (validationError) {
+        setLogoError(validationError);
+        return;
+      }
+    }
+
+    // Only proceed if all validations pass
+    if (isValid) {
+      handleSubmit(onFormSubmit)();
+    }
+  };
+
   return (
     <Card>
       <CardContent className="p-8">
-        <form onSubmit={handleSubmit(onFormSubmit)} className="space-y-5">
+        <form onSubmit={(e) => { e.preventDefault(); handleFormSubmit(); }} className="space-y-5">
           <Input
             label="Product name"
             placeholder="My Awesome Product"
