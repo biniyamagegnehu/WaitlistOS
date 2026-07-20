@@ -3,7 +3,7 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { PaymentService } from '../../payments/payment.service';
 import * as XLSX from 'xlsx';
 import { Document, Packer, Paragraph, Table, TableCell, TableRow, WidthType, HeadingLevel, TextRun, AlignmentType, BorderStyle } from 'docx';
-import PDFDocument from 'pdfkit';
+import puppeteer from 'puppeteer';
 
 export interface DashboardWaitlist {
   id: string;
@@ -587,96 +587,86 @@ export class DashboardService {
   }
 
   private async exportToPdf(data: any[], slug: string): Promise<{ data: Buffer; filename: string; contentType: string }> {
-    return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
-      const chunks: Buffer[] = [];
-
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => {
-        resolve({
-          data: Buffer.concat(chunks),
-          filename: `${slug}-participants.pdf`,
-          contentType: 'application/pdf',
-        });
+    // Format headers to be more readable
+    const formattedData = data.map(row => {
+      const formattedRow: any = {};
+      Object.keys(row).forEach(key => {
+        // Convert camelCase to readable format
+        const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
+        formattedRow[formattedKey] = row[key];
       });
-      doc.on('error', reject);
-
-      // Add title
-      doc.fontSize(16).text(`${slug} - Participants`, { align: 'center' });
-      doc.moveDown(2);
-
-      // Format headers to be more readable
-      const formattedData = data.map(row => {
-        const formattedRow: any = {};
-        Object.keys(row).forEach(key => {
-          // Convert camelCase to readable format
-          const formattedKey = key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase()).trim();
-          formattedRow[formattedKey] = row[key];
-        });
-        return formattedRow;
-      });
-
-      const headers = Object.keys(formattedData[0]);
-      const pageWidth = doc.page.width - 100; // Account for margins
-      const colWidth = pageWidth / headers.length;
-      const rowHeight = 25;
-      const startX = 50;
-      let y = doc.y;
-
-      // Check if we need a new page
-      if (y + (formattedData.length + 1) * rowHeight > doc.page.height - 50) {
-        doc.addPage();
-        y = 50;
-      }
-
-      // Draw headers with background
-      doc.rect(startX, y, pageWidth, rowHeight).fillAndStroke('#E8E8E8', '#333333');
-      headers.forEach((header, i) => {
-        doc.fontSize(10).fillColor('black').text(header, startX + i * colWidth + 5, y + 8, {
-          width: colWidth - 10,
-          ellipsis: true
-        });
-      });
-      y += rowHeight;
-
-      // Draw data rows
-      formattedData.forEach((row, rowIndex) => {
-        // Check if we need a new page
-        if (y + rowHeight > doc.page.height - 50) {
-          doc.addPage();
-          y = 50;
-          
-          // Redraw headers on new page
-          doc.rect(startX, y, pageWidth, rowHeight).fillAndStroke('#E8E8E8', '#333333');
-          headers.forEach((header, i) => {
-            doc.fontSize(10).fillColor('black').text(header, startX + i * colWidth + 5, y + 8, {
-              width: colWidth - 10,
-              ellipsis: true
-            });
-          });
-          y += rowHeight;
-        }
-        
-        // Alternate row background
-        if (rowIndex % 2 === 0) {
-          doc.rect(startX, y, pageWidth, rowHeight).fill('#F5F5F5');
-        }
-        
-        Object.values(row).forEach((val, i) => {
-          doc.fontSize(9).fillColor('black').text(String(val), startX + i * colWidth + 5, y + 8, {
-            width: colWidth - 10,
-            ellipsis: true
-          });
-        });
-        y += rowHeight;
-      });
-
-      // Draw table border
-      const tableHeight = (formattedData.length + 1) * rowHeight;
-      doc.rect(startX, doc.y - tableHeight, pageWidth, tableHeight).stroke();
-
-      doc.end();
+      return formattedRow;
     });
+
+    const headers = Object.keys(formattedData[0]);
+
+    // Generate HTML table
+    let html = `
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { text-align: center; font-size: 18px; margin-bottom: 20px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th { background-color: #D9D9D9; border: 1px solid #000; padding: 8px; text-align: left; font-size: 10px; }
+          td { border: 1px solid #000; padding: 8px; font-size: 9px; }
+          tr:nth-child(even) { background-color: #F5F5F5; }
+        </style>
+      </head>
+      <body>
+        <h1>${slug} - Participants</h1>
+        <table>
+          <thead>
+            <tr>
+              ${headers.map(header => `<th>${header}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${formattedData.map(row => `
+              <tr>
+                ${headers.map(header => `<td>${row[header] || ''}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </body>
+      </html>
+    `;
+
+    // Launch Puppeteer and generate PDF
+    const browser = await puppeteer.launch({
+      headless: 'shell',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--window-size=1920,1080',
+        '--disable-extensions',
+        '--disable-default-apps',
+        '--disable-background-networking',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+      ],
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    const pdfBuffer = await page.pdf({
+      format: 'Letter',
+      printBackground: true,
+      margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' },
+    });
+    await browser.close();
+
+    return {
+      data: Buffer.from(pdfBuffer),
+      filename: `${slug}-participants.pdf`,
+      contentType: 'application/pdf',
+    };
   }
 
   // ── Export all waitlists ───────────────────────────────────────────────────
@@ -1061,99 +1051,109 @@ export class DashboardService {
   }
 
   private async exportWaitlistsToPdf(data: any[]): Promise<{ data: Buffer; filename: string; contentType: string }> {
-    return new Promise((resolve, reject) => {
-      const doc = new PDFDocument({ margin: 50, size: 'LETTER' });
-      const chunks: Buffer[] = [];
+    // Create main waitlist table (without TotalParticipants)
+    const waitlistHeaders = ['Name', 'Tagline', 'Slug', 'Description', 'CreatedAt'];
+    
+    let html = `
+      <html>
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; margin: 20px; }
+          h1 { text-align: center; font-size: 18px; margin-bottom: 20px; }
+          h2 { font-size: 14px; margin-top: 20px; margin-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+          th { background-color: #D9D9D9; border: 1px solid #000; padding: 8px; text-align: left; font-size: 11px; }
+          td { border: 1px solid #000; padding: 8px; font-size: 10px; }
+          tr:nth-child(even) { background-color: #F5F5F5; }
+        </style>
+      </head>
+      <body>
+        <h1>Waitlists</h1>
+        <table>
+          <thead>
+            <tr>
+              ${waitlistHeaders.map(header => `<th>${header}</th>`).join('')}
+            </tr>
+          </thead>
+          <tbody>
+            ${data.map(row => `
+              <tr>
+                ${waitlistHeaders.map(header => `<td>${row[header] || ''}</td>`).join('')}
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+    `;
 
-      doc.on('data', (chunk) => chunks.push(chunk));
-      doc.on('end', () => {
-        resolve({
-          data: Buffer.concat(chunks),
-          filename: 'waitlists.pdf',
-          contentType: 'application/pdf',
-        });
-      });
-      doc.on('error', reject);
-
-      // Add title
-      doc.fontSize(16).text('Waitlists', { align: 'center' });
-      doc.moveDown(2);
-
-      const headers = Object.keys(data[0]);
-      const pageWidth = doc.page.width - 100; // Account for margins
-      
-      // Calculate column widths - give more space to Description
-      const colWidths = headers.map((header) => {
-        if (header === 'Description') return pageWidth * 0.40;
-        if (header === 'Name') return pageWidth * 0.20;
-        if (header === 'Tagline') return pageWidth * 0.15;
-        if (header === 'Slug') return pageWidth * 0.10;
-        return pageWidth * 0.15;
-      });
-      
-      const rowHeight = 30;
-      const startX = 50;
-      let y = doc.y;
-
-      // Check if we need a new page
-      if (y + (data.length + 1) * rowHeight > doc.page.height - 50) {
-        doc.addPage();
-        y = 50;
+    // Add participant tables for each waitlist
+    data.forEach((waitlist) => {
+      if (waitlist.Participants && waitlist.Participants.length > 0) {
+        html += `
+          <h2>Participants - ${waitlist.Name}</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Position</th>
+                <th>ReferralCount</th>
+                <th>CreatedAt</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${waitlist.Participants.map((participant: any) => `
+                <tr>
+                  <td>${participant.email || ''}</td>
+                  <td>${participant.position || ''}</td>
+                  <td>${participant.referralCount || ''}</td>
+                  <td>${participant.createdAt || ''}</td>
+                  <td>${participant.status || ''}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
       }
-
-      // Draw headers with background
-      doc.rect(startX, y, pageWidth, rowHeight).fillAndStroke('#E8E8E8', '#333333');
-      let currentX = startX;
-      headers.forEach((header, i) => {
-        doc.fontSize(10).fillColor('black').text(header, currentX + 5, y + 10, {
-          width: colWidths[i] - 10,
-          ellipsis: true
-        });
-        currentX += colWidths[i];
-      });
-      y += rowHeight;
-
-      // Draw data rows
-      data.forEach((row, rowIndex) => {
-        // Check if we need a new page
-        if (y + rowHeight > doc.page.height - 50) {
-          doc.addPage();
-          y = 50;
-          
-          // Redraw headers on new page
-          doc.rect(startX, y, pageWidth, rowHeight).fillAndStroke('#E8E8E8', '#333333');
-          currentX = startX;
-          headers.forEach((header, i) => {
-            doc.fontSize(10).fillColor('black').text(header, currentX + 5, y + 10, {
-              width: colWidths[i] - 10,
-              ellipsis: true
-            });
-            currentX += colWidths[i];
-          });
-          y += rowHeight;
-        }
-        
-        // Alternate row background
-        if (rowIndex % 2 === 0) {
-          doc.rect(startX, y, pageWidth, rowHeight).fill('#F5F5F5');
-        }
-        
-        currentX = startX;
-        Object.values(row).forEach((val, i) => {
-          doc.fontSize(9).fillColor('black').text(String(val), currentX + 5, y + 10, {
-            width: colWidths[i] - 10,
-            ellipsis: true
-          });
-          currentX += colWidths[i];
-        });
-        y += rowHeight;
-      });
-
-      // Draw table border
-      const tableHeight = (data.length + 1) * rowHeight;
-      doc.rect(startX, doc.y - tableHeight, pageWidth, tableHeight).stroke();
-
-      doc.end();
     });
+
+    html += `
+      </body>
+      </html>
+    `;
+
+    // Launch Puppeteer and generate PDF
+    const browser = await puppeteer.launch({
+      headless: 'shell',
+      args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-accelerated-2d-canvas',
+        '--no-first-run',
+        '--no-zygote',
+        '--disable-gpu',
+        '--window-size=1920,1080',
+        '--disable-extensions',
+        '--disable-default-apps',
+        '--disable-background-networking',
+        '--disable-background-timer-throttling',
+        '--disable-backgrounding-occluded-windows',
+        '--disable-renderer-backgrounding',
+      ],
+    });
+    const page = await browser.newPage();
+    await page.setContent(html, { waitUntil: 'domcontentloaded' });
+    const pdfBuffer = await page.pdf({
+      format: 'Letter',
+      printBackground: true,
+      margin: { top: '20px', bottom: '20px', left: '20px', right: '20px' },
+    });
+    await browser.close();
+
+    return {
+      data: Buffer.from(pdfBuffer),
+      filename: 'waitlists.pdf',
+      contentType: 'application/pdf',
+    };
   }
 }
