@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import { useRouter } from "next/navigation";
-import { User, Mail, Shield, Calendar, Building2, CheckCircle, XCircle } from "lucide-react";
+import { User, Mail, Shield, Calendar, Building2, CheckCircle, XCircle, Globe, MapPin, Users, Briefcase, Edit } from "lucide-react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
@@ -118,17 +118,57 @@ export function ProfileSettingsSection() {
         </Card>
 
         <Card>
-          <CardHeader>
-            <CardTitle>Founder Information</CardTitle>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>Company Profile</CardTitle>
+            {founder?.companyName && (
+              <Button variant="ghost" size="sm" onClick={() => router.push("/onboarding")}>
+                <Edit className="h-4 w-4 mr-2" />
+                Edit
+              </Button>
+            )}
           </CardHeader>
           <CardContent className="space-y-4">
-            {founder ? (
+            {founder?.companyName ? (
               <>
+                {founder.companyLogo && (
+                  <div className="flex items-center gap-4">
+                    <Avatar size="lg" fallback={founder.companyName[0]} />
+                    <div>
+                      <h3 className="font-semibold text-foreground">{founder.companyName}</h3>
+                      {founder.companyWebsite && (
+                        <a
+                          href={founder.companyWebsite}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-sm text-primary hover:underline"
+                        >
+                          {founder.companyWebsite}
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
                 <InfoRow
-                  icon={<Building2 className="h-4 w-4" />}
-                  label="Company"
-                  value={founder.companyName || "Not set"}
+                  icon={<Briefcase className="h-4 w-4" />}
+                  label="Industry"
+                  value={founder.industry || "Not set"}
                 />
+                <InfoRow
+                  icon={<MapPin className="h-4 w-4" />}
+                  label="Country"
+                  value={founder.country || "Not set"}
+                />
+                <InfoRow
+                  icon={<Users className="h-4 w-4" />}
+                  label="Team Size"
+                  value={founder.teamSize || "Not set"}
+                />
+                {founder.companyDescription && (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Company Description</p>
+                    <p className="text-sm text-foreground">{founder.companyDescription}</p>
+                  </div>
+                )}
                 <InfoRow
                   icon={<Calendar className="h-4 w-4" />}
                   label="Founder since"
@@ -136,12 +176,12 @@ export function ProfileSettingsSection() {
                 />
               </>
             ) : (
-              <Alert variant="info" title="No founder account">
+              <Alert variant="info" title="No company profile">
                 <p className="text-sm">
-                  Create a waitlist to set up your founder profile.
+                  Complete your company profile to get started.
                 </p>
-                <Button className="mt-3" onClick={() => router.push(routes.create)}>
-                  Create Waitlist
+                <Button className="mt-3" onClick={() => router.push("/onboarding")}>
+                  Complete Profile
                 </Button>
               </Alert>
             )}

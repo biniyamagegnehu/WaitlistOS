@@ -16,6 +16,7 @@ import { WaitlistsModule } from './modules/waitlists/waitlists.module';
 import { ParticipantsModule } from './modules/participants/participants.module';
 import { EmailsModule } from './modules/emails/emails.module';
 import { DashboardModule } from './modules/founders/dashboard/dashboard.module';
+import { FoundersModule } from './modules/founders/founders.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { FilesModule } from './modules/files/files.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
@@ -53,6 +54,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     ParticipantsModule,
     EmailsModule,
     DashboardModule,
+    FoundersModule,
     CloudinaryModule,
     FilesModule,
     BrandingModule,

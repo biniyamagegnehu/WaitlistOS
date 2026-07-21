@@ -13,6 +13,7 @@ interface AuthContextValue {
   founder: Founder | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  onboardingCompleted: boolean;
   login: (email: string, password: string) => Promise<AuthResponse["data"]>;
   register: (data: {
     email: string;
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const fetchIdRef = React.useRef(0);
 
   const isAuthenticated = !!user;
+  const onboardingCompleted = founder?.onboardingCompleted ?? false;
 
   const applyAuthResponse = React.useCallback((data: AuthResponse["data"]) => {
     if (data.accessToken) {
@@ -48,7 +50,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (data.user) {
       setUser(normalizeUser(data.user));
-      setFounder(data.founder || null);
+      if (data.founder) {
+        setFounder({
+          ...data.founder,
+          onboardingCompleted: data.onboardingCompleted ?? data.founder.onboardingCompleted ?? false,
+        });
+      } else {
+        setFounder(null);
+      }
     }
   }, []);
 
@@ -173,6 +182,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     founder,
     isAuthenticated,
     isLoading,
+    onboardingCompleted,
     login,
     register,
     logout,

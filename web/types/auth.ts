@@ -20,7 +20,15 @@ export interface Founder {
   id: string;
   userId: string;
   companyName?: string;
+  industry?: string;
+  companyDescription?: string;
+  country?: string;
+  teamSize?: string;
+  companyLogo?: string;
+  companyWebsite?: string;
+  onboardingCompleted?: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 // ── Auth Response Types ─────────────────────────────────────────────────────────────
@@ -35,6 +43,7 @@ export interface AuthResponse {
     refreshToken?: never;
     requiresTwoFactor?: boolean;
     userId?: string;
+    onboardingCompleted?: boolean;
   };
 }
 

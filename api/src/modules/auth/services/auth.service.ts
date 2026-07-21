@@ -37,6 +37,7 @@ export interface AuthResponse {
     refreshToken?: string;
     requiresTwoFactor?: boolean;
     userId?: string;
+    onboardingCompleted?: boolean;
   };
 }
 
@@ -634,6 +635,7 @@ export class AuthService {
         founder: founder ?? null,
         accessToken: tokens.accessToken,
         refreshToken: tokens.refreshToken,
+        onboardingCompleted: founder?.onboardingCompleted ?? false,
       },
     };
   }
