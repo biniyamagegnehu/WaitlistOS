@@ -48,7 +48,17 @@ export function UserMenu() {
         aria-haspopup="menu"
         className="inline-flex items-center gap-2 rounded-md border border-border bg-surface px-2 py-1.5 text-sm transition-colors hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
       >
-        <Avatar fallback={initials} size="sm" />
+        {user?.avatar ? (
+          <div className="h-8 w-8 overflow-hidden rounded-full">
+            <img
+              src={user.avatar}
+              alt="Profile avatar"
+              className="h-full w-full object-cover"
+            />
+          </div>
+        ) : (
+          <Avatar fallback={initials} size="sm" />
+        )}
         <ChevronDown
           className={cn(
             "h-4 w-4 text-muted-foreground transition-transform",
