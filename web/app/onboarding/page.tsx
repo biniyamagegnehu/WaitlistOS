@@ -12,7 +12,7 @@ import { LoadingScreen } from "@/components/layouts/loading-screen";
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { user, founder } = useAuth();
+  const { user, founder, refreshUser } = useAuth();
   const [isLoading, setIsLoading] = React.useState(true);
   const [isEditMode, setIsEditMode] = React.useState(false);
   const [serverError, setServerError] = React.useState("");
@@ -62,6 +62,9 @@ export default function OnboardingPage() {
         await companyProfileService.createCompanyProfile(data);
         toast.success("Company profile completed successfully");
       }
+      
+      // Refresh user data to update onboarding status
+      await refreshUser();
       
       router.replace("/dashboard");
     } catch (err) {

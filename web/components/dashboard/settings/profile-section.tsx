@@ -127,53 +127,70 @@ export function ProfileSettingsSection() {
               </Button>
             )}
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             {founder?.companyName ? (
               <>
-                {founder.companyLogo && (
-                  <div className="flex items-center gap-4">
-                    <Avatar size="lg" fallback={founder.companyName[0]} />
-                    <div>
-                      <h3 className="font-semibold text-foreground">{founder.companyName}</h3>
-                      {founder.companyWebsite && (
-                        <a
-                          href={founder.companyWebsite}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-sm text-primary hover:underline"
-                        >
-                          {founder.companyWebsite}
-                        </a>
-                      )}
+                {/* Company Header with Logo */}
+                <div className="flex items-start gap-4">
+                  {founder.companyLogo ? (
+                    <div className="h-16 w-16 overflow-hidden rounded-full border border-border">
+                      <img
+                        src={founder.companyLogo}
+                        alt={`${founder.companyName} logo`}
+                        className="h-full w-full object-cover"
+                      />
                     </div>
+                  ) : (
+                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-surface-muted">
+                      <Building2 className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-foreground">{founder.companyName}</h3>
+                    {founder.companyWebsite && (
+                      <a
+                        href={founder.companyWebsite}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-sm text-primary hover:underline"
+                      >
+                        {founder.companyWebsite}
+                      </a>
+                    )}
                   </div>
-                )}
-                <InfoRow
-                  icon={<Briefcase className="h-4 w-4" />}
-                  label="Industry"
-                  value={founder.industry || "Not set"}
-                />
-                <InfoRow
-                  icon={<MapPin className="h-4 w-4" />}
-                  label="Country"
-                  value={founder.country || "Not set"}
-                />
-                <InfoRow
-                  icon={<Users className="h-4 w-4" />}
-                  label="Team Size"
-                  value={founder.teamSize || "Not set"}
-                />
+                </div>
+
+                {/* Company Details */}
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <InfoRow
+                    icon={<Briefcase className="h-4 w-4" />}
+                    label="Industry"
+                    value={founder.industry || "Not set"}
+                  />
+                  <InfoRow
+                    icon={<MapPin className="h-4 w-4" />}
+                    label="Country"
+                    value={founder.country || "Not set"}
+                  />
+                  <InfoRow
+                    icon={<Users className="h-4 w-4" />}
+                    label="Team Size"
+                    value={founder.teamSize || "Not set"}
+                  />
+                  <InfoRow
+                    icon={<Calendar className="h-4 w-4" />}
+                    label="Founder since"
+                    value={formatDate(founder.createdAt)}
+                  />
+                </div>
+
+                {/* Company Description */}
                 {founder.companyDescription && (
                   <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">Company Description</p>
-                    <p className="text-sm text-foreground">{founder.companyDescription}</p>
+                    <p className="text-sm font-medium text-foreground">Company Description</p>
+                    <p className="text-sm text-muted-foreground">{founder.companyDescription}</p>
                   </div>
                 )}
-                <InfoRow
-                  icon={<Calendar className="h-4 w-4" />}
-                  label="Founder since"
-                  value={formatDate(founder.createdAt)}
-                />
               </>
             ) : (
               <Alert variant="info" title="No company profile">

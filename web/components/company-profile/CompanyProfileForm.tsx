@@ -5,6 +5,9 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Upload } from "lucide-react";
 import { companyProfileSchema, type CompanyProfileFormData } from "@/lib/validations/company-profile";
+import { uploadFile } from "@/services/files";
+import { getApiErrorMessage } from "@/lib/errors";
+import toast from "react-hot-toast";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -29,6 +32,170 @@ const TEAM_SIZES = [
   "6–20 Employees",
   "21–50 Employees",
   "50+ Employees",
+] as const;
+
+const COUNTRIES = [
+  "Afghanistan",
+  "Albania",
+  "Algeria",
+  "Andorra",
+  "Angola",
+  "Argentina",
+  "Armenia",
+  "Australia",
+  "Austria",
+  "Azerbaijan",
+  "Bahamas",
+  "Bahrain",
+  "Bangladesh",
+  "Barbados",
+  "Belarus",
+  "Belgium",
+  "Belize",
+  "Benin",
+  "Bhutan",
+  "Bolivia",
+  "Bosnia and Herzegovina",
+  "Botswana",
+  "Brazil",
+  "Brunei",
+  "Bulgaria",
+  "Burkina Faso",
+  "Burundi",
+  "Cambodia",
+  "Cameroon",
+  "Canada",
+  "Cape Verde",
+  "Central African Republic",
+  "Chad",
+  "Chile",
+  "China",
+  "Colombia",
+  "Comoros",
+  "Congo",
+  "Costa Rica",
+  "Croatia",
+  "Cuba",
+  "Cyprus",
+  "Czech Republic",
+  "Denmark",
+  "Djibouti",
+  "Dominican Republic",
+  "Ecuador",
+  "Egypt",
+  "El Salvador",
+  "Estonia",
+  "Ethiopia",
+  "Fiji",
+  "Finland",
+  "France",
+  "Gabon",
+  "Gambia",
+  "Georgia",
+  "Germany",
+  "Ghana",
+  "Greece",
+  "Guatemala",
+  "Guinea",
+  "Haiti",
+  "Honduras",
+  "Hungary",
+  "Iceland",
+  "India",
+  "Indonesia",
+  "Iran",
+  "Iraq",
+  "Ireland",
+  "Israel",
+  "Italy",
+  "Jamaica",
+  "Japan",
+  "Jordan",
+  "Kazakhstan",
+  "Kenya",
+  "Kuwait",
+  "Kyrgyzstan",
+  "Laos",
+  "Latvia",
+  "Lebanon",
+  "Lesotho",
+  "Liberia",
+  "Libya",
+  "Lithuania",
+  "Luxembourg",
+  "Madagascar",
+  "Malawi",
+  "Malaysia",
+  "Maldives",
+  "Mali",
+  "Malta",
+  "Mauritania",
+  "Mauritius",
+  "Mexico",
+  "Moldova",
+  "Monaco",
+  "Mongolia",
+  "Montenegro",
+  "Morocco",
+  "Mozambique",
+  "Myanmar",
+  "Namibia",
+  "Nepal",
+  "Netherlands",
+  "New Zealand",
+  "Nicaragua",
+  "Niger",
+  "Nigeria",
+  "North Korea",
+  "North Macedonia",
+  "Norway",
+  "Oman",
+  "Pakistan",
+  "Panama",
+  "Paraguay",
+  "Peru",
+  "Philippines",
+  "Poland",
+  "Portugal",
+  "Qatar",
+  "Romania",
+  "Russia",
+  "Rwanda",
+  "Saudi Arabia",
+  "Senegal",
+  "Serbia",
+  "Singapore",
+  "Slovakia",
+  "Slovenia",
+  "Somalia",
+  "South Africa",
+  "South Korea",
+  "Spain",
+  "Sri Lanka",
+  "Sudan",
+  "Sweden",
+  "Switzerland",
+  "Syria",
+  "Taiwan",
+  "Tajikistan",
+  "Tanzania",
+  "Thailand",
+  "Togo",
+  "Trinidad and Tobago",
+  "Tunisia",
+  "Turkey",
+  "Uganda",
+  "Ukraine",
+  "United Arab Emirates",
+  "United Kingdom",
+  "United States",
+  "Uruguay",
+  "Uzbekistan",
+  "Venezuela",
+  "Vietnam",
+  "Yemen",
+  "Zambia",
+  "Zimbabwe",
 ] as const;
 
 export interface CompanyProfileFormProps {
@@ -57,6 +224,8 @@ export function CompanyProfileForm({
   const [companyLogo, setCompanyLogo] = React.useState<string | null>(
     initialValues?.companyLogo || null
   );
+  const [logoFile, setLogoFile] = React.useState<File | null>(null);
+  const [isUploadingLogo, setIsUploadingLogo] = React.useState(false);
 
   const {
     register,
@@ -80,16 +249,32 @@ export function CompanyProfileForm({
 
   const handleLogoChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0] ?? null;
-    // TODO: Implement file upload using existing file system
     if (file) {
+      setLogoFile(file);
       setCompanyLogo(URL.createObjectURL(file));
     }
   };
 
   const onFormSubmit = async (data: CompanyProfileFormData) => {
+    let logoUrl = companyLogo;
+
+    // Upload logo if a new file was selected
+    if (logoFile) {
+      setIsUploadingLogo(true);
+      try {
+        const uploaded = await uploadFile(logoFile);
+        logoUrl = uploaded.url;
+      } catch (error) {
+        toast.error(getApiErrorMessage(error, "Failed to upload logo"));
+        throw error;
+      } finally {
+        setIsUploadingLogo(false);
+      }
+    }
+
     const payload = {
       ...data,
-      companyLogo: companyLogo || undefined,
+      companyLogo: logoUrl || undefined,
       companyWebsite: data.companyWebsite || undefined,
     };
     await onSubmit(payload);
@@ -149,13 +334,25 @@ export function CompanyProfileForm({
             {watch("companyDescription")?.length || 0}/250
           </p>
 
-          <Input
-            label="Country"
-            placeholder="United States"
-            error={errors.country?.message}
-            {...register("country")}
-            required
-          />
+          <div className="space-y-2">
+            <label className="block text-sm font-medium text-foreground">
+              Country <span className="text-destructive">*</span>
+            </label>
+            <select
+              {...register("country")}
+              className="w-full px-3 py-2 border border-border rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary/30"
+            >
+              <option value="">Select country</option>
+              {COUNTRIES.map((country) => (
+                <option key={country} value={country}>
+                  {country}
+                </option>
+              ))}
+            </select>
+            {errors.country && (
+              <p className="text-sm text-destructive">{errors.country.message}</p>
+            )}
+          </div>
 
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">
@@ -220,8 +417,8 @@ export function CompanyProfileForm({
             </Alert>
           )}
 
-          <Button type="submit" className="w-full" loading={isSubmitting}>
-            {submitButtonText}
+          <Button type="submit" className="w-full" loading={isSubmitting || isUploadingLogo}>
+            {isUploadingLogo ? "Uploading logo..." : submitButtonText}
           </Button>
         </form>
       </CardContent>
