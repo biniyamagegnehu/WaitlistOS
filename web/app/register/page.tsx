@@ -18,6 +18,7 @@ import { routes } from "@/lib/routes";
 export default function RegisterPage() {
   const router = useRouter();
   const { register: registerUser, googleLogin, isAuthenticated, isLoading } = useAuth();
+  const [registeredEmail, setRegisteredEmail] = React.useState("");
 
   React.useEffect(() => {
     if (isAuthenticated && !isLoading) {
@@ -30,15 +31,21 @@ export default function RegisterPage() {
   }
 
   const handleRegister = async (data: RegisterFormData) => {
+    setRegisteredEmail(data.email);
     await registerUser({
       email: data.email,
       password: data.password,
       firstName: data.firstName,
       lastName: data.lastName,
     });
-    router.replace(
-      `${routes.resendVerification}?email=${encodeURIComponent(data.email)}`
-    );
+  };
+
+  const handleSuccess = () => {
+    setTimeout(() => {
+      router.replace(
+        `${routes.resendVerification}?email=${encodeURIComponent(registeredEmail)}`
+      );
+    }, 3000);
   };
 
   return (
@@ -53,6 +60,7 @@ export default function RegisterPage() {
         onSubmit={handleRegister}
         submitText="Create account"
         onSuccessMessage="Account created successfully"
+        onSuccess={handleSuccess}
       >
         {({ register, formState: { errors } }) => (
           <>
@@ -91,7 +99,7 @@ export default function RegisterPage() {
               label="Password"
               placeholder="••••••••"
               showStrength
-              error={errors.password?.message as string | undefined}
+              error={errors.password?.message}
               helper="Must be at least 8 characters"
               {...register("password")}
               required
@@ -100,7 +108,7 @@ export default function RegisterPage() {
             <PasswordInput
               label="Confirm password"
               placeholder="••••••••"
-              error={errors.confirmPassword?.message as string | undefined}
+              error={errors.confirmPassword?.message}
               {...register("confirmPassword")}
               required
             />

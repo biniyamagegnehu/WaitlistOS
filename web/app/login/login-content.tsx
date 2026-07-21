@@ -74,7 +74,7 @@ export default function LoginContent() {
               type="email"
               placeholder="you@example.com"
               leftIcon={<Mail className="h-4 w-4" />}
-              error={errors.email?.message as string | undefined}
+              error={errors.email?.message}
               {...register("email")}
               required
             />
@@ -82,7 +82,7 @@ export default function LoginContent() {
             <PasswordInput
               label="Password"
               placeholder="••••••••"
-              error={errors.password?.message as string | undefined}
+              error={errors.password?.message}
               {...register("password")}
               required
             />

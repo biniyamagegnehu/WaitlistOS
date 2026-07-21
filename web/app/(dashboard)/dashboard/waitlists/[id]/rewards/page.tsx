@@ -315,6 +315,18 @@ export default function RewardsPage() {
           </DialogHeader>
           <form onSubmit={form.handleSubmit(handleSave)}>
             <DialogBody className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Title <span className="text-destructive">*</span></label>
+                <Input
+                  {...form.register("title")}
+                  placeholder="e.g. Skip 100 spots"
+                  required
+                />
+                {form.formState.errors.title && (
+                  <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
+                )}
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Milestone <span className="text-destructive">*</span></label>
@@ -345,18 +357,6 @@ export default function RewardsPage() {
                     <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>
                   )}
                 </div>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Title <span className="text-destructive">*</span></label>
-                <Input
-                  {...form.register("title")}
-                  placeholder="e.g. Skip 100 spots"
-                  required
-                />
-                {form.formState.errors.title && (
-                  <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
-                )}
               </div>
 
               {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT' || rewardType === 'CUSTOM') && (

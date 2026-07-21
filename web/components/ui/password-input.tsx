@@ -71,7 +71,6 @@ export function PasswordInput({
         <Input
           {...props}
           type={showPassword ? "text" : "password"}
-          error={error}
           leftIcon={<Lock className="h-4 w-4" />}
           rightIcon={
             <button
@@ -91,6 +90,11 @@ export function PasswordInput({
           className={cn("pr-10", className)}
         />
       </div>
+      {error && (
+        <p className="text-xs text-destructive" role="alert">
+          {error}
+        </p>
+      )}
       {showStrength && props.value && (
         <div className="mt-1 flex items-center gap-2">
           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-surface-muted">
@@ -101,11 +105,6 @@ export function PasswordInput({
           </div>
           <span className="text-xs text-muted-foreground">{getStrengthLabel()}</span>
         </div>
-      )}
-      {error && (
-        <p className="text-xs text-destructive" role="alert">
-          {error}
-        </p>
       )}
       {helper && !error && (
         <p className="text-xs text-muted-foreground">{helper}</p>
