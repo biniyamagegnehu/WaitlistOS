@@ -13,6 +13,7 @@ type ApiUser = {
   twoFactorEnabled?: boolean;
   isEmailVerified?: boolean;
   isTwoFactorEnabled?: boolean;
+  hasPassword?: boolean;
   lastLoginAt?: string | Date | null;
   createdAt: string | Date;
   updatedAt: string | Date;
@@ -48,6 +49,7 @@ export function normalizeUser(apiUser: ApiUser): User {
       apiUser.isEmailVerified ?? Boolean(apiUser.emailVerifiedAt),
     isTwoFactorEnabled:
       apiUser.isTwoFactorEnabled ?? apiUser.twoFactorEnabled ?? false,
+    hasPassword: apiUser.hasPassword ?? false,
     status: apiUser.status,
     lastLoginAt: apiUser.lastLoginAt
       ? toIsoString(apiUser.lastLoginAt)

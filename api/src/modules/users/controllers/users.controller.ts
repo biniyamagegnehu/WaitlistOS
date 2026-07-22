@@ -58,6 +58,7 @@ export class UsersController {
           status: safeUser.status,
           emailVerifiedAt: safeUser.emailVerifiedAt,
           twoFactorEnabled: safeUser.twoFactorEnabled,
+          hasPassword: !!dbUser.passwordHash,
           lastLoginAt: safeUser.lastLoginAt,
           createdAt: safeUser.createdAt,
           updatedAt: safeUser.updatedAt,

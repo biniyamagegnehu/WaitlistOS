@@ -20,6 +20,7 @@ import { VerifyEmailDto } from '../dto/verify-email.dto';
 import { ResendVerificationDto } from '../dto/resend-verification.dto';
 import { ForgotPasswordDto } from '../dto/forgot-password.dto';
 import { ResetPasswordDto } from '../dto/reset-password.dto';
+import { SetPasswordDto } from '../dto/set-password.dto';
 import { Enable2faDto } from '../dto/enable-2fa.dto';
 import { Disable2faDto } from '../dto/disable-2fa.dto';
 import { Verify2faDto } from '../dto/verify-2fa.dto';
@@ -217,6 +218,20 @@ export class AuthController {
       req.headers['user-agent'],
     );
     return this.sendAuthResponse(res, response);
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // POST /auth/set-password — Set password for OAuth users
+  // ──────────────────────────────────────────────────────────────
+
+  @Post('set-password')
+  @UseGuards(VerifiedEmailGuard)
+  @HttpCode(HttpStatus.OK)
+  async setPassword(
+    @CurrentUser() user: AuthenticatedUser,
+    @Body() dto: SetPasswordDto,
+  ) {
+    return this.authService.setPassword(user.userId, dto);
   }
 
   // ──────────────────────────────────────────────────────────────

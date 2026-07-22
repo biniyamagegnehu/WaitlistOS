@@ -12,9 +12,9 @@ import { Alert } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCurrentUser } from "@/contexts/auth-context";
-import { changePassword, changeEmail } from "@/services/auth";
-import { changePasswordSchema, changeEmailSchema } from "@/lib/validations/auth";
-import type { ChangePasswordFormData, ChangeEmailFormData } from "@/lib/validations/auth";
+import { changePassword, changeEmail, setPassword } from "@/services/auth";
+import { changePasswordSchema, changeEmailSchema, setPasswordSchema } from "@/lib/validations/auth";
+import type { ChangePasswordFormData, ChangeEmailFormData, SetPasswordFormData } from "@/lib/validations/auth";
 import toast from "react-hot-toast";
 import { routes } from "@/lib/routes";
 
@@ -22,6 +22,7 @@ export function SecuritySettingsSection() {
   const router = useRouter();
   const { user, isLoading, refreshUser } = useCurrentUser();
   const [showChangePassword, setShowChangePassword] = React.useState(false);
+  const [showSetPassword, setShowSetPassword] = React.useState(false);
   const [showChangeEmail, setShowChangeEmail] = React.useState(false);
 
   React.useEffect(() => {
@@ -41,12 +42,23 @@ export function SecuritySettingsSection() {
 
   if (!user) return null;
 
+  const hasPassword = user.hasPassword;
+
   const handleChangePassword = async (data: ChangePasswordFormData) => {
     await changePassword({
       currentPassword: data.currentPassword,
       newPassword: data.newPassword,
     });
     setShowChangePassword(false);
+  };
+
+  const handleSetPassword = async (data: SetPasswordFormData) => {
+    await setPassword({
+      password: data.password,
+      confirmPassword: data.confirmPassword,
+    });
+    setShowSetPassword(false);
+    await refreshUser();
   };
 
   const handleChangeEmail = async (data: ChangeEmailFormData) => {
@@ -63,16 +75,54 @@ export function SecuritySettingsSection() {
           <CardTitle>Change Password</CardTitle>
         </CardHeader>
         <CardContent>
-          {!showChangePassword ? (
+          {!showChangePassword && !showSetPassword ? (
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="text-foreground">Password</p>
                 <p className="text-sm text-muted-foreground">Last changed recently</p>
               </div>
-              <Button variant="secondary" onClick={() => setShowChangePassword(true)}>
-                Change
-              </Button>
+              {hasPassword ? (
+                <Button variant="secondary" onClick={() => setShowChangePassword(true)}>
+                  Change
+                </Button>
+              ) : (
+                <Button variant="secondary" onClick={() => setShowSetPassword(true)}>
+                  Set Password
+                </Button>
+              )}
             </div>
+          ) : showSetPassword ? (
+            <AuthForm
+              schema={setPasswordSchema}
+              onSubmit={handleSetPassword}
+              submitText="Set password"
+              onSuccessMessage="Password set successfully"
+            >
+              {({ register, formState: { errors } }) => (
+                <div className="space-y-4">
+                  <PasswordInput
+                    label="New password"
+                    placeholder="••••••••"
+                    showStrength
+                    error={errors.password?.message as string | undefined}
+                    {...register("password")}
+                  />
+                  <PasswordInput
+                    label="Confirm password"
+                    placeholder="••••••••"
+                    error={errors.confirmPassword?.message as string | undefined}
+                    {...register("confirmPassword")}
+                  />
+                  <Button
+                    variant="ghost"
+                    onClick={() => setShowSetPassword(false)}
+                    className="w-full"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              )}
+            </AuthForm>
           ) : (
             <AuthForm
               schema={changePasswordSchema}

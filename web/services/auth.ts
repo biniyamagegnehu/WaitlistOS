@@ -78,6 +78,13 @@ export async function changePassword(data: ChangePasswordData): Promise<void> {
   await api.patch("/users/change-password", data);
 }
 
+export async function setPassword(data: {
+  password: string;
+  confirmPassword: string;
+}): Promise<void> {
+  await api.post("/auth/set-password", data);
+}
+
 // ── Email Verification ───────────────────────────────────────────────────────────
 export async function verifyEmail(data: VerifyEmailData): Promise<void> {
   await api.post("/auth/verify-email", data);

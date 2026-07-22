@@ -15,6 +15,7 @@ import { EmailsService } from '../../emails/emails.service';
 import { TwoFactorService, TwoFactorSetupResult } from './two-factor.service';
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
+import { SetPasswordDto } from '../dto/set-password.dto';
 import { JwtPayload, JwtRefreshPayload, GoogleUser } from '../interfaces/jwt-payload.interface';
 import { Provider, User, Founder, Session } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
@@ -341,6 +342,40 @@ export class AuthService {
     this.logger.log(`Password reset successful for user: ${user.email}`);
 
     return { success: true, message: 'Password has been reset successfully. Please log in.', data: {} };
+  }
+
+  // ──────────────────────────────────────────────────────────────
+  // Set Password (for OAuth users)
+  // ──────────────────────────────────────────────────────────────
+
+  async setPassword(userId: string, dto: SetPasswordDto): Promise<AuthResponse> {
+    const user = await this.usersService.findById(userId);
+
+    // Check if user already has a password
+    if (user.passwordHash) {
+      throw new BadRequestException('User already has a password set. Use change password instead.');
+    }
+
+    // Validate password confirmation
+    if (dto.password !== dto.confirmPassword) {
+      throw new BadRequestException('Passwords do not match');
+    }
+
+    const passwordHash = await bcrypt.hash(dto.password, BCRYPT_ROUNDS);
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: {
+        passwordHash,
+        passwordChangedAt: new Date(),
+      },
+    });
+
+    await this.emailsService.queuePasswordChangedEmail(user.email, user.firstName);
+
+    this.logger.log(`Password set successfully for OAuth user: ${user.email}`);
+
+    return { success: true, message: 'Password has been set successfully. You can now log in with email and password.', data: {} };
   }
 
   // ──────────────────────────────────────────────────────────────

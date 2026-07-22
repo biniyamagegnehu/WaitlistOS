@@ -10,6 +10,7 @@ export interface User {
   provider: 'local' | 'google';
   isEmailVerified: boolean;
   isTwoFactorEnabled: boolean;
+  hasPassword: boolean;
   status?: string;
   lastLoginAt?: string;
   createdAt: string;
