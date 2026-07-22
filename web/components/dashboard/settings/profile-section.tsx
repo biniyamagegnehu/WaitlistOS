@@ -142,7 +142,12 @@ export function ProfileSettingsSection() {
                     ? `${user.firstName} ${user.lastName}`
                     : user.firstName || user.lastName || user.email}
                 </h2>
-                <Button variant="ghost" size="sm" onClick={handleNameEdit}>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleNameEdit}
+                  className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200"
+                >
                   <Edit className="h-3 w-3" />
                 </Button>
               </div>
@@ -173,7 +178,12 @@ export function ProfileSettingsSection() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Company Profile</CardTitle>
           {founder?.companyName && (
-            <Button variant="ghost" size="sm" onClick={() => setIsEditCompanyDialogOpen(true)}>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => setIsEditCompanyDialogOpen(true)}
+              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200"
+            >
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
