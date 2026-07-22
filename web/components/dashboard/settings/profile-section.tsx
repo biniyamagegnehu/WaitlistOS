@@ -10,11 +10,13 @@ import { Badge } from "@/components/ui/badge";
 import { Alert } from "@/components/ui/alert";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogBody } from "@/components/ui/dialog";
+import { CompanyProfileForm } from "@/components/company-profile/CompanyProfileForm";
 import { useCurrentUser } from "@/contexts/auth-context";
 import { routes } from "@/lib/routes";
 import { uploadFile } from "@/services/files";
 import { updateProfile } from "@/services/users";
+import { companyProfileService } from "@/services/company-profile";
 import { getApiErrorMessage } from "@/lib/errors";
 import toast from "react-hot-toast";
 
@@ -22,6 +24,7 @@ export function ProfileSettingsSection() {
   const router = useRouter();
   const { user, founder, isLoading, refreshUser } = useCurrentUser();
   const [isEditNameDialogOpen, setIsEditNameDialogOpen] = React.useState(false);
+  const [isEditCompanyDialogOpen, setIsEditCompanyDialogOpen] = React.useState(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = React.useState(false);
   const [editNameForm, setEditNameForm] = React.useState({
     firstName: user?.firstName || "",
@@ -170,7 +173,7 @@ export function ProfileSettingsSection() {
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Company Profile</CardTitle>
           {founder?.companyName && (
-            <Button variant="ghost" size="sm" onClick={() => router.push("/onboarding")}>
+            <Button variant="ghost" size="sm" onClick={() => setIsEditCompanyDialogOpen(true)}>
               <Edit className="h-4 w-4 mr-2" />
               Edit
             </Button>
@@ -295,24 +298,48 @@ export function ProfileSettingsSection() {
           <DialogHeader>
             <DialogTitle>Edit Name</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
+          <DialogBody className="space-y-4">
             <Input
               label="First Name"
               value={editNameForm.firstName}
               onChange={(e) => setEditNameForm({ ...editNameForm, firstName: e.target.value })}
+              placeholder="Enter your first name"
             />
             <Input
               label="Last Name"
               value={editNameForm.lastName}
               onChange={(e) => setEditNameForm({ ...editNameForm, lastName: e.target.value })}
+              placeholder="Enter your last name"
             />
-          </div>
+          </DialogBody>
           <DialogFooter>
             <Button variant="secondary" onClick={() => setIsEditNameDialogOpen(false)}>
               Cancel
             </Button>
             <Button onClick={handleNameSave}>Save Changes</Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Company Profile Dialog */}
+      <Dialog open={isEditCompanyDialogOpen} onClose={() => setIsEditCompanyDialogOpen(false)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Company Profile</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <CompanyProfileForm
+              mode="edit"
+              initialValues={founder || undefined}
+              onSubmit={async (data) => {
+                await companyProfileService.updateCompanyProfile(data);
+                toast.success("Company profile updated successfully");
+                setIsEditCompanyDialogOpen(false);
+                await refreshUser();
+              }}
+              submitButtonText="Save Changes"
+            />
+          </DialogBody>
         </DialogContent>
       </Dialog>
     </div>
