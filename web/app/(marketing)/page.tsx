@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { HeroSection } from "@/components/landing/hero-section";
 import { SocialProof } from "@/components/landing/social-proof";
+import { CoreCapabilities } from "@/components/landing/core-capabilities";
 import { ProductShowcase, DashboardMockup } from "@/components/landing/product-showcase";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { FAQSection } from "@/components/landing/faq-section";
 import { FinalCTA } from "@/components/landing/final-cta";
-import { FeatureGridSection } from "@/components/landing/feature-grid-section";
-import { Users, Share2, BarChart3, Lock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "WaitlistOS — Launch With Demand Already Waiting",
@@ -20,42 +19,8 @@ export default function HomePage() {
       <HeroSection />
       <SocialProof />
       
-      {/* Feature Grid Section - Planar Style */}
-      <FeatureGridSection
-        features={[
-          {
-            icon: <Users className="h-6 w-6" />,
-            title: "Waitlist Management",
-            description: "Create and manage multiple branded waitlists with custom branding, colors, and messaging. Track signups in real-time and segment your audience for targeted campaigns.",
-          },
-          {
-            icon: <Share2 className="h-6 w-6" />,
-            title: "Referral System",
-            description: "Every participant gets a unique referral link. When they share it and friends sign up, they move up the waitlist and unlock exclusive rewards. Built-in viral growth mechanics.",
-          },
-          {
-            icon: <BarChart3 className="h-6 w-6" />,
-            title: "Analytics Dashboard",
-            description: "Monitor your waitlist performance with real-time analytics. Track signups, referrals, conversion rates, and growth trends all in one comprehensive dashboard.",
-          },
-          {
-            icon: <Lock className="h-6 w-6" />,
-            title: "Open The Gates",
-            description: "When your product is ready, select participants from your waitlist and send batch invitations. Control your launch pace by inviting users in waves based on position or referrals.",
-          },
-        ]}
-        rightContent={
-          <div className="relative rounded-2xl border border-border bg-surface p-4 shadow-2xl">
-            <div className="aspect-[4/3] rounded-xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden">
-              <div className="text-center p-8">
-                <div className="text-5xl font-bold text-primary mb-2">Image Placeholder</div>
-                <div className="text-sm text-muted-foreground">Replace with actual product screenshot</div>
-                <div className="mt-4 text-xs text-muted-foreground/60">Recommended: 800x600px</div>
-              </div>
-            </div>
-          </div>
-        }
-      />
+      {/* Core Capabilities Section */}
+      <CoreCapabilities />
 
       {/* Visual Storytelling - Create Waitlist */}
       <section className="py-16 sm:py-24" id="how-it-works">
