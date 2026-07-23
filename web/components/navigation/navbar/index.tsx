@@ -12,7 +12,7 @@ import { routes } from "@/lib/routes";
 const navLinks = [
   { label: "Features", href: "/#features" },
   { label: "Pricing", href: "/pricing" },
-  { label: "Documentation", href: "/#features" },
+  { label: "FAQ", href: "/#faq" },
 ];
 
 export function MarketingNavbar() {
