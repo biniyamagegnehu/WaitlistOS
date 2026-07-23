@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Zap } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 interface BrandLogoProps {
@@ -15,19 +15,18 @@ export function BrandLogo({
   showText = true,
   size = "md",
 }: BrandLogoProps) {
-  const iconSize = size === "sm" ? "h-6 w-6" : "h-7 w-7";
-  const iconInner = size === "sm" ? "h-3.5 w-3.5" : "h-4 w-4";
+  const height = size === "sm" ? 32 : 40;
+  const width = size === "sm" ? 32 : 40;
 
   const content = (
     <>
-      <div
-        className={cn(
-          "flex shrink-0 items-center justify-center rounded-md bg-primary text-primary-foreground",
-          iconSize
-        )}
-      >
-        <Zap className={iconInner} aria-hidden="true" />
-      </div>
+      <Image
+        src="/favicon.ico"
+        alt="WaitlistOS Logo"
+        width={width}
+        height={height}
+        className="shrink-0"
+      />
       {showText && (
         <span className="text-[15px] font-semibold tracking-tight text-foreground">
           WaitlistOS
