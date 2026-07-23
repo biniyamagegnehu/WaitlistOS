@@ -59,7 +59,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         className="fixed inset-y-0 left-0 z-50 flex w-72 flex-col border-r border-border bg-surface shadow-md"
       >
         <div className="flex h-16 shrink-0 items-center justify-between border-b border-border px-4">
-          <BrandLogo href={routes.dashboard} />
+          <BrandLogo href="/" />
           <button
             onClick={onClose}
             aria-label="Close navigation"

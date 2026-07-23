@@ -8,6 +8,7 @@ import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/cn";
 import { BrandLogo } from "@/components/brand/logo";
 import { routes } from "@/lib/routes";
+import { useAuth } from "@/contexts/auth-context";
 
 const navLinks = [
   { label: "Features", href: "/#features" },
@@ -18,6 +19,7 @@ const navLinks = [
 export function MarketingNavbar() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const pathname = usePathname();
+  const { isAuthenticated, isLoading } = useAuth();
 
   return (
     <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-sm">
@@ -47,18 +49,29 @@ export function MarketingNavbar() {
 
         <div className="hidden items-center gap-1 md:flex">
           <ThemeToggle size="sm" />
-          <Link
-            href={routes.login}
-            className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
-          >
-            Login
-          </Link>
-          <Link
-            href={routes.register}
-            className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
-          >
-            Get Started
-          </Link>
+          {!isLoading && isAuthenticated ? (
+            <Link
+              href={routes.dashboard}
+              className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+            >
+              Dashboard
+            </Link>
+          ) : (
+            <>
+              <Link
+                href={routes.login}
+                className="rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+              >
+                Login
+              </Link>
+              <Link
+                href={routes.register}
+                className="inline-flex h-10 items-center rounded-md bg-primary px-4 text-sm font-medium text-primary-foreground shadow-sm transition-colors hover:bg-primary-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              >
+                Get Started
+              </Link>
+            </>
+          )}
         </div>
 
         <button
@@ -97,20 +110,32 @@ export function MarketingNavbar() {
               <span className="text-sm text-muted-foreground">Theme</span>
               <ThemeToggle size="sm" />
             </div>
-            <Link
-              href={routes.login}
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
-            >
-              Login
-            </Link>
-            <Link
-              href={routes.register}
-              onClick={() => setMobileOpen(false)}
-              className="block rounded-md bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
-            >
-              Get Started
-            </Link>
+            {!isLoading && isAuthenticated ? (
+              <Link
+                href={routes.dashboard}
+                onClick={() => setMobileOpen(false)}
+                className="block rounded-md bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link
+                  href={routes.login}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground"
+                >
+                  Login
+                </Link>
+                <Link
+                  href={routes.register}
+                  onClick={() => setMobileOpen(false)}
+                  className="block rounded-md bg-primary px-3 py-2.5 text-center text-sm font-medium text-primary-foreground transition-colors hover:bg-primary-hover"
+                >
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       )}

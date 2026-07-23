@@ -34,7 +34,7 @@ export function DashboardSidebar({
     >
       <div className="flex h-16 shrink-0 items-center border-b border-border px-4">
         <BrandLogo
-          href={routes.dashboard}
+          href="/"
           showText={!collapsed}
           className={cn(collapsed && "justify-center w-full")}
         />
