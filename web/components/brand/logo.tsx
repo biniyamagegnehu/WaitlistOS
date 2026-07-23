@@ -25,7 +25,7 @@ export function BrandLogo({
         alt="WaitlistOS Logo"
         width={width}
         height={height}
-        className="shrink-0"
+        className="shrink-0 dark:invert dark:hue-rotate-180"
       />
       {showText && (
         <span className="text-[15px] font-semibold tracking-tight text-foreground">
