@@ -15,6 +15,11 @@ import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import { LoadingScreen } from "@/components/layouts/loading-screen";
 import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
+import { generateWaitlistWithAi } from "@/services/ai";
+import { Sparkles } from "lucide-react";
+import toast from "react-hot-toast";
+import { Textarea } from "@/components/ui/textarea";
+import { cn } from "@/lib/cn";
 
 export default function CreateWaitlistPage() {
   const router = useRouter();
@@ -22,6 +27,16 @@ export default function CreateWaitlistPage() {
   const [serverError, setServerError] = React.useState("");
   const [result, setResult] = React.useState<CreateWaitlistResponse | null>(null);
   const [copiedField, setCopiedField] = React.useState<string | null>(null);
+
+  // AI Builder state
+  const [creationMode, setCreationMode] = React.useState<"manual" | "ai">("manual");
+  const [aiDescription, setAiDescription] = React.useState("");
+  const [isGenerating, setIsGenerating] = React.useState(false);
+  const [initialValues, setInitialValues] = React.useState<{
+    name?: string;
+    tagline?: string;
+    description?: string;
+  }>({});
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -33,6 +48,34 @@ export default function CreateWaitlistPage() {
     await navigator.clipboard.writeText(value);
     setCopiedField(field);
     window.setTimeout(() => setCopiedField(null), 2000);
+  };
+
+  const handleGenerateAi = async () => {
+    if (!aiDescription.trim()) {
+      toast.error("Please describe your product first");
+      return;
+    }
+    
+    setIsGenerating(true);
+    setServerError("");
+    
+    try {
+      const generated = await generateWaitlistWithAi(aiDescription);
+      
+      setInitialValues({
+        name: generated.productName || "",
+        tagline: generated.tagline || "",
+        description: generated.description || "",
+      });
+      
+      toast.success("AI suggestions generated successfully");
+      setCreationMode("manual");
+    } catch (error: unknown) {
+      toast.error("Unable to generate suggestions. Please try again.");
+      console.error(error);
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   const onSubmit = async (data: CreateWaitlistFormData & { logoId?: string; slug?: string }) => {
@@ -141,12 +184,66 @@ export default function CreateWaitlistPage() {
           </p>
         </div>
 
-        <WaitlistForm
-          mode="create"
-          onSubmit={onSubmit}
-          submitButtonText="Create waitlist"
-          serverError={serverError}
-        />
+        <div className="mb-8 flex rounded-lg border border-border p-1 bg-surface-muted">
+          <button
+            type="button"
+            className={cn(
+              "flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors",
+              creationMode === "manual" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+            onClick={() => setCreationMode("manual")}
+          >
+            Create manually
+          </button>
+          <button
+            type="button"
+            className={cn(
+              "flex-1 rounded-md px-4 py-2 text-sm font-medium transition-colors flex items-center justify-center gap-2",
+              creationMode === "ai" ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground"
+            )}
+            onClick={() => setCreationMode("ai")}
+          >
+            <Sparkles className="h-4 w-4" />
+            Generate with AI
+          </button>
+        </div>
+
+        {creationMode === "ai" ? (
+          <Card>
+            <CardContent className="p-8 space-y-6">
+              <div className="space-y-2">
+                <h3 className="text-lg font-medium text-foreground">Describe your product</h3>
+                <p className="text-sm text-muted-foreground">
+                  Our AI will generate a catchy product name, tagline, and description for you.
+                </p>
+              </div>
+              <Textarea
+                placeholder="An AI accounting assistant that helps freelancers automate invoices and taxes."
+                rows={5}
+                value={aiDescription}
+                onChange={(e) => setAiDescription(e.target.value)}
+                disabled={isGenerating}
+              />
+              <Button 
+                onClick={() => void handleGenerateAi()} 
+                className="w-full" 
+                loading={isGenerating}
+              >
+                {!isGenerating && <Sparkles className="h-4 w-4 mr-2" />}
+                Generate Waitlist
+              </Button>
+            </CardContent>
+          </Card>
+        ) : (
+          <WaitlistForm
+            key={JSON.stringify(initialValues)}
+            mode="create"
+            initialValues={initialValues}
+            onSubmit={onSubmit}
+            submitButtonText="Create waitlist"
+            serverError={serverError}
+          />
+        )}
       </div>
     </div>
   );
