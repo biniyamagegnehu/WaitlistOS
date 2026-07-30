@@ -265,6 +265,8 @@ model User {
 
   payments Payment[]
 
+  aiLogs   AiLog[]
+
 
 
   @@map("users")
@@ -908,3 +910,24 @@ model CohortInvitation {
   @@index([participantId])
   @@map("cohort_invitations")
 }
+
+// ─────────────────────────────────────────────
+// AiLog — Track all AI usage
+// ─────────────────────────────────────────────
+
+model AiLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  feature   String
+  prompt    String   @db.Text
+  response  String   @db.Text
+  provider  String
+  model     String
+  createdAt DateTime @default(now())
+
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("ai_logs")
+}
+

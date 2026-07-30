@@ -8,6 +8,7 @@ import { AppService } from './app.service';
 import { appConfig } from './config/app.config';
 import { chapaConfig } from './config/chapa.config';
 import { plansConfig } from './config/plans.config';
+import { aiConfig } from './config/ai.config';
 import { CommonModule } from './common/common.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
@@ -27,6 +28,7 @@ import { ReferralsModule } from './modules/referrals/referrals.module';
 import { RewardsModule } from './modules/rewards/rewards.module';
 import { CohortsModule } from './modules/cohorts/cohorts.module';
 import { PaymentModule } from './modules/payments/payment.module';
+import { AiModule } from './modules/ai/ai.module';
 import { AccessTokenGuard } from './modules/auth/guards/access-token.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -34,7 +36,7 @@ import { RolesGuard } from './common/guards/roles.guard';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, chapaConfig, plansConfig],
+      load: [appConfig, chapaConfig, plansConfig, aiConfig],
     }),
     ThrottlerModule.forRoot([
       {
@@ -64,6 +66,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     PaymentModule,
     RewardsModule,
     CohortsModule,
+    AiModule,
   ],
   controllers: [AppController],
   providers: [
