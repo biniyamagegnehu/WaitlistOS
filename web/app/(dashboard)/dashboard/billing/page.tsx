@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import {
   useInitializePayment,
@@ -8,10 +9,11 @@ import {
 } from "@/hooks/use-billing";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
-import type { SubscriptionPlanCode } from "@/types/billing";
+import type { SubscriptionPlanCode, PaymentProvider } from "@/types/billing";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/loader";
 import toast from "react-hot-toast";
 
@@ -20,10 +22,19 @@ export default function BillingPage() {
   const { data: history, isLoading: historyLoading } = usePaymentHistory();
   const initializePayment = useInitializePayment();
 
+  const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlanCode | null>(null);
+  const [selectedProvider, setSelectedProvider] = useState<PaymentProvider>("CHAPA");
+
   const startCheckout = (plan: SubscriptionPlanCode) => {
-    initializePayment.mutate(plan, {
+    setSelectedPlan(plan);
+  };
+
+  const handleContinuePayment = () => {
+    if (!selectedPlan) return;
+    initializePayment.mutate({ plan: selectedPlan, provider: selectedProvider }, {
       onError: (error) => {
-        toast.error(getApiErrorMessage(error, "Unable to connect to Chapa. Try again."));
+        toast.error(getApiErrorMessage(error, "Unable to initialize payment. Try again."));
+        setSelectedPlan(null);
       },
     });
   };
@@ -172,6 +183,86 @@ export default function BillingPage() {
           </p>
         </CardContent>
       </Card>
+
+      <Dialog open={!!selectedPlan} onClose={() => setSelectedPlan(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Choose Payment Method</DialogTitle>
+          </DialogHeader>
+          <DialogBody>
+            <div className="flex flex-col gap-4">
+              <button
+                type="button"
+                onClick={() => setSelectedProvider("CHAPA")}
+                className={`flex items-center justify-between rounded-xl border p-4 text-left transition-colors ${
+                  selectedProvider === "CHAPA"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border hover:bg-surface-muted"
+                }`}
+              >
+                <div>
+                  <h3 className="font-medium text-foreground">Chapa</h3>
+                  <p className="text-sm text-muted-foreground">Local payments in ETB</p>
+                </div>
+                <div
+                  className={`h-5 w-5 rounded-full border flex items-center justify-center ${
+                    selectedProvider === "CHAPA"
+                      ? "border-primary bg-primary"
+                      : "border-border"
+                  }`}
+                >
+                  {selectedProvider === "CHAPA" && (
+                    <div className="h-2 w-2 rounded-full bg-primary-foreground" />
+                  )}
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSelectedProvider("STRIPE")}
+                className={`flex items-center justify-between rounded-xl border p-4 text-left transition-colors ${
+                  selectedProvider === "STRIPE"
+                    ? "border-primary bg-primary/5 ring-1 ring-primary"
+                    : "border-border hover:bg-surface-muted"
+                }`}
+              >
+                <div>
+                  <h3 className="font-medium text-foreground">Stripe</h3>
+                  <p className="text-sm text-muted-foreground">International payments in USD</p>
+                </div>
+                <div
+                  className={`h-5 w-5 rounded-full border flex items-center justify-center ${
+                    selectedProvider === "STRIPE"
+                      ? "border-primary bg-primary"
+                      : "border-border"
+                  }`}
+                >
+                  {selectedProvider === "STRIPE" && (
+                    <div className="h-2 w-2 rounded-full bg-primary-foreground" />
+                  )}
+                </div>
+              </button>
+            </div>
+          </DialogBody>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setSelectedPlan(null)}
+              disabled={initializePayment.isPending}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleContinuePayment}
+              loading={initializePayment.isPending}
+              disabled={initializePayment.isPending}
+            >
+              Continue to Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

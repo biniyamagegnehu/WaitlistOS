@@ -8,7 +8,7 @@ import {
   initializePayment,
   verifyPayment,
 } from "@/services/billing";
-import type { SubscriptionPlanCode } from "@/types/billing";
+import type { SubscriptionPlanCode, PaymentProvider } from "@/types/billing";
 
 export function usePublicPlans() {
   return useQuery({
@@ -33,7 +33,8 @@ export function usePaymentHistory() {
 
 export function useInitializePayment() {
   return useMutation({
-    mutationFn: (plan: SubscriptionPlanCode) => initializePayment(plan),
+    mutationFn: ({ plan, provider }: { plan: SubscriptionPlanCode; provider: PaymentProvider }) => 
+      initializePayment(plan, provider),
     onSuccess: (data) => {
       const checkoutUrl = data?.checkoutUrl?.trim();
       if (!checkoutUrl) {

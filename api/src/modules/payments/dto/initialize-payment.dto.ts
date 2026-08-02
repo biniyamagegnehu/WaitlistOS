@@ -1,4 +1,4 @@
-import { SubscriptionPlanCode } from '@prisma/client';
+import { SubscriptionPlanCode, PaymentProvider } from '@prisma/client';
 import { IsEnum, IsIn, IsNotEmpty } from 'class-validator';
 
 const PAID_PLANS = [SubscriptionPlanCode.STARTER, SubscriptionPlanCode.PRO] as const;
@@ -8,6 +8,10 @@ export class InitializePaymentDto {
   @IsIn(PAID_PLANS)
   @IsNotEmpty()
   plan!: SubscriptionPlanCode;
+
+  @IsEnum(PaymentProvider)
+  @IsNotEmpty()
+  provider!: PaymentProvider;
 }
 export class VerifyPaymentQueryDto {
   @IsNotEmpty()

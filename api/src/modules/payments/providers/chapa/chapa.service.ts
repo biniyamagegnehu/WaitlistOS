@@ -20,13 +20,14 @@ import type {
 
   ChapaVerifyResponse,
 
-} from '../interfaces/payment.interfaces';
+} from '../../interfaces/payment.interfaces';
+import { IPaymentProvider, InitializeTransactionPayload, VerifyTransactionResponse } from '../payment-provider.interface';
 
 
 
 @Injectable()
 
-export class ChapaService {
+export class ChapaService implements IPaymentProvider {
 
   private readonly logger = new Logger(ChapaService.name);
 
@@ -58,9 +59,9 @@ export class ChapaService {
 
   async initializeTransaction(
 
-    payload: ChapaInitializePayload,
+    payload: InitializeTransactionPayload,
 
-  ): Promise<ChapaInitializeResponse> {
+  ): Promise<{ checkoutUrl: string; providerReference: string }> {
 
     this.assertConfigured();
 
@@ -74,15 +75,15 @@ export class ChapaService {
 
       email: payload.email,
 
-      first_name: payload.first_name,
+      first_name: payload.firstName,
 
-      last_name: payload.last_name,
+      last_name: payload.lastName,
 
-      tx_ref: payload.tx_ref,
+      tx_ref: payload.txRef,
 
-      callback_url: payload.callback_url,
+      callback_url: payload.callbackUrl,
 
-      return_url: payload.return_url,
+      return_url: payload.returnUrl,
 
     };
 
@@ -136,9 +137,8 @@ export class ChapaService {
 
 
 
-    this.extractCheckoutUrl(body);
-
-    return body;
+    const checkoutUrl = this.extractCheckoutUrl(body);
+    return { checkoutUrl, providerReference: payload.txRef };
 
   }
 
@@ -172,7 +172,7 @@ export class ChapaService {
 
 
 
-  async verifyTransaction(txRef: string): Promise<ChapaVerifyResponse> {
+  async verifyTransaction(txRef: string): Promise<VerifyTransactionResponse> {
 
     this.assertConfigured();
 
@@ -228,7 +228,10 @@ export class ChapaService {
 
 
 
-    return body;
+    return {
+      success: body.status?.toLowerCase() === 'success',
+      providerReference: body.data?.reference,
+    };
 
   }
 

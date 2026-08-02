@@ -1,18 +1,22 @@
 import { Module, forwardRef } from '@nestjs/common';
-import { PaymentController, PaymentWebhookController } from './payment.controller';
+import { PaymentController } from './payment.controller';
 import { PaymentService } from './payment.service';
 import { PaymentRepository } from './payment.repository';
-import { ChapaService } from './chapa/chapa.service';
+import { ChapaService } from './providers/chapa/chapa.service';
+import { StripeService } from './providers/stripe/stripe.service';
+import { ChapaWebhookController } from './providers/chapa/chapa.webhook';
+import { StripeWebhookController } from './providers/stripe/stripe.webhook';
 import { SubscriptionGuard } from './guards/subscription.guard';
 import { EmailsModule } from '../emails/emails.module';
 
 @Module({
   imports: [forwardRef(() => EmailsModule)],
-  controllers: [PaymentController, PaymentWebhookController],
+  controllers: [PaymentController, ChapaWebhookController, StripeWebhookController],
   providers: [
     PaymentService,
     PaymentRepository,
     ChapaService,
+    StripeService,
     SubscriptionGuard,
   ],
   exports: [PaymentService, SubscriptionGuard],

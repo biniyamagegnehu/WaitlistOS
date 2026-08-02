@@ -1,6 +1,7 @@
 import {
   BillingCycle,
   PaymentEventType,
+  PaymentProvider,
   PaymentStatus,
   Prisma,
   SubscriptionPlanCode,
@@ -58,6 +59,7 @@ export interface CreatePaymentRecordInput {
   planCode: SubscriptionPlanCode;
   amount: number;
   currency: string;
+  provider?: PaymentProvider;
   providerReference: string;
   checkoutUrl?: string;
   metadata?: Prisma.InputJsonValue;

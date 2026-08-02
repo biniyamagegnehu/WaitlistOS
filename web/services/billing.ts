@@ -4,6 +4,7 @@ import type {
   PaymentHistoryItem,
   PublicPlan,
   SubscriptionPlanCode,
+  PaymentProvider,
   SubscriptionSummary,
 } from "@/types/billing";
 
@@ -29,11 +30,12 @@ export async function getPaymentHistory(): Promise<PaymentHistoryItem[]> {
 }
 
 export async function initializePayment(
-  plan: SubscriptionPlanCode
+  plan: SubscriptionPlanCode,
+  provider: PaymentProvider
 ): Promise<InitializePaymentResponse> {
   const response = await api.post<{ success: boolean; data: InitializePaymentResponse }>(
     "/payments/initialize",
-    { plan }
+    { plan, provider }
   );
   return response.data.data;
 }

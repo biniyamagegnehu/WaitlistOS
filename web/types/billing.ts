@@ -1,5 +1,7 @@
 export type SubscriptionPlanCode = "FREE" | "STARTER" | "PRO";
 
+export type PaymentProvider = "CHAPA" | "STRIPE";
+
 
 
 export interface PlanFeatureFlags {

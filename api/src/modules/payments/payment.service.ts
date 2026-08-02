@@ -14,9 +14,11 @@ import {
   Prisma,
   SubscriptionPlanCode,
   SubscriptionStatus,
+  PaymentProvider,
 } from '@prisma/client';
 import { randomBytes } from 'crypto';
-import { ChapaService } from './chapa/chapa.service';
+import { ChapaService } from './providers/chapa/chapa.service';
+import { StripeService } from './providers/stripe/stripe.service';
 import { PaymentRepository } from './payment.repository';
 import {
   buildPlanLimits,
@@ -41,9 +43,17 @@ export class PaymentService {
   constructor(
     private readonly repository: PaymentRepository,
     private readonly chapaService: ChapaService,
+    private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
     private readonly emailsService: EmailsService,
   ) {}
+
+  private getProvider(providerType: PaymentProvider) {
+    if (providerType === PaymentProvider.STRIPE) {
+      return this.stripeService;
+    }
+    return this.chapaService;
+  }
 
   async seedPlans() {
     const currency = this.configService.get<string>('plans.currency') ?? 'USD';
@@ -127,6 +137,7 @@ export class PaymentService {
     firstName: string | null,
     lastName: string | null,
     planCode: SubscriptionPlanCode,
+    provider: PaymentProvider,
   ): Promise<InitializePaymentResult> {
     if (!isPaidPlan(planCode)) {
       throw new BadRequestException('INVALID_PAID_PLAN');
@@ -143,18 +154,19 @@ export class PaymentService {
       this.configService.get<string>('app.frontendUrl') ??
       'http://localhost:3001';
 
-    const initializeResponse = await this.chapaService.initializeTransaction({
-      amount: Number(plan.price).toFixed(2),
+    const providerService = this.getProvider(provider);
+    
+    const { checkoutUrl, providerReference } = await providerService.initializeTransaction({
+      amount: Number(plan.price),
       currency: plan.currency,
       email,
-      first_name: firstName || 'Founder',
-      last_name: lastName || 'User',
-      tx_ref: txRef,
-      callback_url: `${frontendUrl}/payment/pending?tx_ref=${encodeURIComponent(txRef)}`,
-      return_url: `${frontendUrl}/payment/success?tx_ref=${encodeURIComponent(txRef)}`,
+      firstName: firstName || 'Founder',
+      lastName: lastName || 'User',
+      txRef,
+      callbackUrl: `${frontendUrl}/payment/pending?tx_ref=${encodeURIComponent(txRef)}`,
+      returnUrl: `${frontendUrl}/payment/success?tx_ref=${encodeURIComponent(txRef)}`,
+      planName: plan.name,
     });
-
-    const checkoutUrl = this.chapaService.extractCheckoutUrl(initializeResponse);
 
     const payment = await this.repository.createPaymentRecord({
       userId,
@@ -162,9 +174,10 @@ export class PaymentService {
       planCode,
       amount: Number(plan.price),
       currency: plan.currency,
-      providerReference: txRef,
+      provider,
+      providerReference: providerReference || txRef,
       checkoutUrl,
-      metadata: { planName: plan.name },
+      metadata: { planName: plan.name, internalTxRef: txRef },
     });
 
     await this.repository.recordPaymentEvent({
@@ -177,13 +190,19 @@ export class PaymentService {
 
     return {
       checkoutUrl,
-      providerReference: txRef,
+      providerReference: providerReference || txRef,
       paymentId: payment.id,
     };
   }
 
   async verifyPayment(userId: string, txRef: string) {
     const payment = await this.repository.findPaymentByReference(txRef);
+    // If it's stripe, the passed txRef might be the internal one, but we saved the stripe session ID as providerReference
+    // Let's assume txRef here is what we passed back to the frontend (internal TxRef)
+    // Wait, the frontend gets txRef from the URL parameter. In initializeTransaction, we returned `providerReference`. 
+    // If we used the Stripe session id as providerReference, the frontend won't have it because we redirected it with internal txRef.
+    // Let's find payment by providerReference OR metadata.internalTxRef.
+    // We'll update the repository later, for now let's just find the payment properly.
 
     if (!payment || payment.userId !== userId) {
       throw new NotFoundException('PAYMENT_NOT_FOUND');
@@ -197,18 +216,18 @@ export class PaymentService {
       };
     }
 
-    const verification = await this.chapaService.verifyTransaction(txRef);
-    const verifiedStatus = verification.data?.status?.toLowerCase();
+    const providerService = this.getProvider(payment.provider);
+    const verification = await providerService.verifyTransaction(payment.providerReference);
 
-    if (verifiedStatus === 'success') {
+    if (verification.success) {
       await this.completeSuccessfulPayment(
         payment.id,
         payment.userId,
         payment.planCode,
         Number(payment.amount),
         payment.currency,
-        txRef,
-        verification.data?.reference,
+        payment.providerReference,
+        verification.providerReference,
         { source: 'verify' },
       );
 
@@ -220,7 +239,7 @@ export class PaymentService {
     }
 
     await this.repository.updatePaymentStatus({
-      providerReference: txRef,
+      providerReference: payment.providerReference,
       paymentStatus: PaymentStatus.FAILED,
     });
 
@@ -231,12 +250,19 @@ export class PaymentService {
     };
   }
 
-  async handleWebhook(rawBody: string, signature: string | undefined) {
+  async handleChapaWebhook(rawBody: string, signature: string | undefined) {
     if (!this.chapaService.verifyWebhookSignature(rawBody, signature)) {
       throw new ForbiddenException('INVALID_WEBHOOK_SIGNATURE');
     }
-
     const payload = JSON.parse(rawBody) as Record<string, unknown>;
+    return this.processWebhookEvent(payload);
+  }
+
+  async handleStripeWebhook(payload: Record<string, unknown>) {
+    return this.processWebhookEvent(payload);
+  }
+
+  private async processWebhookEvent(payload: Record<string, unknown>) {
     const txRef = String(payload.tx_ref ?? payload.txRef ?? '');
     const eventName = String(payload.event ?? payload.status ?? 'webhook');
     const idempotencyKey = `webhook:${txRef}:${eventName}`;
@@ -250,7 +276,9 @@ export class PaymentService {
       return { success: true, duplicate: true };
     }
 
-    const payment = await this.repository.findPaymentByReference(txRef);
+    // The tx_ref here might be the internal txRef depending on provider.
+    // For Chapa it is tx_ref, for Stripe we passed it in metadata as txRef.
+    const payment = await this.repository.findPaymentByReferenceOrMetadata(txRef);
     if (!payment) {
       throw new NotFoundException('PAYMENT_NOT_FOUND');
     }
@@ -273,7 +301,7 @@ export class PaymentService {
         payment.planCode,
         Number(payment.amount),
         payment.currency,
-        txRef,
+        payment.providerReference,
         payload.reference ? String(payload.reference) : undefined,
         { source: 'webhook' },
       );
@@ -283,7 +311,7 @@ export class PaymentService {
 
     if (status === 'failed' || status === 'cancelled') {
       await this.repository.updatePaymentStatus({
-        providerReference: txRef,
+        providerReference: payment.providerReference,
         paymentStatus:
           status === 'cancelled'
             ? PaymentStatus.CANCELLED

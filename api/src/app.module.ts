@@ -9,6 +9,7 @@ import { appConfig } from './config/app.config';
 import { chapaConfig } from './config/chapa.config';
 import { plansConfig } from './config/plans.config';
 import { aiConfig } from './config/ai.config';
+import { stripeConfig } from './config/stripe.config';
 import { CommonModule } from './common/common.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
@@ -38,7 +39,7 @@ import { ScheduleModule } from '@nestjs/schedule';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, chapaConfig, plansConfig, aiConfig],
+      load: [appConfig, chapaConfig, plansConfig, aiConfig, stripeConfig],
     }),
     ThrottlerModule.forRoot([
       {

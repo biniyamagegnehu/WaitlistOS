@@ -151,7 +151,7 @@ export function ReferralMessages({ participantId, primaryColor = "var(--primary)
                 {messages.twitter}
               </div>
               <Button
-                size="icon"
+                size="sm"
                 variant="ghost"
                 className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => copyToClipboard(messages.twitter)}
@@ -172,7 +172,7 @@ export function ReferralMessages({ participantId, primaryColor = "var(--primary)
                 {messages.linkedin}
               </div>
               <Button
-                size="icon"
+                size="sm"
                 variant="ghost"
                 className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => copyToClipboard(messages.linkedin)}
@@ -193,7 +193,7 @@ export function ReferralMessages({ participantId, primaryColor = "var(--primary)
                 {messages.whatsapp}
               </div>
               <Button
-                size="icon"
+                size="sm"
                 variant="ghost"
                 className="absolute top-2 right-2 h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
                 onClick={() => copyToClipboard(messages.whatsapp)}

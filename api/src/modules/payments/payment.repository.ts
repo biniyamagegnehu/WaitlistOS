@@ -4,8 +4,9 @@ import {
   PaymentStatus,
   SubscriptionPlanCode,
   SubscriptionStatus,
+  Prisma,
+  PaymentProvider,
 } from '@prisma/client';
-import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import type {
   ActivateSubscriptionInput,
@@ -97,9 +98,26 @@ export class PaymentRepository {
     });
   }
 
-  findPaymentByReference(providerReference: string) {
+  findPaymentByReference(txRef: string) {
     return this.prisma.payment.findUnique({
-      where: { providerReference },
+      where: { providerReference: txRef },
+      include: { subscription: true },
+    });
+  }
+
+  async findPaymentByReferenceOrMetadata(txRef: string) {
+    return this.prisma.payment.findFirst({
+      where: {
+        OR: [
+          { providerReference: txRef },
+          {
+            metadata: {
+              path: ['internalTxRef'],
+              equals: txRef,
+            },
+          },
+        ],
+      },
       include: { subscription: true },
     });
   }
@@ -157,6 +175,7 @@ export class PaymentRepository {
         planCode: input.planCode,
         amount: input.amount,
         currency: input.currency,
+        provider: input.provider,
         providerReference: input.providerReference,
         checkoutUrl: input.checkoutUrl,
         paymentStatus: PaymentStatus.PENDING,
