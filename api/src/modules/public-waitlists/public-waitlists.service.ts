@@ -28,6 +28,7 @@ export class PublicWaitlistsService {
         _count: {
           select: { participants: true },
         },
+        copy: true,
       },
     });
 
@@ -69,6 +70,13 @@ export class PublicWaitlistsService {
         branding: this.brandingService.formatPublicBranding(waitlist.branding),
         hostedPage: widgetMetadata.hostedPage,
         widget,
+        copy: waitlist.copy ? {
+          headline: waitlist.copy.headline,
+          subheadline: waitlist.copy.subheadline,
+          cta: waitlist.copy.cta,
+          features: waitlist.copy.features,
+          faqs: waitlist.copy.faqs,
+        } : null,
       },
     };
   }

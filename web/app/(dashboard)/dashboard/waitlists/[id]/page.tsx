@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ArrowLeft, ExternalLink, Share2, ChevronDown, ChevronUp } from "lucide-react";
 import { ParticipantTable } from "@/components/dashboard/ParticipantTable";
+import { AiCopywriter } from "@/components/dashboard/AiCopywriter";
 import { ExportButton } from "@/components/dashboard/ExportButton";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Button } from "@/components/ui/button";
@@ -187,6 +188,8 @@ export default function WaitlistDetailPage() {
           )}
         </CardContent>
       </Card>
+
+      <AiCopywriter waitlistId={waitlistId} waitlist={waitlist} />
 
       <ParticipantTable
         waitlistId={waitlistId}

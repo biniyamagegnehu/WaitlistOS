@@ -454,6 +454,8 @@ model Waitlist {
 
   cohorts      Cohort[]
 
+  copy         WaitlistCopy?
+
 
 
   @@index([founderId])
@@ -931,3 +933,43 @@ model AiLog {
   @@map("ai_logs")
 }
 
+// ─────────────────────────────────────────────
+// WaitlistCopy — Current live copy for a waitlist (AI Copywriter)
+// ─────────────────────────────────────────────
+
+model WaitlistCopy {
+  id           String   @id @default(uuid())
+  waitlistId   String   @unique
+  headline     String
+  subheadline  String
+  cta          String
+  features     Json     // [{title: string, description: string}] x3
+  faqs         Json     // [{question: string, answer: string}] x5
+  generatedAt  DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  waitlist Waitlist              @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  versions WaitlistCopyVersion[]
+
+  @@map("waitlist_copies")
+}
+
+// ─────────────────────────────────────────────
+// WaitlistCopyVersion — Append-only version history for AI copy
+// ─────────────────────────────────────────────
+
+model WaitlistCopyVersion {
+  id          String   @id @default(uuid())
+  copyId      String
+  headline    String
+  subheadline String
+  cta         String
+  features    Json
+  faqs        Json
+  createdAt   DateTime @default(now())
+
+  copy WaitlistCopy @relation(fields: [copyId], references: [id], onDelete: Cascade)
+
+  @@index([copyId])
+  @@map("waitlist_copy_versions")
+}

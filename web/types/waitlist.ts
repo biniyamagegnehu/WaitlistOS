@@ -1,3 +1,5 @@
+import type { WaitlistCopy } from "./copywriter";
+
 export interface WaitlistBranding {
   logoUrl: string | null;
   primaryColor: string;
@@ -51,6 +53,7 @@ export interface PublicWaitlistResponse {
   branding: WaitlistBranding | null;
   hostedPage: string;
   widget: WaitlistWidget | null;
+  copy?: Pick<WaitlistCopy, 'headline' | 'subheadline' | 'cta' | 'features' | 'faqs'> | null;
 }
 
 export interface UploadedFile {
