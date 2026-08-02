@@ -4,6 +4,11 @@ export interface DashboardParticipant {
   referralCount: number;
   createdAt: string;
   status: string;
+  engagement?: {
+    riskScore: number;
+    riskLevel: 'HEALTHY' | 'MEDIUM_RISK' | 'HIGH_RISK';
+    lastEvaluatedAt: string;
+  };
 }
 
 export interface DashboardWaitlist {
@@ -40,6 +45,11 @@ export interface DashboardOverview {
     waitlistName: string;
   }>;
   waitlistCount: number;
+  health: {
+    healthy: number;
+    mediumRisk: number;
+    highRisk: number;
+  };
 }
 
 export type SettingsTab = "profile" | "security" | "sessions";

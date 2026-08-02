@@ -2,7 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Users, TrendingUp, Trophy, List } from "lucide-react";
+import { Users, TrendingUp, Trophy, List, Activity, AlertTriangle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -59,7 +59,14 @@ export default function DashboardPage() {
     referralConversionRate: 0,
     topReferrers: [],
     waitlistCount: 0,
+    health: {
+      healthy: 0,
+      mediumRisk: 0,
+      highRisk: 0,
+    }
   };
+
+  const totalAtRisk = stats.health.mediumRisk + stats.health.highRisk;
 
   return (
     <div className="space-y-8">
@@ -90,6 +97,74 @@ export default function DashboardPage() {
           value={stats.waitlistCount.toLocaleString()}
           icon={<List className="h-5 w-5 text-accent" />}
         />
+      </div>
+
+      {/* Waitlist Health Metrics */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-4 w-4 text-primary" />
+              Waitlist Health
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-muted-foreground">Total Participants</span>
+                <span className="font-semibold text-foreground">{stats.totalSignups.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-success"></div>
+                  <span className="text-sm text-foreground">Healthy</span>
+                </div>
+                <span className="font-semibold text-foreground">{stats.health.healthy.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-warning"></div>
+                  <span className="text-sm text-foreground">Medium Risk</span>
+                </div>
+                <span className="font-semibold text-foreground">{stats.health.mediumRisk.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-destructive"></div>
+                  <span className="text-sm text-foreground">High Risk</span>
+                </div>
+                <span className="font-semibold text-foreground">{stats.health.highRisk.toLocaleString()}</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-warning">
+              <AlertTriangle className="h-4 w-4" />
+              At-Risk Participants
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex flex-col items-center justify-center h-[180px] text-center">
+            {totalAtRisk > 0 ? (
+              <>
+                <p className="text-4xl font-bold text-foreground mb-2">{totalAtRisk.toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">participants need re-engagement</p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Re-engagement emails are queued automatically for high-risk users.
+                </p>
+              </>
+            ) : (
+              <>
+                <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mb-4">
+                  <Activity className="h-6 w-6 text-success" />
+                </div>
+                <p className="text-sm font-medium text-foreground">All participants are healthy!</p>
+              </>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <Card>

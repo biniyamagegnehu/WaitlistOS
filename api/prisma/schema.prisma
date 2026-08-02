@@ -173,6 +173,16 @@ enum ParticipantStatus {
 
 }
 
+enum RiskLevel {
+
+  HEALTHY
+
+  MEDIUM_RISK
+
+  HIGH_RISK
+
+}
+
 
 
 // ─────────────────────────────────────────────
@@ -570,7 +580,11 @@ model Participant {
 
   accessedAt         DateTime?
 
+  lastPositionUpdatedAt DateTime @default(now())
+
   createdAt          DateTime @default(now())
+
+  updatedAt          DateTime @default(now()) @updatedAt
 
 
 
@@ -585,6 +599,10 @@ model Participant {
   cohortInvitations    CohortInvitation[]
 
   referralMessage      ParticipantReferralMessage?
+
+  engagement           ParticipantEngagement?
+
+  engagementLogs       ParticipantEngagementLog[]
 
 
 
@@ -991,4 +1009,33 @@ model ParticipantReferralMessage {
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
 
   @@map("participant_referral_messages")
+}
+
+// ─────────────────────────────────────────────
+// ParticipantEngagement — Dropout Prediction
+// ─────────────────────────────────────────────
+model ParticipantEngagement {
+  id              String    @id @default(uuid())
+  participantId   String    @unique
+  riskScore       Int
+  riskLevel       RiskLevel
+  lastEvaluatedAt DateTime  @default(now())
+  lastEmailedAt   DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  @@map("participant_engagements")
+}
+
+model ParticipantEngagementLog {
+  id              String    @id @default(uuid())
+  participantId   String
+  riskScore       Int
+  riskLevel       RiskLevel
+  evaluatedAt     DateTime  @default(now())
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  @@index([participantId])
+  @@map("participant_engagement_logs")
 }

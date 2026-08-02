@@ -21,6 +21,7 @@ export interface DashboardParticipant {
   referralCount: number;
   createdAt: Date;
   status: string;
+  engagement?: any;
 }
 
 export interface PaginationMetadata {
@@ -47,6 +48,11 @@ export interface DashboardOverview {
     waitlistName: string;
   }>;
   waitlistCount: number;
+  health: {
+    healthy: number;
+    mediumRisk: number;
+    highRisk: number;
+  };
 }
 
 @Injectable()
@@ -82,6 +88,7 @@ export class DashboardService {
             email: true,
             referralCount: true,
             referredById: true,
+            engagement: { select: { riskLevel: true } },
           },
         },
       },
@@ -110,11 +117,22 @@ export class DashboardService {
         waitlistName: p.waitlistName,
       }));
 
+    let healthy = 0;
+    let mediumRisk = 0;
+    let highRisk = 0;
+
+    participants.forEach((p) => {
+      if (p.engagement?.riskLevel === 'HIGH_RISK') highRisk++;
+      else if (p.engagement?.riskLevel === 'MEDIUM_RISK') mediumRisk++;
+      else healthy++; // Defaults to healthy if no engagement record yet
+    });
+
     return {
       totalSignups,
       referralConversionRate,
       topReferrers,
       waitlistCount: waitlists.length,
+      health: { healthy, mediumRisk, highRisk },
     };
   }
 
@@ -262,6 +280,13 @@ export class DashboardService {
             referralCount: true,
             createdAt: true,
             status: true,
+            engagement: {
+              select: {
+                riskScore: true,
+                riskLevel: true,
+                lastEvaluatedAt: true,
+              }
+            }
           },
         },
       },

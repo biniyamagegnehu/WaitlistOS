@@ -243,6 +243,7 @@ export function ParticipantTable({
                       )}
                     </div>
                   </TableHeadCell>
+                  <TableHeadCell>Risk</TableHeadCell>
                 </TableRow>
               </TableHead>
               <TableBody>
@@ -271,6 +272,24 @@ export function ParticipantTable({
                       </TableCell>
                       <TableCell className="text-muted-foreground">
                         {formatDate(p.createdAt)}
+                      </TableCell>
+                      <TableCell>
+                        {p.engagement ? (
+                          <div className="flex flex-col items-start gap-1">
+                            <Badge variant={
+                              p.engagement.riskLevel === 'HIGH_RISK' ? 'danger' : 
+                              p.engagement.riskLevel === 'MEDIUM_RISK' ? 'warning' : 
+                              'success'
+                            }>
+                              {p.engagement.riskLevel.replace('_', ' ')}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground whitespace-nowrap">
+                              Score: {p.engagement.riskScore}
+                            </span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground text-xs whitespace-nowrap">Not evaluated</span>
+                        )}
                       </TableCell>
                     </TableRow>
                   ))

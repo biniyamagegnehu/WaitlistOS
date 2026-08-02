@@ -29,8 +29,10 @@ import { RewardsModule } from './modules/rewards/rewards.module';
 import { CohortsModule } from './modules/cohorts/cohorts.module';
 import { PaymentModule } from './modules/payments/payment.module';
 import { AiModule } from './modules/ai/ai.module';
+import { EngagementModule } from './modules/engagement/engagement.module';
 import { AccessTokenGuard } from './modules/auth/guards/access-token.guard';
 import { RolesGuard } from './common/guards/roles.guard';
+import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [
@@ -47,6 +49,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     BullModule.forRoot({
       redis: process.env.REDIS_URL || 'redis://localhost:6379',
     }),
+    ScheduleModule.forRoot(),
     CommonModule,
     PrismaModule,
     SessionsModule,
@@ -67,6 +70,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     RewardsModule,
     CohortsModule,
     AiModule,
+    EngagementModule,
   ],
   controllers: [AppController],
   providers: [

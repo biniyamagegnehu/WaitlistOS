@@ -87,4 +87,10 @@ export class EmailsProcessor {
   async handleSendSubscriptionExpired(job: Job<any>) {
     await this.emailsService.sendSubscriptionExpiredEmail(job.data);
   }
+
+  @Process('send-reengagement-email')
+  async handleSendReengagementEmail(job: Job<any>) {
+    this.logger.debug(`Processing send-reengagement-email job for ${job.data.email}...`);
+    await this.emailsService.sendReengagementEmail(job.data);
+  }
 }

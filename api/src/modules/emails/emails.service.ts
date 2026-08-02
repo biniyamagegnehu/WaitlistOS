@@ -18,6 +18,7 @@ import { getPaymentFailedTemplate } from './templates/payment-failed';
 import { getSubscriptionRenewedTemplate } from './templates/subscription-renewed';
 import { getSubscriptionExpiredTemplate } from './templates/subscription-expired';
 import { getInvitationTemplate } from './templates/invitation';
+import { getReengagementEmailTemplate } from './templates/reengagement';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -268,6 +269,12 @@ export class EmailsService implements OnModuleInit {
       .catch((e) => this.logger.error('Failed to queue invitation email: ' + e.message));
   }
 
+  queueReengagementEmail(email: string, templateId: number, position: number, referralLink: string) {
+    this.emailsQueue
+      .add('send-reengagement-email', { email, templateId, position, referralLink })
+      .catch((e) => this.logger.error('Failed to queue re-engagement email: ' + e.message));
+  }
+
   // ── Direct Sending Methods (Called by Processor) ────────────────────────────
 
   private async executeSend(email: string, subject: string, html: string) {
@@ -425,6 +432,11 @@ export class EmailsService implements OnModuleInit {
     const waitlistName = waitlist?.name || 'the waitlist';
     const html = getInvitationTemplate(waitlistName, data.position);
     await this.executeSend(data.email, "You're In!", html);
+  }
+
+  async sendReengagementEmail(data: { email: string; templateId: number; position: number; referralLink: string }) {
+    const { subject, html } = getReengagementEmailTemplate(data.templateId, data.position, data.referralLink);
+    await this.executeSend(data.email, subject, html);
   }
 
   // Direct method for cohorts service (non-queued)
