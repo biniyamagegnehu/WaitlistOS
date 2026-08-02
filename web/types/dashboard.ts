@@ -34,6 +34,12 @@ export interface DashboardWaitlistDetail {
   waitlist: DashboardWaitlist;
   participants: DashboardParticipant[];
   pagination?: PaginationMetadata;
+  health?: {
+    healthy: number;
+    mediumRisk: number;
+    highRisk: number;
+    notEvaluated: number;
+  };
 }
 
 export interface DashboardOverview {

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ExternalLink, Share2, ChevronDown, ChevronUp } from "lucide-react";
+import { ArrowLeft, ExternalLink, Share2, ChevronDown, ChevronUp, Activity, AlertTriangle } from "lucide-react";
 import { ParticipantTable } from "@/components/dashboard/ParticipantTable";
 import { AiCopywriter } from "@/components/dashboard/AiCopywriter";
 import { ExportButton } from "@/components/dashboard/ExportButton";
@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getDashboardWaitlistDetail } from "@/services/dashboard";
 import type { DashboardWaitlistDetail, DashboardParticipant, PaginationMetadata } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
@@ -191,12 +191,142 @@ export default function WaitlistDetailPage() {
 
       <AiCopywriter waitlistId={waitlistId} waitlist={waitlist} />
 
+      {/* Waitlist Health Card */}
+      {detail.health && (
+        <WaitlistHealthCard health={detail.health} total={waitlist.totalParticipants} />
+      )}
+
       <ParticipantTable
         waitlistId={waitlistId}
         initialParticipants={participants}
         initialPagination={pagination}
         onLoadPage={loadPage}
       />
+    </div>
+  );
+}
+
+function WaitlistHealthCard({
+  health,
+  total,
+}: {
+  health: { healthy: number; mediumRisk: number; highRisk: number; notEvaluated: number };
+  total: number;
+}) {
+  const atRisk = health.mediumRisk + health.highRisk;
+  const healthyPct = total > 0 ? Math.round((health.healthy / total) * 100) : 0;
+  const mediumPct = total > 0 ? Math.round((health.mediumRisk / total) * 100) : 0;
+  const highPct = total > 0 ? Math.round((health.highRisk / total) * 100) : 0;
+
+  return (
+    <Card>
+      <CardHeader className="pb-4">
+        <CardTitle className="flex items-center gap-2">
+          <Activity className="h-4 w-4 text-primary" />
+          Engagement Health
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-5">
+
+        {/* Progress bar */}
+        {total > 0 && (
+          <div className="space-y-2">
+            <div className="flex h-3 overflow-hidden rounded-full bg-surface-muted">
+              <div
+                className="bg-success transition-all"
+                style={{ width: `${healthyPct}%` }}
+                title={`Healthy: ${healthyPct}%`}
+              />
+              <div
+                className="bg-warning transition-all"
+                style={{ width: `${mediumPct}%` }}
+                title={`Medium Risk: ${mediumPct}%`}
+              />
+              <div
+                className="bg-destructive transition-all"
+                style={{ width: `${highPct}%` }}
+                title={`High Risk: ${highPct}%`}
+              />
+            </div>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-success" />
+                Healthy {healthyPct}%
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-warning" />
+                Medium {mediumPct}%
+              </span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full bg-destructive" />
+                High Risk {highPct}%
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Stat grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <HealthStat
+            label="Healthy"
+            value={health.healthy}
+            color="text-success"
+            dot="bg-success"
+          />
+          <HealthStat
+            label="Medium Risk"
+            value={health.mediumRisk}
+            color="text-warning"
+            dot="bg-warning"
+          />
+          <HealthStat
+            label="High Risk"
+            value={health.highRisk}
+            color="text-destructive"
+            dot="bg-destructive"
+          />
+          <div className="rounded-lg border border-border bg-background p-4">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="h-3.5 w-3.5 text-warning" />
+              <p className="text-xs font-medium text-muted-foreground">At Risk</p>
+            </div>
+            <p className={`text-2xl font-bold ${atRisk > 0 ? 'text-warning' : 'text-foreground'}`}>
+              {atRisk}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              {atRisk > 0 ? 'need re-engagement' : 'all good!'}
+            </p>
+          </div>
+        </div>
+
+        {atRisk > 0 && (
+          <p className="text-xs text-muted-foreground border-t border-border pt-3">
+            Re-engagement emails are automatically queued for high-risk participants once per week.
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function HealthStat({
+  label,
+  value,
+  color,
+  dot,
+}: {
+  label: string;
+  value: number;
+  color: string;
+  dot: string;
+}) {
+  return (
+    <div className="rounded-lg border border-border bg-background p-4">
+      <div className="flex items-center gap-2 mb-2">
+        <span className={`inline-block w-2 h-2 rounded-full ${dot}`} />
+        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+      </div>
+      <p className={`text-2xl font-bold ${color}`}>{value}</p>
     </div>
   );
 }

@@ -37,6 +37,12 @@ export interface DashboardWaitlistDetail {
   waitlist: DashboardWaitlist;
   participants: DashboardParticipant[];
   pagination?: PaginationMetadata;
+  health?: {
+    healthy: number;
+    mediumRisk: number;
+    highRisk: number;
+    notEvaluated: number;
+  };
 }
 
 export interface DashboardOverview {
@@ -298,6 +304,23 @@ export class DashboardService {
       );
     }
 
+    // Compute health metrics for this specific waitlist (across all participants, not just this page)
+    const allEngagements = await this.prisma.participantEngagement.findMany({
+      where: { participant: { waitlistId } },
+      select: { riskLevel: true },
+    });
+
+    const totalAll = waitlist._count.participants;
+    let healthy = 0, mediumRisk = 0, highRisk = 0;
+    for (const e of allEngagements) {
+      if (e.riskLevel === 'HIGH_RISK') highRisk++;
+      else if (e.riskLevel === 'MEDIUM_RISK') mediumRisk++;
+      else healthy++;
+    }
+    const notEvaluated = totalAll - allEngagements.length;
+    // Participants without engagement records are treated as healthy by default
+    healthy += notEvaluated;
+
     return {
       waitlist: {
         id: waitlist.id,
@@ -317,6 +340,7 @@ export class DashboardService {
         hasNext: page < totalPages,
         hasPrevious: page > 1,
       },
+      health: { healthy, mediumRisk, highRisk, notEvaluated },
     };
   }
 
