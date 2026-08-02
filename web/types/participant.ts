@@ -19,8 +19,15 @@ export interface UnlockedReward {
   value: number | null;
 }
 
+export interface ReferralMessages {
+  twitter: string;
+  linkedin: string;
+  whatsapp: string;
+}
+
 export interface JoinResponse {
   success: boolean;
+  id: string;
   email: string;
   position: number;
   referralCode: string;

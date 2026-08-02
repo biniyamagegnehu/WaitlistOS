@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/loader";
 import { ReferralSharePreview } from "@/components/waitlist/ReferralSharePreview";
 import { getShareableReferralUrl } from "@/lib/referral";
+import { ReferralMessages } from "@/components/waitlist/ReferralMessages";
 
 export default function PublicWaitlistPageClient() {
   const params = useParams();
@@ -183,6 +184,9 @@ export default function PublicWaitlistPageClient() {
             </Button>
           </CardContent>
         </Card>
+
+        {/* AI Referral Messages */}
+        <ReferralMessages participantId={joined.id} primaryColor={primaryColor} />
       </div>
     );
   }

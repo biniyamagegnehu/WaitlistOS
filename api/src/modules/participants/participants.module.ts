@@ -6,9 +6,10 @@ import { PaymentModule } from '../payments/payment.module';
 
 @Module({
   imports: [
-    BullModule.registerQueue({
-      name: 'emails',
-    }),
+    BullModule.registerQueue(
+      { name: 'emails' },
+      { name: 'ai-tasks' },
+    ),
     PaymentModule,
   ],
   controllers: [ParticipantsController],

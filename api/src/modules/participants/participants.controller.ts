@@ -4,6 +4,8 @@ import {
   Body,
   HttpCode,
   HttpStatus,
+  Get,
+  Param,
 } from '@nestjs/common';
 import { Public } from '../../common/decorators/public.decorator';
 import { ParticipantsService } from './participants.service';
@@ -18,5 +20,18 @@ export class ParticipantsController {
   @HttpCode(HttpStatus.CREATED)
   create(@Body() createParticipantDto: CreateParticipantDto) {
     return this.participantsService.create(createParticipantDto);
+  }
+
+  @Public()
+  @Get(':id/referral-messages')
+  getReferralMessages(@Param('id') id: string) {
+    return this.participantsService.getReferralMessages(id);
+  }
+
+  @Public()
+  @Post(':id/referral-messages/regenerate')
+  @HttpCode(HttpStatus.OK)
+  regenerateReferralMessages(@Param('id') id: string) {
+    return this.participantsService.regenerateReferralMessages(id);
   }
 }

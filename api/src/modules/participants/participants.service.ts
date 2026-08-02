@@ -19,6 +19,7 @@ export class ParticipantsService {
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue('emails') private readonly emailsQueue: Queue,
+    @InjectQueue('ai-tasks') private readonly aiTasksQueue: Queue,
     private readonly paymentService: PaymentService,
   ) {}
 
@@ -233,13 +234,47 @@ export class ParticipantsService {
       },
     );
 
+    // 7. Queue AI Referral Messages
+    await this.aiTasksQueue.add(
+      'generate-referral-messages',
+      { participantId: participant.id },
+      {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+        removeOnComplete: true,
+      },
+    );
+
     return {
       success: true,
+      id: participant.id,
       email: participant.email,
       position: participant.position,
       referralCode: participant.referralCode,
       referralCount: participant.referralCount,
       referralLink,
     };
+  }
+
+  // ── Referral Messages ─────────────────────────────────────
+  async getReferralMessages(id: string) {
+    const messages = await this.prisma.participantReferralMessage.findUnique({
+      where: { participantId: id },
+      select: { twitter: true, linkedin: true, whatsapp: true }
+    });
+    return { success: true, data: messages };
+  }
+
+  async regenerateReferralMessages(id: string) {
+    await this.aiTasksQueue.add(
+      'generate-referral-messages',
+      { participantId: id },
+      {
+        attempts: 3,
+        backoff: { type: 'exponential', delay: 1000 },
+        removeOnComplete: true,
+      },
+    );
+    return { success: true, message: 'Regeneration queued' };
   }
 }

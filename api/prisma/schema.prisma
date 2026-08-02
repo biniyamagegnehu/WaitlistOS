@@ -584,6 +584,8 @@ model Participant {
 
   cohortInvitations    CohortInvitation[]
 
+  referralMessage      ParticipantReferralMessage?
+
 
 
   @@unique([waitlistId, email])
@@ -972,4 +974,21 @@ model WaitlistCopyVersion {
 
   @@index([copyId])
   @@map("waitlist_copy_versions")
+}
+
+// ─────────────────────────────────────────────
+// ParticipantReferralMessage — AI Generated sharing texts
+// ─────────────────────────────────────────────
+model ParticipantReferralMessage {
+  id            String   @id @default(uuid())
+  participantId String   @unique
+  twitter       String   @db.Text
+  linkedin      String   @db.Text
+  whatsapp      String   @db.Text
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@map("participant_referral_messages")
 }

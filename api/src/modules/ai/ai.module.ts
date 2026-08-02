@@ -4,11 +4,17 @@ import { AiController } from './ai.controller';
 import { CopywriterService } from './copywriter.service';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { WaitlistsModule } from '../waitlists/waitlists.module';
+import { BullModule } from '@nestjs/bull';
+import { ReferralMessagesProcessor } from './referral-messages.processor';
 
 @Module({
-  imports: [PrismaModule, WaitlistsModule],
+  imports: [
+    PrismaModule, 
+    WaitlistsModule,
+    BullModule.registerQueue({ name: 'ai-tasks' }),
+  ],
   controllers: [AiController],
-  providers: [AiService, CopywriterService],
+  providers: [AiService, CopywriterService, ReferralMessagesProcessor],
   exports: [AiService],
 })
 export class AiModule {}
