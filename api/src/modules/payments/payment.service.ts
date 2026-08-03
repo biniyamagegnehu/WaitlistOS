@@ -196,7 +196,7 @@ export class PaymentService {
   }
 
   async verifyPayment(userId: string, txRef: string) {
-    const payment = await this.repository.findPaymentByReference(txRef);
+    const payment = await this.repository.findPaymentByReferenceOrMetadata(txRef);
     // If it's stripe, the passed txRef might be the internal one, but we saved the stripe session ID as providerReference
     // Let's assume txRef here is what we passed back to the frontend (internal TxRef)
     // Wait, the frontend gets txRef from the URL parameter. In initializeTransaction, we returned `providerReference`. 
