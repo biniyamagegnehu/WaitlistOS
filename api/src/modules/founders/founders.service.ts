@@ -23,6 +23,7 @@ export class FoundersService {
       teamSize: founder.teamSize,
       companyLogo: founder.companyLogo,
       companyWebsite: founder.companyWebsite,
+      billingEmail: founder.billingEmail,
       onboardingCompleted: founder.onboardingCompleted,
     };
   }
@@ -46,6 +47,7 @@ export class FoundersService {
         teamSize: dto.teamSize,
         companyLogo: dto.companyLogo,
         companyWebsite: dto.companyWebsite,
+        billingEmail: dto.billingEmail,
         onboardingCompleted: true,
       },
     });
@@ -58,6 +60,7 @@ export class FoundersService {
       teamSize: updatedFounder.teamSize,
       companyLogo: updatedFounder.companyLogo,
       companyWebsite: updatedFounder.companyWebsite,
+      billingEmail: updatedFounder.billingEmail,
       onboardingCompleted: updatedFounder.onboardingCompleted,
     };
   }
@@ -81,6 +84,7 @@ export class FoundersService {
         ...(dto.teamSize !== undefined && { teamSize: dto.teamSize }),
         ...(dto.companyLogo !== undefined && { companyLogo: dto.companyLogo }),
         ...(dto.companyWebsite !== undefined && { companyWebsite: dto.companyWebsite }),
+        ...(dto.billingEmail !== undefined && { billingEmail: dto.billingEmail }),
       },
     });
 
@@ -92,6 +96,7 @@ export class FoundersService {
       teamSize: updatedFounder.teamSize,
       companyLogo: updatedFounder.companyLogo,
       companyWebsite: updatedFounder.companyWebsite,
+      billingEmail: updatedFounder.billingEmail,
       onboardingCompleted: updatedFounder.onboardingCompleted,
     };
   }

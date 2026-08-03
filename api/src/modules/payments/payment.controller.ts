@@ -39,6 +39,24 @@ export class PaymentController {
   }
 
   @UseGuards(VerifiedEmailGuard)
+  @Post('subscription/cancel')
+  @HttpCode(HttpStatus.OK)
+  cancelSubscription(@CurrentUser() user: AuthenticatedUser) {
+    return this.paymentService
+      .cancelSubscription(user.userId)
+      .then((data) => ({ success: true, data }));
+  }
+
+  @UseGuards(VerifiedEmailGuard)
+  @Post('subscription/resume')
+  @HttpCode(HttpStatus.OK)
+  resumeSubscription(@CurrentUser() user: AuthenticatedUser) {
+    return this.paymentService
+      .resumeSubscription(user.userId)
+      .then((data) => ({ success: true, data }));
+  }
+
+  @UseGuards(VerifiedEmailGuard)
   @Get('history')
   @HttpCode(HttpStatus.OK)
   getHistory(@CurrentUser() user: AuthenticatedUser) {

@@ -349,6 +349,7 @@ model Founder {
   teamSize           String?
   companyLogo        String?
   companyWebsite     String?
+  billingEmail       String?
   onboardingCompleted Boolean @default(false)
 
   createdAt DateTime @default(now())

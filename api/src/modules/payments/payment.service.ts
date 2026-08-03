@@ -116,6 +116,33 @@ export class PaymentService {
     return this.toSubscriptionSummary(subscription);
   }
 
+  async cancelSubscription(userId: string): Promise<SubscriptionSummaryDto> {
+    const subscription = await this.ensureSubscription(userId);
+    
+    if (subscription.status !== SubscriptionStatus.ACTIVE) {
+      throw new BadRequestException('SUBSCRIPTION_NOT_ACTIVE');
+    }
+
+    const updated = await this.repository.cancelSubscription(userId);
+    return this.toSubscriptionSummary(updated);
+  }
+
+  async resumeSubscription(userId: string): Promise<SubscriptionSummaryDto> {
+    const subscription = await this.ensureSubscription(userId);
+    
+    if (subscription.status !== SubscriptionStatus.CANCELLED) {
+      throw new BadRequestException('SUBSCRIPTION_NOT_CANCELLED');
+    }
+
+    // Only allow resume if it hasn't expired yet
+    if (subscription.expiresAt && subscription.expiresAt < new Date()) {
+      throw new BadRequestException('SUBSCRIPTION_EXPIRED');
+    }
+
+    const updated = await this.repository.resumeSubscription(userId);
+    return this.toSubscriptionSummary(updated);
+  }
+
   async getPaymentHistory(userId: string): Promise<PaymentHistoryItemDto[]> {
     const payments = await this.repository.listPaymentsByUserId(userId);
     return payments.map((payment) => ({
@@ -389,7 +416,7 @@ export class PaymentService {
   async assertFeatureAccess(userId: string, feature: PremiumFeature) {
     const subscription = await this.ensureSubscription(userId);
 
-    if (!isSubscriptionActive(subscription.status)) {
+    if (!isSubscriptionActive({ status: subscription.status, expiresAt: subscription.expiresAt })) {
       throw new ForbiddenException('SUBSCRIPTION_INACTIVE');
     }
 
@@ -415,7 +442,7 @@ export class PaymentService {
   ) {
     const subscription = await this.ensureSubscription(userId);
 
-    if (!isSubscriptionActive(subscription.status)) {
+    if (!isSubscriptionActive({ status: subscription.status, expiresAt: subscription.expiresAt })) {
       throw new ForbiddenException('SUBSCRIPTION_INACTIVE');
     }
 

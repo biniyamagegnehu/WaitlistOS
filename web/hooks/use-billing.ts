@@ -7,6 +7,8 @@ import {
   getSubscription,
   initializePayment,
   verifyPayment,
+  cancelSubscription,
+  resumeSubscription,
 } from "@/services/billing";
 import type { SubscriptionPlanCode, PaymentProvider } from "@/types/billing";
 
@@ -51,5 +53,17 @@ export function useVerifyPayment(txRef: string | null) {
     queryFn: () => verifyPayment(txRef!),
     enabled: Boolean(txRef),
     retry: 2,
+  });
+}
+
+export function useCancelSubscription() {
+  return useMutation({
+    mutationFn: cancelSubscription,
+  });
+}
+
+export function useResumeSubscription() {
+  return useMutation({
+    mutationFn: resumeSubscription,
   });
 }

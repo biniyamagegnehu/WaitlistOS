@@ -56,8 +56,10 @@ export function isPaidPlan(planCode: SubscriptionPlanCode): boolean {
   );
 }
 
-export function isSubscriptionActive(status: SubscriptionStatus): boolean {
-  return status === SubscriptionStatus.ACTIVE;
+export function isSubscriptionActive(subscription: { status: SubscriptionStatus, expiresAt: Date | null }): boolean {
+  if (subscription.status === SubscriptionStatus.ACTIVE) return true;
+  if (subscription.status === SubscriptionStatus.CANCELLED && subscription.expiresAt && subscription.expiresAt > new Date()) return true;
+  return false;
 }
 
 export function hasMinimumPlan(

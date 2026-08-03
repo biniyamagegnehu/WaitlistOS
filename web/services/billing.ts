@@ -22,6 +22,20 @@ export async function getSubscription(): Promise<SubscriptionSummary> {
   return response.data.data;
 }
 
+export async function cancelSubscription(): Promise<SubscriptionSummary> {
+  const response = await api.post<{ success: boolean; data: SubscriptionSummary }>(
+    "/payments/subscription/cancel"
+  );
+  return response.data.data;
+}
+
+export async function resumeSubscription(): Promise<SubscriptionSummary> {
+  const response = await api.post<{ success: boolean; data: SubscriptionSummary }>(
+    "/payments/subscription/resume"
+  );
+  return response.data.data;
+}
+
 export async function getPaymentHistory(): Promise<PaymentHistoryItem[]> {
   const response = await api.get<{ success: boolean; data: PaymentHistoryItem[] }>(
     "/payments/history"

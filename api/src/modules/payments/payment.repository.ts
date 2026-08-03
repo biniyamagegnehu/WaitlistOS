@@ -303,4 +303,26 @@ export class PaymentRepository {
       data: { processed: true },
     });
   }
+
+  cancelSubscription(userId: string) {
+    return this.prisma.subscription.update({
+      where: { userId },
+      data: {
+        status: SubscriptionStatus.CANCELLED,
+        cancelledAt: new Date(),
+      },
+      include: { plan: true },
+    });
+  }
+
+  resumeSubscription(userId: string) {
+    return this.prisma.subscription.update({
+      where: { userId },
+      data: {
+        status: SubscriptionStatus.ACTIVE,
+        cancelledAt: null,
+      },
+      include: { plan: true },
+    });
+  }
 }

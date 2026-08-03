@@ -26,6 +26,7 @@ export interface CompanyProfile {
   teamSize?: string;
   companyLogo?: string;
   companyWebsite?: string;
+  billingEmail?: string;
   onboardingCompleted?: boolean;
 }
 
@@ -37,6 +38,7 @@ export interface CompanyProfileDto {
   teamSize: string;
   companyLogo?: string;
   companyWebsite?: string;
+  billingEmail?: string;
 }
 
 export interface UpdateCompanyProfileDto {
@@ -47,4 +49,5 @@ export interface UpdateCompanyProfileDto {
   teamSize?: string;
   companyLogo?: string;
   companyWebsite?: string;
+  billingEmail?: string;
 }

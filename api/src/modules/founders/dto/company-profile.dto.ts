@@ -45,6 +45,10 @@ export class CompanyProfileDto {
   @IsOptional()
   @IsUrl()
   companyWebsite?: string;
+
+  @IsOptional()
+  @IsString()
+  billingEmail?: string;
 }
 
 export class UpdateCompanyProfileDto {
@@ -77,4 +81,8 @@ export class UpdateCompanyProfileDto {
   @IsOptional()
   @IsUrl()
   companyWebsite?: string;
+
+  @IsOptional()
+  @IsString()
+  billingEmail?: string;
 }
