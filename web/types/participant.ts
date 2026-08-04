@@ -25,6 +25,24 @@ export interface ReferralMessages {
   whatsapp: string;
 }
 
+export interface UnlockedStreakReward {
+  id: string;
+  days: number;
+  title: string | null;
+  type: string;
+  value: number | null;
+  unlockedAt: string;
+}
+
+export interface ParticipantStreak {
+  current: number;
+  longest: number;
+  referredToday: boolean;
+  active: boolean;
+  nextMilestone: { id: string; days: number; type: string; value: number | null; title: string | null } | null;
+  unlockedRewards: UnlockedStreakReward[];
+}
+
 export interface JoinResponse {
   success: boolean;
   id: string;
@@ -35,6 +53,7 @@ export interface JoinResponse {
   referralLink: string;
   rewardProgress?: RewardProgress;
   unlockedRewards?: UnlockedReward[];
+  streak?: ParticipantStreak;
 }
 
 export interface JoinWaitlistInput {

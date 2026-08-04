@@ -169,6 +169,65 @@ export default function PublicWaitlistPageClient() {
           </Card>
         )}
 
+        {waitlist.streakBonusesEnabled && joined.streak && (
+          <Card>
+            <CardContent className="space-y-4 p-5 text-left">
+              <div className="flex justify-between items-center">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  Streak Bonuses
+                </p>
+                <div className="flex items-center gap-1.5 text-sm font-medium">
+                  <span className="text-xl">🔥</span>
+                  <span className={joined.streak.active ? "text-orange-500" : "text-muted-foreground"}>
+                    {joined.streak.current} Day{joined.streak.current !== 1 ? 's' : ''}
+                  </span>
+                </div>
+              </div>
+
+              {joined.streak.referredToday ? (
+                <div className="rounded-lg border border-success/20 bg-success/10 p-3 text-sm text-success-foreground flex items-start gap-2">
+                  <CheckCircle className="h-4 w-4 mt-0.5 text-success" />
+                  <p>You've referred someone today! Keep it up tomorrow to maintain your streak.</p>
+                </div>
+              ) : (
+                <div className="rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm text-warning-foreground">
+                  <p>⚠️ Refer one friend today to {joined.streak.active ? 'keep your streak alive' : 'start your streak'}!</p>
+                </div>
+              )}
+
+              {waitlist.streakMilestones && waitlist.streakMilestones.length > 0 && (
+                <div className="space-y-3 mt-4">
+                  <p className="text-xs font-medium text-muted-foreground">Milestones</p>
+                  {waitlist.streakMilestones.map(milestone => {
+                    const isUnlocked = joined.streak!.unlockedRewards?.some(r => r.days === milestone.days);
+                    return (
+                      <div key={milestone.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-surface">
+                        <div className="mt-0.5">
+                          <CheckCircle className={`h-5 w-5 ${isUnlocked ? 'text-success' : 'text-muted-foreground/30'}`} />
+                        </div>
+                        <div>
+                          <p className={`font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
+                            {milestone.title}
+                          </p>
+                          <p className="text-sm text-muted-foreground">
+                            {milestone.days} Day Streak
+                          </p>
+                          {milestone.description && (
+                            <p className="mt-1 text-sm text-muted-foreground/80">{milestone.description}</p>
+                          )}
+                        </div>
+                        <div className="ml-auto text-right">
+                           <Badge variant="info">+{milestone.value} Boost</Badge>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardContent className="space-y-3 p-5 text-left">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">

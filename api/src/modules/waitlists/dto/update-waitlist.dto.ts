@@ -46,4 +46,7 @@ export class UpdateWaitlistDto {
 
   @IsOptional()
   newParticipantRankingBonus?: number;
+
+  @IsOptional()
+  streakBonusesEnabled?: boolean;
 }

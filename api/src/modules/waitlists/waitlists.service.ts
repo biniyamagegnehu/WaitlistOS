@@ -112,6 +112,7 @@ export class WaitlistsService {
           ...(dto.doubleSidedRewardsEnabled !== undefined && { doubleSidedRewardsEnabled: dto.doubleSidedRewardsEnabled }),
           ...(dto.referrerRankingBonus !== undefined && { referrerRankingBonus: dto.referrerRankingBonus }),
           ...(dto.newParticipantRankingBonus !== undefined && { newParticipantRankingBonus: dto.newParticipantRankingBonus }),
+          ...(dto.streakBonusesEnabled !== undefined && { streakBonusesEnabled: dto.streakBonusesEnabled }),
         },
         include: { logo: true },
       });

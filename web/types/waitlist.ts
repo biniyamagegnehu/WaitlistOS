@@ -24,6 +24,16 @@ export interface WaitlistReward {
   unlocked?: boolean;
 }
 
+export interface StreakMilestone {
+  id: string;
+  days: number;
+  type: string;
+  value: number | null;
+  title: string | null;
+  description: string | null;
+  unlocked?: boolean;
+}
+
 export interface WaitlistSummary {
   id: string;
   name: string;
@@ -32,6 +42,8 @@ export interface WaitlistSummary {
   description?: string | null;
   participantCount?: number;
   rewards?: WaitlistReward[];
+  streakBonusesEnabled?: boolean;
+  streakMilestones?: StreakMilestone[];
 }
 
 export interface CreateWaitlistInput {

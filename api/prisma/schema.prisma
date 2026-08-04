@@ -456,6 +456,9 @@ model Waitlist {
   totalReferrerRankingBonusAwarded       Int     @default(0)
   totalNewParticipantRankingBonusAwarded Int     @default(0)
 
+  // ── Streak Bonuses ──────────────────────────
+  streakBonusesEnabled                   Boolean @default(false)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -472,6 +475,8 @@ model Waitlist {
   participants Participant[]
 
   rewards      Reward[]
+
+  streakMilestones StreakMilestone[]
 
   cohorts      Cohort[]
 
@@ -585,6 +590,12 @@ model Participant {
 
   positionBoostBonus Int      @default(0)
 
+  currentStreak      Int      @default(0)
+
+  longestStreak      Int      @default(0)
+
+  lastSuccessfulReferralAt DateTime?
+
   status             ParticipantStatus @default(WAITING)
 
   invitedAt          DateTime?
@@ -606,6 +617,8 @@ model Participant {
   referrals  Participant[]      @relation("Referrals")
 
   participantRewards    ParticipantReward[]
+
+  participantStreakRewards ParticipantStreakReward[]
 
   cohortInvitations    CohortInvitation[]
 
@@ -907,6 +920,46 @@ model ParticipantReward {
 
   @@unique([participantId, rewardId])
   @@map("participant_rewards")
+}
+
+// ─────────────────────────────────────────────
+// StreakMilestone — A consecutive day referral reward milestone
+// ─────────────────────────────────────────────
+
+model StreakMilestone {
+  id          String     @id @default(uuid())
+  waitlistId  String
+  days        Int
+  type        RewardType
+  value       Int?
+  valueType   String?    @default("fixed")
+  title       String?
+  description String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  waitlist                 Waitlist                  @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  participantStreakRewards ParticipantStreakReward[]
+
+  @@unique([waitlistId, days])
+  @@map("streak_milestones")
+}
+
+// ─────────────────────────────────────────────
+// ParticipantStreakReward — A streak reward unlocked by a participant
+// ─────────────────────────────────────────────
+
+model ParticipantStreakReward {
+  id                String   @id @default(uuid())
+  participantId     String
+  streakMilestoneId String
+  unlockedAt        DateTime @default(now())
+
+  participant     Participant     @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  streakMilestone StreakMilestone @relation(fields: [streakMilestoneId], references: [id], onDelete: Cascade)
+
+  @@unique([participantId, streakMilestoneId])
+  @@map("participant_streak_rewards")
 }
 
 // ─────────────────────────────────────────────

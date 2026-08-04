@@ -31,6 +31,7 @@ import { CohortsModule } from './modules/cohorts/cohorts.module';
 import { PaymentModule } from './modules/payments/payment.module';
 import { AiModule } from './modules/ai/ai.module';
 import { EngagementModule } from './modules/engagement/engagement.module';
+import { StreakMilestonesModule } from './modules/streak-milestones/streak-milestones.module';
 import { AccessTokenGuard } from './modules/auth/guards/access-token.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ScheduleModule } from '@nestjs/schedule';
@@ -72,6 +73,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     CohortsModule,
     AiModule,
     EngagementModule,
+    StreakMilestonesModule,
   ],
   controllers: [AppController],
   providers: [

@@ -11,6 +11,7 @@ import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
 import { PaymentService } from '../payments/payment.service';
 import { Prisma } from '@prisma/client';
+import { computeEffectiveStreak } from '../../lib/streak-utils';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -69,7 +70,7 @@ export class ParticipantsService {
     // 1. Resolve waitlist by slug — 404 if not found
     const waitlist = await this.prisma.waitlist.findUnique({
       where: { slug: waitlistSlug },
-      include: { founder: true },
+      include: { founder: true, streakMilestones: { orderBy: { days: 'asc' } } },
     });
     if (!waitlist) {
       throw new NotFoundException('WAITLIST_NOT_FOUND');
@@ -204,6 +205,79 @@ export class ParticipantsService {
                   totalNewParticipantRankingBonusAwarded: { increment: waitlist.newParticipantRankingBonus },
                 },
               });
+            }
+
+            // ── Streak Bonuses ────────────────────────────────────
+            if (waitlist.streakBonusesEnabled && waitlist.streakMilestones.length > 0) {
+              // Fetch the referrer with streak fields (fresh from DB inside tx)
+              const freshReferrer = await tx.participant.findUniqueOrThrow({
+                where: { id: referrer.id },
+                include: { participantStreakRewards: true },
+              });
+
+              // Compute the effective current streak (accounting for lapsed days)
+              const effectiveStreak = computeEffectiveStreak(
+                freshReferrer.currentStreak,
+                freshReferrer.lastSuccessfulReferralAt,
+              );
+
+              // Determine how to update the streak
+              const now = new Date();
+              const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+              const lastRef = freshReferrer.lastSuccessfulReferralAt;
+              const lastRefDayUTC = lastRef
+                ? new Date(Date.UTC(lastRef.getUTCFullYear(), lastRef.getUTCMonth(), lastRef.getUTCDate()))
+                : null;
+
+              const alreadyReferredToday = lastRefDayUTC?.getTime() === todayUTC.getTime();
+
+              let newStreak: number;
+              if (alreadyReferredToday) {
+                // Already got credit for today — don't double-count
+                newStreak = effectiveStreak;
+              } else if (effectiveStreak === 0) {
+                // Starting fresh or lapsed
+                newStreak = 1;
+              } else {
+                // Continuing streak
+                newStreak = effectiveStreak + 1;
+              }
+
+              const newLongest = Math.max(freshReferrer.longestStreak, newStreak);
+
+              updatedReferrer = await tx.participant.update({
+                where: { id: referrer.id },
+                data: {
+                  currentStreak: newStreak,
+                  longestStreak: newLongest,
+                  lastSuccessfulReferralAt: alreadyReferredToday ? undefined : now,
+                },
+              });
+
+              // Check if any milestone is hit for the first time
+              const alreadyUnlockedIds = new Set(
+                freshReferrer.participantStreakRewards.map((r) => r.streakMilestoneId),
+              );
+
+              for (const milestone of waitlist.streakMilestones) {
+                if (newStreak >= milestone.days && !alreadyUnlockedIds.has(milestone.id)) {
+                  // Unlock the milestone
+                  await tx.participantStreakReward.create({
+                    data: {
+                      participantId: referrer.id,
+                      streakMilestoneId: milestone.id,
+                    },
+                  });
+
+                  // Award positionBoostBonus for POSITION_BOOST type
+                  if (milestone.type === 'POSITION_BOOST' && milestone.value && milestone.value > 0) {
+                    updatedReferrer = await tx.participant.update({
+                      where: { id: referrer.id },
+                      data: { positionBoostBonus: { increment: milestone.value } },
+                    });
+                  }
+                }
+              }
             }
 
             // Rerank all participants based on new referral counts / bonuses

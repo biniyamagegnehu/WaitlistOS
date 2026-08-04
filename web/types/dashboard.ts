@@ -25,6 +25,7 @@ export interface DashboardWaitlist {
   doubleSidedRewardsGranted: number;
   totalReferrerRankingBonusAwarded: number;
   totalNewParticipantRankingBonusAwarded: number;
+  streakBonusesEnabled: boolean;
 }
 
 export interface PaginationMetadata {

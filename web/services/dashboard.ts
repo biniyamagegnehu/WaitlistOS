@@ -127,6 +127,7 @@ export async function updateWaitlist(
     doubleSidedRewardsEnabled?: boolean;
     referrerRankingBonus?: number;
     newParticipantRankingBonus?: number;
+    streakBonusesEnabled?: boolean;
   }
 ): Promise<DashboardWaitlist> {
   const response = await api.patch<DashboardWaitlist>(

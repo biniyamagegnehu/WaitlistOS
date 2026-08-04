@@ -18,7 +18,7 @@ import { getDashboardWaitlistDetail, updateWaitlist } from "@/services/dashboard
 import type { DashboardWaitlistDetail, DashboardParticipant, DashboardWaitlist, PaginationMetadata } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
-
+import { StreakBonusesCard } from "@/components/dashboard/StreakBonusesCard";
 export default function WaitlistDetailPage() {
   const params = useParams();
   const waitlistId = params?.id as string;
@@ -191,6 +191,7 @@ export default function WaitlistDetailPage() {
       </Card>
 
       <DoubleSidedRewardsCard waitlistId={waitlistId} initialData={waitlist} />
+      <StreakBonusesCard waitlistId={waitlistId} initialData={waitlist} />
 
       <AiCopywriter waitlistId={waitlistId} waitlist={waitlist} />
 

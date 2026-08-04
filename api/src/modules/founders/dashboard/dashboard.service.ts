@@ -19,6 +19,7 @@ export interface DashboardWaitlist {
   doubleSidedRewardsGranted: number;
   totalReferrerRankingBonusAwarded: number;
   totalNewParticipantRankingBonusAwarded: number;
+  streakBonusesEnabled: boolean;
 }
 
 export interface DashboardParticipant {
@@ -205,6 +206,7 @@ export class DashboardService {
         doubleSidedRewardsGranted: w.doubleSidedRewardsGranted,
         totalReferrerRankingBonusAwarded: w.totalReferrerRankingBonusAwarded,
         totalNewParticipantRankingBonusAwarded: w.totalNewParticipantRankingBonusAwarded,
+        streakBonusesEnabled: w.streakBonusesEnabled,
       }));
     }
 
@@ -235,6 +237,7 @@ export class DashboardService {
       doubleSidedRewardsGranted: w.doubleSidedRewardsGranted,
       totalReferrerRankingBonusAwarded: w.totalReferrerRankingBonusAwarded,
       totalNewParticipantRankingBonusAwarded: w.totalNewParticipantRankingBonusAwarded,
+      streakBonusesEnabled: w.streakBonusesEnabled,
     }));
   }
 
@@ -354,6 +357,7 @@ export class DashboardService {
         doubleSidedRewardsGranted: waitlist.doubleSidedRewardsGranted,
         totalReferrerRankingBonusAwarded: waitlist.totalReferrerRankingBonusAwarded,
         totalNewParticipantRankingBonusAwarded: waitlist.totalNewParticipantRankingBonusAwarded,
+        streakBonusesEnabled: waitlist.streakBonusesEnabled,
       },
       participants: waitlist.participants,
       pagination: {

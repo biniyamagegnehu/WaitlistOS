@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { BrandingService } from '../branding/branding.service';
 import { PaymentService } from '../payments/payment.service';
+import { getStreakStatus } from '../../lib/streak-utils';
 
 const REWARD_REFERRAL_TARGET = 10;
 
@@ -26,10 +27,16 @@ export class ReferralsService {
             rewards: {
               orderBy: { milestone: 'asc' },
             },
+            streakMilestones: {
+              orderBy: { days: 'asc' },
+            },
           },
         },
         participantRewards: {
           include: { reward: true },
+        },
+        participantStreakRewards: {
+          include: { streakMilestone: true },
         },
       },
     });
@@ -67,6 +74,31 @@ export class ReferralsService {
       unlocked: unlockedRewardIds.has(r.id),
     }));
 
+    const streakStatus = getStreakStatus(participant.currentStreak, participant.lastSuccessfulReferralAt);
+    const unlockedStreakMilestoneIds = new Set(
+      participant.participantStreakRewards.map((sr) => sr.streakMilestoneId),
+    );
+    const streakMilestones = participant.waitlist.streakMilestones.map((m) => ({
+      id: m.id,
+      days: m.days,
+      type: m.type,
+      value: m.value,
+      title: m.title,
+      description: m.description,
+      unlocked: unlockedStreakMilestoneIds.has(m.id),
+    }));
+    const nextStreakMilestone = streakMilestones.find((m) => !m.unlocked) ?? null;
+    const unlockedStreakRewards = participant.participantStreakRewards
+      .map((sr) => ({
+        id: sr.id,
+        days: sr.streakMilestone.days,
+        title: sr.streakMilestone.title,
+        type: sr.streakMilestone.type,
+        value: sr.streakMilestone.value,
+        unlockedAt: sr.unlockedAt,
+      }))
+      .sort((a, b) => b.unlockedAt.getTime() - a.unlockedAt.getTime());
+
     return {
       success: true,
       data: {
@@ -89,12 +121,22 @@ export class ReferralsService {
             type: pr.reward.type,
             value: pr.reward.value,
           })).sort((a, b) => b.unlockedAt.getTime() - a.unlockedAt.getTime()),
+          streak: {
+            current: streakStatus.activeStreak,
+            longest: participant.longestStreak,
+            referredToday: streakStatus.referredToday,
+            active: streakStatus.active,
+            nextMilestone: nextStreakMilestone,
+            unlockedRewards: unlockedStreakRewards,
+          },
         },
         waitlist: {
           name: participant.waitlist.name,
           tagline: participant.waitlist.tagline,
           slug: participant.waitlist.slug,
           rewards: mappedRewards,
+          streakBonusesEnabled: participant.waitlist.streakBonusesEnabled,
+          streakMilestones,
         },
         branding,
       },
