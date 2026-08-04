@@ -181,6 +181,31 @@ export class ParticipantsService {
               }
             }
 
+            // ── Double-Sided Rewards ─────────────────────────────
+            if (waitlist.doubleSidedRewardsEnabled) {
+              // 1. Give referrer their bonus
+              updatedReferrer = await tx.participant.update({
+                where: { id: referrer.id },
+                data: { positionBoostBonus: { increment: waitlist.referrerRankingBonus } },
+              });
+
+              // 2. Give new participant their bonus
+              await tx.participant.update({
+                where: { id: p.id },
+                data: { positionBoostBonus: { increment: waitlist.newParticipantRankingBonus } },
+              });
+
+              // 3. Update Waitlist analytics counters
+              await tx.waitlist.update({
+                where: { id: waitlist.id },
+                data: {
+                  doubleSidedRewardsGranted: { increment: 1 },
+                  totalReferrerRankingBonusAwarded: { increment: waitlist.referrerRankingBonus },
+                  totalNewParticipantRankingBonusAwarded: { increment: waitlist.newParticipantRankingBonus },
+                },
+              });
+            }
+
             // Rerank all participants based on new referral counts / bonuses
             await this.rerankParticipants(waitlist.id, tx);
 

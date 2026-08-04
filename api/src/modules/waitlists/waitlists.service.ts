@@ -109,6 +109,9 @@ export class WaitlistsService {
           description: dto.description ?? waitlist.description,
           logoId: dto.logoId ?? waitlist.logoId,
           slug,
+          ...(dto.doubleSidedRewardsEnabled !== undefined && { doubleSidedRewardsEnabled: dto.doubleSidedRewardsEnabled }),
+          ...(dto.referrerRankingBonus !== undefined && { referrerRankingBonus: dto.referrerRankingBonus }),
+          ...(dto.newParticipantRankingBonus !== undefined && { newParticipantRankingBonus: dto.newParticipantRankingBonus }),
         },
         include: { logo: true },
       });

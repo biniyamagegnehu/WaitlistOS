@@ -37,4 +37,13 @@ export class UpdateWaitlistDto {
     message: 'Slug must contain only lowercase letters, numbers, and hyphens',
   })
   slug?: string;
+
+  @IsOptional()
+  doubleSidedRewardsEnabled?: boolean;
+
+  @IsOptional()
+  referrerRankingBonus?: number;
+
+  @IsOptional()
+  newParticipantRankingBonus?: number;
 }

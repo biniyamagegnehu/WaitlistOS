@@ -447,8 +447,16 @@ model Waitlist {
 
   logoId      String?
 
-  createdAt   DateTime @default(now())
+  
+  // ── Double-Sided Rewards ────────────────────
+  doubleSidedRewardsEnabled              Boolean @default(false)
+  referrerRankingBonus                   Int     @default(5)
+  newParticipantRankingBonus             Int     @default(2)
+  doubleSidedRewardsGranted              Int     @default(0)
+  totalReferrerRankingBonusAwarded       Int     @default(0)
+  totalNewParticipantRankingBonusAwarded Int     @default(0)
 
+  createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
 

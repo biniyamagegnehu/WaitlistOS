@@ -19,6 +19,12 @@ export interface DashboardWaitlist {
   totalParticipants: number;
   description?: string | null;
   logoUrl?: string | null;
+  doubleSidedRewardsEnabled: boolean;
+  referrerRankingBonus: number;
+  newParticipantRankingBonus: number;
+  doubleSidedRewardsGranted: number;
+  totalReferrerRankingBonusAwarded: number;
+  totalNewParticipantRankingBonusAwarded: number;
 }
 
 export interface PaginationMetadata {

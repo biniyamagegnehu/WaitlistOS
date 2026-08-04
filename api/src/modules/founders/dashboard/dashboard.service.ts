@@ -13,6 +13,12 @@ export interface DashboardWaitlist {
   totalParticipants: number;
   description?: string | null;
   logoUrl?: string | null;
+  doubleSidedRewardsEnabled: boolean;
+  referrerRankingBonus: number;
+  newParticipantRankingBonus: number;
+  doubleSidedRewardsGranted: number;
+  totalReferrerRankingBonusAwarded: number;
+  totalNewParticipantRankingBonusAwarded: number;
 }
 
 export interface DashboardParticipant {
@@ -193,6 +199,12 @@ export class DashboardService {
         totalParticipants: w._count.participants,
         description: w.description,
         logoUrl: w.logo?.url || null,
+        doubleSidedRewardsEnabled: w.doubleSidedRewardsEnabled,
+        referrerRankingBonus: w.referrerRankingBonus,
+        newParticipantRankingBonus: w.newParticipantRankingBonus,
+        doubleSidedRewardsGranted: w.doubleSidedRewardsGranted,
+        totalReferrerRankingBonusAwarded: w.totalReferrerRankingBonusAwarded,
+        totalNewParticipantRankingBonusAwarded: w.totalNewParticipantRankingBonusAwarded,
       }));
     }
 
@@ -217,6 +229,12 @@ export class DashboardService {
       totalParticipants: w._count.participants,
       description: w.description,
       logoUrl: w.logo?.url || null,
+      doubleSidedRewardsEnabled: w.doubleSidedRewardsEnabled,
+      referrerRankingBonus: w.referrerRankingBonus,
+      newParticipantRankingBonus: w.newParticipantRankingBonus,
+      doubleSidedRewardsGranted: w.doubleSidedRewardsGranted,
+      totalReferrerRankingBonusAwarded: w.totalReferrerRankingBonusAwarded,
+      totalNewParticipantRankingBonusAwarded: w.totalNewParticipantRankingBonusAwarded,
     }));
   }
 
@@ -330,6 +348,12 @@ export class DashboardService {
         totalParticipants: waitlist._count.participants,
         description: waitlist.description,
         logoUrl: waitlist.logo?.url || null,
+        doubleSidedRewardsEnabled: waitlist.doubleSidedRewardsEnabled,
+        referrerRankingBonus: waitlist.referrerRankingBonus,
+        newParticipantRankingBonus: waitlist.newParticipantRankingBonus,
+        doubleSidedRewardsGranted: waitlist.doubleSidedRewardsGranted,
+        totalReferrerRankingBonusAwarded: waitlist.totalReferrerRankingBonusAwarded,
+        totalNewParticipantRankingBonusAwarded: waitlist.totalNewParticipantRankingBonusAwarded,
       },
       participants: waitlist.participants,
       pagination: {
