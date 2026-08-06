@@ -16,6 +16,7 @@ import { ReferralSharePreview } from "@/components/waitlist/ReferralSharePreview
 import { getShareableReferralUrl } from "@/lib/referral";
 import { ReferralMessages } from "@/components/waitlist/ReferralMessages";
 import { TeamSection } from "@/components/waitlist/TeamSection";
+import { UrgencyWidget } from "@/components/public/UrgencyWidget";
 
 export default function PublicWaitlistPageClient() {
   const params = useParams();
@@ -31,13 +32,22 @@ export default function PublicWaitlistPageClient() {
 
   useEffect(() => {
     if (!slug) return;
-    getPublicWaitlistBySlug(slug)
-      .then((data) => {
-        if (!data) setNotFound(true);
-        else setWaitlistData(data);
-      })
-      .catch(() => setNotFound(true))
-      .finally(() => setLoading(false));
+    
+    const fetchData = () => {
+      getPublicWaitlistBySlug(slug)
+        .then((data) => {
+          if (!data) setNotFound(true);
+          else setWaitlistData(data);
+        })
+        .catch(() => setNotFound(true))
+        .finally(() => setLoading(false));
+    };
+
+    fetchData();
+    
+    // Poll for real-time updates every 10 seconds
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
   }, [slug]);
 
   const handleCopy = (link: string) => {
@@ -340,6 +350,21 @@ export default function PublicWaitlistPageClient() {
           </div>
         </div>
       )}
+
+      {/* Section 4.5: Urgency Engine */}
+      <UrgencyWidget
+        urgencyEnabled={waitlist.urgencyEnabled}
+        batchEnabled={waitlist.batchEnabled}
+        batchName={waitlist.batchName}
+        batchSize={waitlist.batchSize}
+        batchDescription={waitlist.batchDescription}
+        countdownEnabled={waitlist.countdownEnabled}
+        launchDate={waitlist.launchDate}
+        showRemainingSpots={waitlist.showRemainingSpots}
+        showBatchProgress={waitlist.showBatchProgress}
+        showCountdown={waitlist.showCountdown}
+        currentParticipants={waitlist.participantCount || 0}
+      />
 
       {/* Section 5: Join Waitlist Form */}
       <Card id="join-form" className="shadow-sm border-border/50">

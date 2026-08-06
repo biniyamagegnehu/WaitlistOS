@@ -28,6 +28,16 @@ export interface DashboardWaitlist {
   streakBonusesEnabled: boolean;
   teamReferralsEnabled: boolean;
   maxTeamSize: number;
+  urgencyEnabled: boolean;
+  batchEnabled: boolean;
+  batchName?: string | null;
+  batchSize?: number | null;
+  batchDescription?: string | null;
+  countdownEnabled: boolean;
+  launchDate?: Date | string | null;
+  showRemainingSpots: boolean;
+  showBatchProgress: boolean;
+  showCountdown: boolean;
 }
 
 export interface PaginationMetadata {

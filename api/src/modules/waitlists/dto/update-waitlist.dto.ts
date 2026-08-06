@@ -55,4 +55,37 @@ export class UpdateWaitlistDto {
 
   @IsOptional()
   maxTeamSize?: number;
+
+  @IsOptional()
+  urgencyEnabled?: boolean;
+
+  @IsOptional()
+  batchEnabled?: boolean;
+
+  @IsOptional()
+  @IsString()
+  batchName?: string;
+
+  @IsOptional()
+  batchSize?: number;
+
+  @IsOptional()
+  @IsString()
+  batchDescription?: string;
+
+  @IsOptional()
+  countdownEnabled?: boolean;
+
+  @IsOptional()
+  @IsString() // Will be transformed to Date later if needed, but ISO string works
+  launchDate?: Date | string;
+
+  @IsOptional()
+  showRemainingSpots?: boolean;
+
+  @IsOptional()
+  showBatchProgress?: boolean;
+
+  @IsOptional()
+  showCountdown?: boolean;
 }

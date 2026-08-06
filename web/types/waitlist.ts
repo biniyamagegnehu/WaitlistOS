@@ -47,6 +47,16 @@ export interface WaitlistSummary {
   teamReferralsEnabled?: boolean;
   maxTeamSize?: number;
   teamMilestones?: Array<{ id: string; milestone: number; type: string; value: number | null; title: string | null }>;
+  urgencyEnabled?: boolean;
+  batchEnabled?: boolean;
+  batchName?: string | null;
+  batchSize?: number | null;
+  batchDescription?: string | null;
+  countdownEnabled?: boolean;
+  launchDate?: string | null;
+  showRemainingSpots?: boolean;
+  showBatchProgress?: boolean;
+  showCountdown?: boolean;
 }
 
 export interface CreateWaitlistInput {

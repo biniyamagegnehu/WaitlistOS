@@ -20,6 +20,7 @@ import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { StreakBonusesCard } from "@/components/dashboard/StreakBonusesCard";
 import { TeamReferralsCard } from "@/components/dashboard/TeamReferralsCard";
+import { UrgencyEngineCard } from "@/components/dashboard/UrgencyEngineCard";
 export default function WaitlistDetailPage() {
   const params = useParams();
   const waitlistId = params?.id as string;
@@ -194,6 +195,7 @@ export default function WaitlistDetailPage() {
       <DoubleSidedRewardsCard waitlistId={waitlistId} initialData={waitlist} />
       <StreakBonusesCard waitlistId={waitlistId} initialData={waitlist} />
       <TeamReferralsCard waitlistId={waitlistId} initialData={waitlist} />
+      <UrgencyEngineCard waitlistId={waitlistId} initialData={waitlist} />
 
       <AiCopywriter waitlistId={waitlistId} waitlist={waitlist} />
 

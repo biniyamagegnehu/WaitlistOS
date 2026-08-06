@@ -22,6 +22,16 @@ export interface DashboardWaitlist {
   streakBonusesEnabled: boolean;
   teamReferralsEnabled: boolean;
   maxTeamSize: number;
+  urgencyEnabled: boolean;
+  batchEnabled: boolean;
+  batchName?: string | null;
+  batchSize?: number | null;
+  batchDescription?: string | null;
+  countdownEnabled: boolean;
+  launchDate?: Date | null;
+  showRemainingSpots: boolean;
+  showBatchProgress: boolean;
+  showCountdown: boolean;
 }
 
 export interface DashboardParticipant {
@@ -211,6 +221,16 @@ export class DashboardService {
         streakBonusesEnabled: w.streakBonusesEnabled,
         teamReferralsEnabled: w.teamReferralsEnabled,
         maxTeamSize: w.maxTeamSize,
+        urgencyEnabled: w.urgencyEnabled,
+        batchEnabled: w.batchEnabled,
+        batchName: w.batchName,
+        batchSize: w.batchSize,
+        batchDescription: w.batchDescription,
+        countdownEnabled: w.countdownEnabled,
+        launchDate: w.launchDate,
+        showRemainingSpots: w.showRemainingSpots,
+        showBatchProgress: w.showBatchProgress,
+        showCountdown: w.showCountdown,
       }));
     }
 
@@ -244,6 +264,16 @@ export class DashboardService {
       streakBonusesEnabled: w.streakBonusesEnabled,
       teamReferralsEnabled: w.teamReferralsEnabled,
       maxTeamSize: w.maxTeamSize,
+      urgencyEnabled: w.urgencyEnabled,
+      batchEnabled: w.batchEnabled,
+      batchName: w.batchName,
+      batchSize: w.batchSize,
+      batchDescription: w.batchDescription,
+      countdownEnabled: w.countdownEnabled,
+      launchDate: w.launchDate,
+      showRemainingSpots: w.showRemainingSpots,
+      showBatchProgress: w.showBatchProgress,
+      showCountdown: w.showCountdown,
     }));
   }
 
@@ -366,6 +396,16 @@ export class DashboardService {
         streakBonusesEnabled: waitlist.streakBonusesEnabled,
         teamReferralsEnabled: waitlist.teamReferralsEnabled,
         maxTeamSize: waitlist.maxTeamSize,
+        urgencyEnabled: waitlist.urgencyEnabled,
+        batchEnabled: waitlist.batchEnabled,
+        batchName: waitlist.batchName,
+        batchSize: waitlist.batchSize,
+        batchDescription: waitlist.batchDescription,
+        countdownEnabled: waitlist.countdownEnabled,
+        launchDate: waitlist.launchDate,
+        showRemainingSpots: waitlist.showRemainingSpots,
+        showBatchProgress: waitlist.showBatchProgress,
+        showCountdown: waitlist.showCountdown,
       },
       participants: waitlist.participants,
       pagination: {

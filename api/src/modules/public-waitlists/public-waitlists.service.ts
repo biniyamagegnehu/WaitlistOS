@@ -85,6 +85,16 @@ export class PublicWaitlistsService {
             value: m.value,
             title: m.title,
           })),
+          urgencyEnabled: waitlist.urgencyEnabled,
+          batchEnabled: waitlist.batchEnabled,
+          batchName: waitlist.batchName,
+          batchSize: waitlist.batchSize,
+          batchDescription: waitlist.batchDescription,
+          countdownEnabled: waitlist.countdownEnabled,
+          launchDate: waitlist.launchDate,
+          showRemainingSpots: waitlist.showRemainingSpots,
+          showBatchProgress: waitlist.showBatchProgress,
+          showCountdown: waitlist.showCountdown,
         },
         teamLeaderboard: waitlist.teamReferralsEnabled
           ? waitlist.teams

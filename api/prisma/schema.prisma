@@ -463,6 +463,18 @@ model Waitlist {
   teamReferralsEnabled                   Boolean @default(false)
   maxTeamSize                            Int     @default(10)
 
+  // ── Urgency Engine ──────────────────────────
+  urgencyEnabled                         Boolean @default(false)
+  batchEnabled                           Boolean @default(false)
+  batchName                              String?
+  batchSize                              Int?
+  batchDescription                       String?
+  countdownEnabled                       Boolean @default(false)
+  launchDate                             DateTime?
+  showRemainingSpots                     Boolean @default(true)
+  showBatchProgress                      Boolean @default(true)
+  showCountdown                          Boolean @default(true)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
