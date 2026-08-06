@@ -67,7 +67,7 @@ export function AiCopywriter({ waitlistId, waitlist }: AiCopywriterProps) {
   const [isSaving, setIsSaving] = React.useState(false);
   const [regeneratingSection, setRegeneratingSection] =
     React.useState<CopySection | null>(null);
-  const [isExpanded, setIsExpanded] = React.useState(true);
+  const [isExpanded, setIsExpanded] = React.useState(false);
 
   // Version history
   const [showHistory, setShowHistory] = React.useState(false);
