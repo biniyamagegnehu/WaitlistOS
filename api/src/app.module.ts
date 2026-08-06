@@ -35,6 +35,7 @@ import { StreakMilestonesModule } from './modules/streak-milestones/streak-miles
 import { AccessTokenGuard } from './modules/auth/guards/access-token.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ScheduleModule } from '@nestjs/schedule';
+import { TeamsModule } from './modules/teams/teams.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     AiModule,
     EngagementModule,
     StreakMilestonesModule,
+    TeamsModule,
   ],
   controllers: [AppController],
   providers: [

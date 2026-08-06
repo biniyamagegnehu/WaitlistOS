@@ -459,6 +459,10 @@ model Waitlist {
   // ── Streak Bonuses ──────────────────────────
   streakBonusesEnabled                   Boolean @default(false)
 
+  // ── Team Referrals ──────────────────────────
+  teamReferralsEnabled                   Boolean @default(false)
+  maxTeamSize                            Int     @default(10)
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -477,6 +481,9 @@ model Waitlist {
   rewards      Reward[]
 
   streakMilestones StreakMilestone[]
+  
+  teams                Team[]
+  teamRewardMilestones TeamRewardMilestone[]
 
   cohorts      Cohort[]
 
@@ -596,6 +603,8 @@ model Participant {
 
   lastSuccessfulReferralAt DateTime?
 
+  teamId             String?
+
   status             ParticipantStatus @default(WAITING)
 
   invitedAt          DateTime?
@@ -627,6 +636,11 @@ model Participant {
   engagement           ParticipantEngagement?
 
   engagementLogs       ParticipantEngagementLog[]
+
+  team                   Team?                   @relation("TeamMembers", fields: [teamId], references: [id])
+  ownedTeams             Team[]                  @relation("TeamOwner")
+  teamInvitations        TeamInvitation[]
+  teamParticipantRewards TeamParticipantReward[]
 
 
 
@@ -1102,4 +1116,98 @@ model ParticipantEngagementLog {
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
   @@index([participantId])
   @@map("participant_engagement_logs")
+}
+
+// ─────────────────────────────────────────────
+// Team — Collaborative referrals
+// ─────────────────────────────────────────────
+model Team {
+  id          String   @id @default(uuid())
+  waitlistId  String
+  name        String
+  ownerId     String
+  inviteCode  String   @unique
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  waitlist Waitlist      @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  owner    Participant   @relation("TeamOwner", fields: [ownerId], references: [id])
+  members  Participant[] @relation("TeamMembers")
+  invitations TeamInvitation[]
+  teamMilestoneRewards TeamMilestoneReward[]
+
+  @@unique([waitlistId, name])
+  @@map("teams")
+}
+
+// ─────────────────────────────────────────────
+// TeamInvitation — Direct invites
+// ─────────────────────────────────────────────
+model TeamInvitation {
+  id            String   @id @default(uuid())
+  teamId        String
+  participantId String
+  status        String   @default("PENDING") // PENDING, ACCEPTED, DECLINED
+  createdAt     DateTime @default(now())
+
+  team        Team        @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([teamId, participantId])
+  @@map("team_invitations")
+}
+
+// ─────────────────────────────────────────────
+// TeamRewardMilestone — Configured by Founder
+// ─────────────────────────────────────────────
+model TeamRewardMilestone {
+  id         String     @id @default(uuid())
+  waitlistId String
+  milestone  Int
+  type       RewardType
+  value      Int?
+  valueType  String?    @default("fixed")
+  title      String?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  teamMilestoneRewards TeamMilestoneReward[]
+
+  @@unique([waitlistId, milestone])
+  @@map("team_reward_milestones")
+}
+
+// ─────────────────────────────────────────────
+// TeamMilestoneReward — Unlocked by a team
+// ─────────────────────────────────────────────
+model TeamMilestoneReward {
+  id                    String   @id @default(uuid())
+  teamId                String
+  teamRewardMilestoneId String
+  unlockedAt            DateTime @default(now())
+
+  team              Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  milestone         TeamRewardMilestone @relation(fields: [teamRewardMilestoneId], references: [id], onDelete: Cascade)
+  participantRewards TeamParticipantReward[]
+
+  @@unique([teamId, teamRewardMilestoneId])
+  @@map("team_milestone_rewards")
+}
+
+// ─────────────────────────────────────────────
+// TeamParticipantReward — Granted to a member
+// ─────────────────────────────────────────────
+model TeamParticipantReward {
+  id                    String   @id @default(uuid())
+  teamMilestoneRewardId String
+  participantId         String
+  unlockedAt            DateTime @default(now())
+
+  teamMilestoneReward TeamMilestoneReward @relation(fields: [teamMilestoneRewardId], references: [id], onDelete: Cascade)
+  participant         Participant         @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
+  @@unique([teamMilestoneRewardId, participantId])
+  @@map("team_participant_rewards")
 }

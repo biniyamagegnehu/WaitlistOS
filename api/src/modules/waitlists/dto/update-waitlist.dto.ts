@@ -49,4 +49,10 @@ export class UpdateWaitlistDto {
 
   @IsOptional()
   streakBonusesEnabled?: boolean;
+
+  @IsOptional()
+  teamReferralsEnabled?: boolean;
+
+  @IsOptional()
+  maxTeamSize?: number;
 }

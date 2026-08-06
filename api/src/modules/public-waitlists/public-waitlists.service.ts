@@ -29,6 +29,16 @@ export class PublicWaitlistsService {
           select: { participants: true },
         },
         copy: true,
+        teamRewardMilestones: {
+          orderBy: { milestone: 'asc' },
+        },
+        teams: {
+          include: {
+            members: { select: { referralCount: true } },
+            _count: { select: { members: true } },
+          },
+          orderBy: { createdAt: 'asc' },
+        },
       },
     });
 
@@ -66,7 +76,32 @@ export class PublicWaitlistsService {
             title: r.title,
             description: r.description,
           })),
+          teamReferralsEnabled: waitlist.teamReferralsEnabled,
+          maxTeamSize: waitlist.maxTeamSize,
+          teamMilestones: waitlist.teamRewardMilestones.map((m) => ({
+            id: m.id,
+            milestone: m.milestone,
+            type: m.type,
+            value: m.value,
+            title: m.title,
+          })),
         },
+        teamLeaderboard: waitlist.teamReferralsEnabled
+          ? waitlist.teams
+              .map((t) => ({
+                id: t.id,
+                name: t.name,
+                memberCount: t._count.members,
+                totalReferrals: t.members.reduce((sum, m) => sum + m.referralCount, 0),
+                createdAt: t.createdAt,
+              }))
+              .sort((a, b) => {
+                if (b.totalReferrals !== a.totalReferrals)
+                  return b.totalReferrals - a.totalReferrals;
+                return a.createdAt.getTime() - b.createdAt.getTime();
+              })
+              .map((t, i) => ({ ...t, rank: i + 1 }))
+          : [],
         branding: this.brandingService.formatPublicBranding(waitlist.branding),
         hostedPage: widgetMetadata.hostedPage,
         widget,

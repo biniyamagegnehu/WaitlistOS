@@ -113,6 +113,8 @@ export class WaitlistsService {
           ...(dto.referrerRankingBonus !== undefined && { referrerRankingBonus: dto.referrerRankingBonus }),
           ...(dto.newParticipantRankingBonus !== undefined && { newParticipantRankingBonus: dto.newParticipantRankingBonus }),
           ...(dto.streakBonusesEnabled !== undefined && { streakBonusesEnabled: dto.streakBonusesEnabled }),
+          ...(dto.teamReferralsEnabled !== undefined && { teamReferralsEnabled: dto.teamReferralsEnabled }),
+          ...(dto.maxTeamSize !== undefined && { maxTeamSize: dto.maxTeamSize }),
         },
         include: { logo: true },
       });

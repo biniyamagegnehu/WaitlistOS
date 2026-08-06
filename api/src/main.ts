@@ -4,6 +4,9 @@ import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter, AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { EventEmitter } from 'events';
+
+EventEmitter.defaultMaxListeners = 20;
 
 function normalizeOrigin(value: string | undefined): string | null {
   if (!value?.trim()) return null;

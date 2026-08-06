@@ -26,6 +26,8 @@ export interface DashboardWaitlist {
   totalReferrerRankingBonusAwarded: number;
   totalNewParticipantRankingBonusAwarded: number;
   streakBonusesEnabled: boolean;
+  teamReferralsEnabled: boolean;
+  maxTeamSize: number;
 }
 
 export interface PaginationMetadata {

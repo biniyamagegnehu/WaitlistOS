@@ -2,18 +2,20 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
-import { CheckCircle } from "lucide-react";
+import { CheckCircle, Users, Trophy, TrendingUp } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import JoinWaitlistForm from "@/components/waitlist/JoinWaitlistForm";
 import { getPublicWaitlistBySlug } from "@/services/api";
 import { JoinResponse } from "@/types/participant";
-import type { PublicWaitlistResponse } from "@/types/waitlist";
+import type { PublicWaitlistResponse, TeamLeaderboardEntry } from "@/types/waitlist";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/loader";
 import { ReferralSharePreview } from "@/components/waitlist/ReferralSharePreview";
 import { getShareableReferralUrl } from "@/lib/referral";
 import { ReferralMessages } from "@/components/waitlist/ReferralMessages";
+import { TeamSection } from "@/components/waitlist/TeamSection";
 
 export default function PublicWaitlistPageClient() {
   const params = useParams();
@@ -228,6 +230,14 @@ export default function PublicWaitlistPageClient() {
           </Card>
         )}
 
+        {waitlist.teamReferralsEnabled && (
+          <TeamSection
+            participantId={joined.id}
+            waitlistId={waitlist.id}
+            primaryColor={primaryColor}
+          />
+        )}
+
         <Card>
           <CardContent className="space-y-3 p-5 text-left">
             <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -349,6 +359,108 @@ export default function PublicWaitlistPageClient() {
           />
         </CardContent>
       </Card>
+
+      {/* Section 6: Leaderboard (Individual + Team) */}
+      <LeaderboardSection
+        waitlistId={waitlist.id}
+        teamLeaderboard={waitlistData?.teamLeaderboard}
+        teamReferralsEnabled={waitlist.teamReferralsEnabled ?? false}
+      />
     </div>
+  );
+}
+
+function LeaderboardSection({
+  waitlistId: _waitlistId,
+  teamLeaderboard,
+  teamReferralsEnabled,
+}: {
+  waitlistId: string;
+  teamLeaderboard?: TeamLeaderboardEntry[];
+  teamReferralsEnabled: boolean;
+}) {
+  const [activeTab, setActiveTab] = useState<"individual" | "team">("individual");
+
+  if (!teamReferralsEnabled || !teamLeaderboard || teamLeaderboard.length === 0) {
+    return null;
+  }
+
+  return (
+    <Card className="shadow-sm border-border/50">
+      <CardContent className="p-6 space-y-5">
+        {/* Tab switcher */}
+        <div className="flex items-center gap-1 rounded-lg border border-border bg-muted/30 p-1 w-fit">
+          <button
+            onClick={() => setActiveTab("individual")}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              activeTab === "individual"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Individual Rankings
+          </button>
+          <button
+            onClick={() => setActiveTab("team")}
+            className={`px-4 py-1.5 rounded-md text-sm font-medium transition-all ${
+              activeTab === "team"
+                ? "bg-background text-foreground shadow-sm"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Team Rankings
+          </button>
+        </div>
+
+        {activeTab === "team" && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 mb-4">
+              <Users className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-foreground">Team Leaderboard</h3>
+            </div>
+            {teamLeaderboard.map((team) => (
+              <div
+                key={team.id}
+                className="flex items-center gap-4 p-3 rounded-lg border border-border bg-surface"
+              >
+                {/* Rank */}
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-primary/10">
+                  {team.rank <= 3 ? (
+                    <span className="text-sm">
+                      {team.rank === 1 ? "🥇" : team.rank === 2 ? "🥈" : "🥉"}
+                    </span>
+                  ) : (
+                    <span className="text-sm font-bold text-muted-foreground">#{team.rank}</span>
+                  )}
+                </div>
+
+                {/* Team info */}
+                <div className="flex-1 min-w-0">
+                  <p className="font-semibold text-foreground truncate">{team.name}</p>
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-0.5">
+                    <Users className="h-3 w-3" />
+                    <span>{team.memberCount} member{team.memberCount !== 1 ? "s" : ""}</span>
+                  </div>
+                </div>
+
+                {/* Score */}
+                <div className="flex items-center gap-1.5 shrink-0">
+                  <TrendingUp className="h-4 w-4 text-primary" />
+                  <span className="font-bold text-foreground">{team.totalReferrals}</span>
+                  <span className="text-xs text-muted-foreground">referrals</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {activeTab === "individual" && (
+          <div className="py-4 text-center text-sm text-muted-foreground">
+            <Trophy className="h-8 w-8 mx-auto mb-2 text-muted-foreground/40" />
+            <p>Sign up and refer friends to see your ranking.</p>
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }

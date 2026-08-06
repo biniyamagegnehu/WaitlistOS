@@ -280,6 +280,68 @@ export class ParticipantsService {
               }
             }
 
+            // ── Team Milestone Rewards ──────────────────────────────
+            if (waitlist.teamReferralsEnabled && referrer.teamId) {
+              const teamAgg = await tx.participant.aggregate({
+                where: { teamId: referrer.teamId },
+                _sum: { referralCount: true },
+              });
+              const teamTotal = teamAgg._sum.referralCount || 0;
+
+              const reachedMilestones = await tx.teamRewardMilestone.findMany({
+                where: {
+                  waitlistId: waitlist.id,
+                  milestone: { lte: teamTotal },
+                },
+              });
+
+              for (const milestone of reachedMilestones) {
+                const existingReward = await tx.teamMilestoneReward.findUnique({
+                  where: {
+                    teamId_teamRewardMilestoneId: {
+                      teamId: referrer.teamId,
+                      teamRewardMilestoneId: milestone.id,
+                    },
+                  },
+                });
+
+                if (!existingReward) {
+                  const teamReward = await tx.teamMilestoneReward.create({
+                    data: {
+                      teamId: referrer.teamId,
+                      teamRewardMilestoneId: milestone.id,
+                    },
+                  });
+
+                  const members = await tx.participant.findMany({
+                    where: { teamId: referrer.teamId },
+                  });
+
+                  for (const member of members) {
+                    await tx.teamParticipantReward.create({
+                      data: {
+                        teamMilestoneRewardId: teamReward.id,
+                        participantId: member.id,
+                      },
+                    });
+
+                    if (
+                      milestone.type === 'POSITION_BOOST' &&
+                      milestone.value &&
+                      milestone.value > 0
+                    ) {
+                      await tx.participant.update({
+                        where: { id: member.id },
+                        data: {
+                          positionBoostBonus: { increment: milestone.value },
+                        },
+                      });
+                    }
+                  }
+                }
+              }
+            }
+
             // Rerank all participants based on new referral counts / bonuses
             await this.rerankParticipants(waitlist.id, tx);
 

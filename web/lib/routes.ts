@@ -30,6 +30,7 @@ export const routes = {
   resendVerification: "/resend-verification",
   create: "/create",
   waitlistPublic: (slug: string) => `/w/${slug}`,
+  waitlistTeams: (id: string) => `/dashboard/waitlists/${id}/teams`,
   referral: (code: string) => `/r/${encodeURIComponent(code)}`,
   referralOg: (code: string) => `/og/referral/${encodeURIComponent(code)}`,
 } as const;

@@ -44,6 +44,9 @@ export interface WaitlistSummary {
   rewards?: WaitlistReward[];
   streakBonusesEnabled?: boolean;
   streakMilestones?: StreakMilestone[];
+  teamReferralsEnabled?: boolean;
+  maxTeamSize?: number;
+  teamMilestones?: Array<{ id: string; milestone: number; type: string; value: number | null; title: string | null }>;
 }
 
 export interface CreateWaitlistInput {
@@ -60,12 +63,21 @@ export interface CreateWaitlistResponse {
   widget: WaitlistWidget | null;
 }
 
+export interface TeamLeaderboardEntry {
+  id: string;
+  rank: number;
+  name: string;
+  memberCount: number;
+  totalReferrals: number;
+}
+
 export interface PublicWaitlistResponse {
   waitlist: WaitlistSummary;
   branding: WaitlistBranding | null;
   hostedPage: string;
   widget: WaitlistWidget | null;
   copy?: Pick<WaitlistCopy, 'headline' | 'subheadline' | 'cta' | 'features' | 'faqs'> | null;
+  teamLeaderboard?: TeamLeaderboardEntry[];
 }
 
 export interface UploadedFile {

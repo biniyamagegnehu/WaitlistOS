@@ -20,6 +20,8 @@ export interface DashboardWaitlist {
   totalReferrerRankingBonusAwarded: number;
   totalNewParticipantRankingBonusAwarded: number;
   streakBonusesEnabled: boolean;
+  teamReferralsEnabled: boolean;
+  maxTeamSize: number;
 }
 
 export interface DashboardParticipant {
@@ -207,6 +209,8 @@ export class DashboardService {
         totalReferrerRankingBonusAwarded: w.totalReferrerRankingBonusAwarded,
         totalNewParticipantRankingBonusAwarded: w.totalNewParticipantRankingBonusAwarded,
         streakBonusesEnabled: w.streakBonusesEnabled,
+        teamReferralsEnabled: w.teamReferralsEnabled,
+        maxTeamSize: w.maxTeamSize,
       }));
     }
 
@@ -238,6 +242,8 @@ export class DashboardService {
       totalReferrerRankingBonusAwarded: w.totalReferrerRankingBonusAwarded,
       totalNewParticipantRankingBonusAwarded: w.totalNewParticipantRankingBonusAwarded,
       streakBonusesEnabled: w.streakBonusesEnabled,
+      teamReferralsEnabled: w.teamReferralsEnabled,
+      maxTeamSize: w.maxTeamSize,
     }));
   }
 
@@ -358,6 +364,8 @@ export class DashboardService {
         totalReferrerRankingBonusAwarded: waitlist.totalReferrerRankingBonusAwarded,
         totalNewParticipantRankingBonusAwarded: waitlist.totalNewParticipantRankingBonusAwarded,
         streakBonusesEnabled: waitlist.streakBonusesEnabled,
+        teamReferralsEnabled: waitlist.teamReferralsEnabled,
+        maxTeamSize: waitlist.maxTeamSize,
       },
       participants: waitlist.participants,
       pagination: {
