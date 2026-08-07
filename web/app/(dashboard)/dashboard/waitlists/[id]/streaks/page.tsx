@@ -23,9 +23,15 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 
 const streakMilestoneSchema = z.object({
-  days: z.string().min(1, "Days is required"),
+  days: z.coerce.number({ invalid_type_error: "Streak day is required." })
+    .int("Streak day must be an integer.")
+    .min(2, "Streak day must be at least 2.")
+    .max(365, "Streak day cannot exceed 365."),
   title: z.string().min(1, "Title is required"),
-  value: z.string().min(1, "Position Boost Value is required"),
+  value: z.coerce.number({ invalid_type_error: "Ranking bonus is required." })
+    .int("Ranking bonus must be an integer.")
+    .min(1, "Ranking bonus must be at least 1.")
+    .max(100, "Ranking bonus cannot exceed 100."),
   description: z.string().optional(),
 });
 
@@ -49,9 +55,9 @@ export default function StreakMilestonesPage() {
   const form = useForm<StreakMilestoneFormData>({
     resolver: zodResolver(streakMilestoneSchema),
     defaultValues: {
-      days: "",
+      days: 2 as any,
       title: "",
-      value: "",
+      value: 1 as any,
       description: "",
     },
   });
@@ -82,9 +88,9 @@ export default function StreakMilestonesPage() {
   const openNewDialog = () => {
     setEditingMilestone(null);
     form.reset({
-      days: "",
+      days: 2 as any,
       title: "",
-      value: "",
+      value: 1 as any,
       description: "",
     });
     setIsDialogOpen(true);
@@ -93,12 +99,21 @@ export default function StreakMilestonesPage() {
   const openEditDialog = (milestone: StreakMilestoneDto) => {
     setEditingMilestone(milestone);
     form.reset({
-      days: milestone.days.toString(),
+      days: milestone.days,
       title: milestone.title || "",
-      value: milestone.value ? milestone.value.toString() : "",
+      value: milestone.value,
       description: milestone.description || "",
     });
     setIsDialogOpen(true);
+  };
+
+  const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    if (val.length > 1 && val.startsWith("0")) {
+      val = val.replace(/^0+/, "");
+      if (val === "") val = "0";
+      e.target.value = val;
+    }
   };
 
   const handleDelete = async () => {
@@ -120,13 +135,34 @@ export default function StreakMilestonesPage() {
   };
 
   const handleSave = async (data: StreakMilestoneFormData) => {
+    // Custom validation
+    const isDuplicate = milestones.some(m => m.id !== editingMilestone?.id && m.days === data.days);
+    if (isDuplicate) {
+      form.setError("days", { type: "manual", message: `A milestone for Day ${data.days} already exists.` });
+      return;
+    }
+
+    const earlier = milestones.filter(m => m.id !== editingMilestone?.id && m.days < data.days);
+    const highestEarlier = earlier.sort((a, b) => b.days - a.days)[0];
+    if (highestEarlier && data.value < highestEarlier.value) {
+      form.setError("value", { type: "manual", message: "Later milestones should provide equal or greater rewards." });
+      return;
+    }
+
+    const later = milestones.filter(m => m.id !== editingMilestone?.id && m.days > data.days);
+    const lowestLater = later.sort((a, b) => a.days - b.days)[0];
+    if (lowestLater && data.value > lowestLater.value) {
+      form.setError("value", { type: "manual", message: "Earlier milestones should provide equal or less rewards." });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload: CreateStreakMilestoneInput = {
-        days: parseInt(data.days, 10),
+        days: data.days,
         type: "POSITION_BOOST",
         title: data.title,
-        value: parseInt(data.value, 10),
+        value: data.value,
         description: data.description || undefined,
       };
 
@@ -233,7 +269,7 @@ export default function StreakMilestonesPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-border">
-                {milestones.map((milestone) => (
+                {[...milestones].sort((a, b) => a.days - b.days).map((milestone) => (
                   <tr key={milestone.id} className="transition-colors hover:bg-surface-muted/30">
                     <td className="px-4 py-3 whitespace-nowrap font-medium">
                       {milestone.days} Days
@@ -287,11 +323,19 @@ export default function StreakMilestonesPage() {
                   <label className="text-sm font-medium">Consecutive Days <span className="text-destructive">*</span></label>
                   <Input
                     type="number"
-                    min="1"
+                    min="2"
+                    max="365"
+                    inputMode="numeric"
+                    onWheel={(e) => e.currentTarget.blur()}
                     {...form.register("days")}
+                    onChange={(e) => {
+                      handleNumericInput(e);
+                      form.register("days").onChange(e);
+                    }}
                     placeholder="e.g. 3"
                     required
                   />
+                  <p className="text-xs text-muted-foreground mt-1">Must be greater than the previous milestone.</p>
                   {form.formState.errors.days && (
                     <p className="text-sm text-destructive">{form.formState.errors.days.message}</p>
                   )}
@@ -301,7 +345,14 @@ export default function StreakMilestonesPage() {
                   <Input
                     type="number"
                     min="1"
+                    max="100"
+                    inputMode="numeric"
+                    onWheel={(e) => e.currentTarget.blur()}
                     {...form.register("value")}
+                    onChange={(e) => {
+                      handleNumericInput(e);
+                      form.register("value").onChange(e);
+                    }}
                     placeholder="e.g. 10 (places skipped)"
                     required
                   />

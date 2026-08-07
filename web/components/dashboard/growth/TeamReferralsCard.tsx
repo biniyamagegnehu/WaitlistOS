@@ -2,6 +2,9 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { Users, Trophy, TrendingUp, Gift, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,18 +18,38 @@ import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import toast from "react-hot-toast";
 
+const teamReferralsSchema = z.object({
+  teamReferralsEnabled: z.boolean(),
+  maxTeamSize: z.coerce
+    .number({ invalid_type_error: "Team size is required." })
+    .int("Team size must be an integer.")
+    .min(2, "Team size must be at least 2.")
+    .max(100, "Team size cannot exceed 100."),
+});
+
+type TeamReferralsFormData = z.infer<typeof teamReferralsSchema>;
+
 interface TeamReferralsCardProps {
   waitlistId: string;
   initialData: DashboardWaitlist;
 }
 
 export function TeamReferralsCard({ waitlistId, initialData }: TeamReferralsCardProps) {
-  const [enabled, setEnabled] = React.useState(initialData.teamReferralsEnabled ?? false);
-  const [maxTeamSize, setMaxTeamSize] = React.useState(initialData.maxTeamSize ?? 10);
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [saveMessage, setSaveMessage] = React.useState("");
   const [analytics, setAnalytics] = React.useState<TeamAnalytics | null>(null);
   const [analyticsLoading, setAnalyticsLoading] = React.useState(false);
+
+  const form = useForm<TeamReferralsFormData>({
+    resolver: zodResolver(teamReferralsSchema),
+    defaultValues: {
+      teamReferralsEnabled: initialData.teamReferralsEnabled ?? false,
+      maxTeamSize: initialData.maxTeamSize ?? 10,
+    },
+    mode: "onChange",
+  });
+
+  const enabled = form.watch("teamReferralsEnabled");
+  const isSaving = form.formState.isSubmitting;
+  const isValid = form.formState.isValid;
 
   React.useEffect(() => {
     if (!initialData.teamReferralsEnabled) return;
@@ -37,20 +60,24 @@ export function TeamReferralsCard({ waitlistId, initialData }: TeamReferralsCard
       .finally(() => setAnalyticsLoading(false));
   }, [waitlistId, initialData.teamReferralsEnabled]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    setSaveMessage("");
+  const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    if (val.length > 1 && val.startsWith("0")) {
+      val = val.replace(/^0+/, "");
+      if (val === "") val = "0";
+      e.target.value = val;
+    }
+  };
+
+  const handleSave = async (data: TeamReferralsFormData) => {
     try {
-      await updateWaitlist(waitlistId, { 
-        teamReferralsEnabled: enabled,
-        maxTeamSize,
+      await updateWaitlist(waitlistId, {
+        teamReferralsEnabled: data.teamReferralsEnabled,
+        maxTeamSize: data.maxTeamSize,
       } as Parameters<typeof updateWaitlist>[1]);
-      setSaveMessage("Saved successfully");
-      setTimeout(() => setSaveMessage(""), 3000);
+      toast.success("Saved successfully");
     } catch (err) {
-      setSaveMessage(getApiErrorMessage(err, "Failed to save"));
-    } finally {
-      setIsSaving(false);
+      toast.error(getApiErrorMessage(err, "Failed to save"));
     }
   };
 
@@ -71,14 +98,13 @@ export function TeamReferralsCard({ waitlistId, initialData }: TeamReferralsCard
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <div>
+        <form onSubmit={form.handleSubmit(handleSave)}>
           <div className="flex items-center gap-3 mb-6">
             <input
               type="checkbox"
               id="enable-team-referrals"
               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-              checked={enabled}
-              onChange={(e) => setEnabled(e.target.checked)}
+              {...form.register("teamReferralsEnabled")}
             />
             <label htmlFor="enable-team-referrals" className="text-sm font-medium text-foreground cursor-pointer">
               Enable Team Referrals
@@ -100,26 +126,30 @@ export function TeamReferralsCard({ waitlistId, initialData }: TeamReferralsCard
                   type="number"
                   min={2}
                   max={100}
-                  value={maxTeamSize}
-                  onChange={(e) => setMaxTeamSize(Number(e.target.value))}
+                  inputMode="numeric"
+                  onWheel={(e) => e.currentTarget.blur()}
+                  {...form.register("maxTeamSize")}
+                  onChange={(e) => {
+                    handleNumericInput(e);
+                    form.register("maxTeamSize").onChange(e);
+                  }}
                   className="w-28"
                 />
                 <span className="text-sm text-muted-foreground">members</span>
               </div>
+              <p className="text-xs text-muted-foreground">Recommended: 5–20 members. A team requires at least an owner and one additional member.</p>
+              {form.formState.errors.maxTeamSize && (
+                <p className="text-sm text-destructive mt-1">{form.formState.errors.maxTeamSize.message}</p>
+              )}
             </div>
           )}
 
           <div className="flex items-center gap-4">
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || (!isValid && enabled)}>
               {isSaving ? "Saving..." : "Save Settings"}
             </Button>
-            {saveMessage && (
-              <span className={`text-sm ${saveMessage.includes("Failed") ? "text-destructive" : "text-success"}`}>
-                {saveMessage}
-              </span>
-            )}
           </div>
-        </div>
+        </form>
 
         {initialData.teamReferralsEnabled && (
           <div className="pt-6 border-t border-border space-y-6">

@@ -1,4 +1,9 @@
+"use client";
+
 import React from "react";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import { DashboardWaitlist } from "@/types/dashboard";
 import { updateWaitlist } from "@/services/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
@@ -6,58 +11,118 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Timer, AlertCircle, Percent } from "lucide-react";
+import toast from "react-hot-toast";
 
 interface UrgencyEngineCardProps {
   waitlistId: string;
   initialData: DashboardWaitlist;
 }
 
+// Build schema with runtime current participant count for cross-field validation
+function buildSchema(currentParticipants: number) {
+  return z
+    .object({
+      urgencyEnabled: z.boolean(),
+      batchEnabled: z.boolean(),
+      batchName: z.string().optional(),
+      batchSize: z.coerce
+        .number({ invalid_type_error: "Batch size is required." })
+        .int("Batch size must be an integer.")
+        .min(1, "Batch size must be at least 1."),
+      batchDescription: z.string().optional(),
+      countdownEnabled: z.boolean(),
+      launchDate: z.string().optional(),
+      showRemainingSpots: z.boolean(),
+      showBatchProgress: z.boolean(),
+      showCountdown: z.boolean(),
+    })
+    .superRefine((data, ctx) => {
+      if (data.urgencyEnabled && data.batchEnabled) {
+        if (data.batchSize < currentParticipants) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["batchSize"],
+            message: `Batch size cannot be smaller than the current participant count (${currentParticipants}).`,
+          });
+        }
+      }
+      if (data.urgencyEnabled && data.countdownEnabled && data.launchDate) {
+        const chosen = new Date(data.launchDate);
+        if (chosen <= new Date()) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["launchDate"],
+            message: "Launch date must be in the future.",
+          });
+        }
+      }
+    });
+}
+
+type UrgencyEngineFormData = z.infer<ReturnType<typeof buildSchema>>;
+
 export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCardProps) {
-  const [urgencyEnabled, setUrgencyEnabled] = React.useState(initialData.urgencyEnabled ?? false);
-  const [batchEnabled, setBatchEnabled] = React.useState(initialData.batchEnabled ?? false);
-  const [batchName, setBatchName] = React.useState(initialData.batchName || "");
-  const [batchSize, setBatchSize] = React.useState(initialData.batchSize || 100);
-  const [batchDescription, setBatchDescription] = React.useState(initialData.batchDescription || "");
-  const [countdownEnabled, setCountdownEnabled] = React.useState(initialData.countdownEnabled ?? false);
-  const [launchDate, setLaunchDate] = React.useState(
-    initialData.launchDate ? new Date(initialData.launchDate).toISOString().slice(0, 16) : ""
-  );
-  
-  const [showRemainingSpots, setShowRemainingSpots] = React.useState(initialData.showRemainingSpots ?? true);
-  const [showBatchProgress, setShowBatchProgress] = React.useState(initialData.showBatchProgress ?? true);
-  const [showCountdown, setShowCountdown] = React.useState(initialData.showCountdown ?? true);
+  const currentParticipants = initialData.totalParticipants || 0;
 
-  const [isSaving, setIsSaving] = React.useState(false);
-  const [saveMessage, setSaveMessage] = React.useState("");
+  const form = useForm<UrgencyEngineFormData>({
+    resolver: zodResolver(buildSchema(currentParticipants)),
+    defaultValues: {
+      urgencyEnabled: initialData.urgencyEnabled ?? false,
+      batchEnabled: initialData.batchEnabled ?? false,
+      batchName: initialData.batchName || "",
+      batchSize: initialData.batchSize || 100,
+      batchDescription: initialData.batchDescription || "",
+      countdownEnabled: initialData.countdownEnabled ?? false,
+      launchDate: initialData.launchDate
+        ? new Date(initialData.launchDate).toISOString().slice(0, 16)
+        : "",
+      showRemainingSpots: initialData.showRemainingSpots ?? true,
+      showBatchProgress: initialData.showBatchProgress ?? true,
+      showCountdown: initialData.showCountdown ?? true,
+    },
+    mode: "onChange",
+  });
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    setSaveMessage("");
-    try {
-      await updateWaitlist(waitlistId, {
-        urgencyEnabled,
-        batchEnabled,
-        batchName: batchName || undefined,
-        batchSize: batchSize || undefined,
-        batchDescription: batchDescription || undefined,
-        countdownEnabled,
-        launchDate: launchDate ? new Date(launchDate).toISOString() : undefined,
-        showRemainingSpots,
-        showBatchProgress,
-        showCountdown,
-      } as Parameters<typeof updateWaitlist>[1]);
-      setSaveMessage("Saved successfully");
-      setTimeout(() => setSaveMessage(""), 3000);
-    } catch (err) {
-      setSaveMessage(getApiErrorMessage(err, "Failed to save"));
-    } finally {
-      setIsSaving(false);
+  const urgencyEnabled = form.watch("urgencyEnabled");
+  const batchEnabled = form.watch("batchEnabled");
+  const countdownEnabled = form.watch("countdownEnabled");
+  const batchSize = form.watch("batchSize") || 0;
+  const isSaving = form.formState.isSubmitting;
+  const isValid = form.formState.isValid;
+
+  const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    if (val.length > 1 && val.startsWith("0")) {
+      val = val.replace(/^0+/, "");
+      if (val === "") val = "0";
+      e.target.value = val;
     }
   };
 
-  const currentParticipants = initialData.totalParticipants || 0;
+  const handleSave = async (data: UrgencyEngineFormData) => {
+    try {
+      await updateWaitlist(waitlistId, {
+        urgencyEnabled: data.urgencyEnabled,
+        batchEnabled: data.batchEnabled,
+        batchName: data.batchName || undefined,
+        batchSize: data.batchSize || undefined,
+        batchDescription: data.batchDescription || undefined,
+        countdownEnabled: data.countdownEnabled,
+        launchDate: data.launchDate ? new Date(data.launchDate).toISOString() : undefined,
+        showRemainingSpots: data.showRemainingSpots,
+        showBatchProgress: data.showBatchProgress,
+        showCountdown: data.showCountdown,
+      } as Parameters<typeof updateWaitlist>[1]);
+      toast.success("Saved successfully");
+    } catch (err) {
+      toast.error(getApiErrorMessage(err, "Failed to save"));
+    }
+  };
+
   const remainingSpots = Math.max(0, batchSize - currentParticipants);
-  const progressPercent = Math.min(100, Math.round((currentParticipants / batchSize) * 100)) || 0;
+  const progressPercent = batchSize > 0
+    ? Math.min(100, Math.round((currentParticipants / batchSize) * 100))
+    : 0;
 
   return (
     <Card>
@@ -76,14 +141,13 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
       </CardHeader>
 
       <CardContent className="space-y-6">
-        <div>
+        <form onSubmit={form.handleSubmit(handleSave)}>
           <div className="flex items-center gap-3 mb-6">
             <input
               type="checkbox"
               id="enable-urgency"
               className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-              checked={urgencyEnabled}
-              onChange={(e) => setUrgencyEnabled(e.target.checked)}
+              {...form.register("urgencyEnabled")}
             />
             <label htmlFor="enable-urgency" className="text-sm font-medium text-foreground cursor-pointer">
               Enable Urgency Engine
@@ -106,21 +170,19 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                     type="checkbox"
                     id="enable-batch"
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                    checked={batchEnabled}
-                    onChange={(e) => setBatchEnabled(e.target.checked)}
+                    {...form.register("batchEnabled")}
                   />
                   <label htmlFor="enable-batch" className="text-sm font-semibold text-foreground cursor-pointer">
                     Enable Batch System
                   </label>
                 </div>
-                
+
                 {batchEnabled && (
                   <div className="grid gap-4 sm:grid-cols-2 pl-7">
                     <div className="space-y-2">
                       <label className="text-sm font-medium text-foreground">Batch Name</label>
                       <Input
-                        value={batchName}
-                        onChange={(e) => setBatchName(e.target.value)}
+                        {...form.register("batchName")}
                         placeholder="e.g. Early Access"
                       />
                     </div>
@@ -129,16 +191,28 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                       <Input
                         type="number"
                         min={1}
-                        value={batchSize}
-                        onChange={(e) => setBatchSize(Number(e.target.value))}
+                        inputMode="numeric"
+                        onWheel={(e) => e.currentTarget.blur()}
+                        {...form.register("batchSize")}
+                        onChange={(e) => {
+                          handleNumericInput(e);
+                          form.register("batchSize").onChange(e);
+                        }}
                         placeholder="e.g. 100"
                       />
+                      <p className="text-xs text-muted-foreground">
+                        Must be greater than or equal to the current participant count ({currentParticipants}).
+                      </p>
+                      {form.formState.errors.batchSize && (
+                        <p className="text-sm text-destructive mt-1">
+                          {form.formState.errors.batchSize.message}
+                        </p>
+                      )}
                     </div>
                     <div className="space-y-2 sm:col-span-2">
                       <label className="text-sm font-medium text-foreground">Batch Description (Optional)</label>
                       <Input
-                        value={batchDescription}
-                        onChange={(e) => setBatchDescription(e.target.value)}
+                        {...form.register("batchDescription")}
                         placeholder="e.g. The first 100 participants will receive early access."
                       />
                     </div>
@@ -153,8 +227,7 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                     type="checkbox"
                     id="enable-countdown"
                     className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                    checked={countdownEnabled}
-                    onChange={(e) => setCountdownEnabled(e.target.checked)}
+                    {...form.register("countdownEnabled")}
                   />
                   <label htmlFor="enable-countdown" className="text-sm font-semibold text-foreground cursor-pointer">
                     Enable Launch Countdown
@@ -164,12 +237,17 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                 {countdownEnabled && (
                   <div className="grid gap-4 sm:grid-cols-2 pl-7">
                     <div className="space-y-2">
-                      <label className="text-sm font-medium text-foreground">Launch Date & Time</label>
+                      <label className="text-sm font-medium text-foreground">Launch Date &amp; Time</label>
                       <Input
                         type="datetime-local"
-                        value={launchDate}
-                        onChange={(e) => setLaunchDate(e.target.value)}
+                        {...form.register("launchDate")}
                       />
+                      <p className="text-xs text-muted-foreground">Must be a future date and time.</p>
+                      {form.formState.errors.launchDate && (
+                        <p className="text-sm text-destructive mt-1">
+                          {form.formState.errors.launchDate.message}
+                        </p>
+                      )}
                     </div>
                   </div>
                 )}
@@ -184,8 +262,7 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                       type="checkbox"
                       id="show-spots"
                       className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                      checked={showRemainingSpots}
-                      onChange={(e) => setShowRemainingSpots(e.target.checked)}
+                      {...form.register("showRemainingSpots")}
                     />
                     <label htmlFor="show-spots" className="text-sm text-foreground cursor-pointer">
                       Show Remaining Spots Counter
@@ -196,8 +273,7 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                       type="checkbox"
                       id="show-progress"
                       className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                      checked={showBatchProgress}
-                      onChange={(e) => setShowBatchProgress(e.target.checked)}
+                      {...form.register("showBatchProgress")}
                     />
                     <label htmlFor="show-progress" className="text-sm text-foreground cursor-pointer">
                       Show Batch Progress Bar
@@ -208,8 +284,7 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                       type="checkbox"
                       id="show-countdown-display"
                       className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary cursor-pointer"
-                      checked={showCountdown}
-                      onChange={(e) => setShowCountdown(e.target.checked)}
+                      {...form.register("showCountdown")}
                     />
                     <label htmlFor="show-countdown-display" className="text-sm text-foreground cursor-pointer">
                       Show Countdown Timer
@@ -221,16 +296,11 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
           )}
 
           <div className="flex items-center gap-4">
-            <Button onClick={handleSave} disabled={isSaving}>
+            <Button type="submit" disabled={isSaving || (!isValid && urgencyEnabled)}>
               {isSaving ? "Saving..." : "Save Settings"}
             </Button>
-            {saveMessage && (
-              <span className={`text-sm ${saveMessage.includes("Failed") ? "text-destructive" : "text-success"}`}>
-                {saveMessage}
-              </span>
-            )}
           </div>
-        </div>
+        </form>
 
         {urgencyEnabled && batchEnabled && (
           <div className="pt-6 border-t border-border space-y-4">

@@ -28,8 +28,15 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 
 const milestoneSchema = z.object({
-  milestone: z.string().min(1, "Referral count is required"),
-  value: z.string().min(1, "Ranking bonus is required"),
+  milestone: z.coerce
+    .number({ invalid_type_error: "Referral milestone is required." })
+    .int("Referral milestone must be an integer.")
+    .min(5, "Referral milestone must be at least 5."),
+  value: z.coerce
+    .number({ invalid_type_error: "Ranking bonus is required." })
+    .int("Ranking bonus must be an integer.")
+    .min(1, "Ranking bonus must be at least 1.")
+    .max(100, "Ranking bonus cannot exceed 100."),
   title: z.string().optional(),
 });
 
@@ -52,7 +59,8 @@ export default function TeamMilestonesPage() {
 
   const form = useForm<MilestoneFormData>({
     resolver: zodResolver(milestoneSchema),
-    defaultValues: { milestone: "", value: "", title: "" },
+    defaultValues: { milestone: 5 as any, value: 1 as any, title: "" },
+    mode: "onChange",
   });
 
   const loadData = React.useCallback(async () => {
@@ -78,27 +86,59 @@ export default function TeamMilestonesPage() {
 
   const openCreate = () => {
     setEditingMilestone(null);
-    form.reset({ milestone: "", value: "", title: "" });
+    form.reset({ milestone: 5 as any, value: 1 as any, title: "" });
     setIsDialogOpen(true);
   };
 
   const openEdit = (m: TeamMilestoneDto) => {
     setEditingMilestone(m);
     form.reset({
-      milestone: String(m.milestone),
-      value: String(m.value ?? ""),
+      milestone: m.milestone,
+      value: m.value ?? 1,
       title: m.title ?? "",
     });
     setIsDialogOpen(true);
   };
 
+  const handleNumericInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    let val = e.target.value;
+    if (val.length > 1 && val.startsWith("0")) {
+      val = val.replace(/^0+/, "");
+      if (val === "") val = "0";
+      e.target.value = val;
+    }
+  };
+
   const onSubmit = async (data: MilestoneFormData) => {
+    // Duplicate milestone check
+    const isDuplicate = milestones.some(m => m.id !== editingMilestone?.id && m.milestone === data.milestone);
+    if (isDuplicate) {
+      form.setError("milestone", { type: "manual", message: `A milestone for ${data.milestone} referrals already exists.` });
+      return;
+    }
+
+    // Progressive rewards: earlier milestones must not reward more than this one
+    const earlier = milestones.filter(m => m.id !== editingMilestone?.id && m.milestone < data.milestone);
+    const highestEarlier = earlier.sort((a, b) => b.milestone - a.milestone)[0];
+    if (highestEarlier && data.value < (highestEarlier.value ?? 0)) {
+      form.setError("value", { type: "manual", message: "Later milestones should provide equal or greater rewards." });
+      return;
+    }
+
+    // Later milestones must not reward less than this one
+    const later = milestones.filter(m => m.id !== editingMilestone?.id && m.milestone > data.milestone);
+    const lowestLater = later.sort((a, b) => a.milestone - b.milestone)[0];
+    if (lowestLater && data.value > (lowestLater.value ?? 0)) {
+      form.setError("value", { type: "manual", message: "Earlier milestones should provide equal or less rewards." });
+      return;
+    }
+
     setIsSubmitting(true);
     try {
       const payload: CreateTeamMilestoneInput = {
-        milestone: Number(data.milestone),
+        milestone: data.milestone,
         type: "POSITION_BOOST",
-        value: Number(data.value),
+        value: data.value,
         title: data.title || undefined,
       };
 
@@ -216,7 +256,7 @@ export default function TeamMilestonesPage() {
         />
       ) : (
         <div className="space-y-3">
-          {milestones.map((m) => (
+          {[...milestones].sort((a, b) => a.milestone - b.milestone).map((m) => (
             <Card key={m.id}>
               <CardContent className="flex items-center justify-between p-5">
                 <div className="flex items-center gap-4">
@@ -295,10 +335,17 @@ export default function TeamMilestonesPage() {
                 </label>
                 <Input
                   type="number"
-                  min={1}
+                  min={5}
+                  inputMode="numeric"
+                  onWheel={(e) => e.currentTarget.blur()}
                   placeholder="e.g. 50"
                   {...form.register("milestone")}
+                  onChange={(e) => {
+                    handleNumericInput(e);
+                    form.register("milestone").onChange(e);
+                  }}
                 />
+                <p className="text-xs text-muted-foreground">Minimum: 5 referrals. Must not duplicate an existing milestone.</p>
                 {form.formState.errors.milestone && (
                   <p className="text-xs text-destructive">{form.formState.errors.milestone.message}</p>
                 )}
@@ -311,8 +358,15 @@ export default function TeamMilestonesPage() {
                 <Input
                   type="number"
                   min={1}
+                  max={100}
+                  inputMode="numeric"
+                  onWheel={(e) => e.currentTarget.blur()}
                   placeholder="e.g. 8"
                   {...form.register("value")}
+                  onChange={(e) => {
+                    handleNumericInput(e);
+                    form.register("value").onChange(e);
+                  }}
                 />
                 {form.formState.errors.value && (
                   <p className="text-xs text-destructive">{form.formState.errors.value.message}</p>
