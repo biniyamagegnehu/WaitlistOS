@@ -2,9 +2,8 @@
 
 import React, { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
-import { Timer, Zap, Users } from "lucide-react";
+import { Timer, Zap, Users, Rocket } from "lucide-react";
 import { motion } from "framer-motion";
-import { cn } from "@/lib/utils";
 
 interface UrgencyWidgetProps {
   urgencyEnabled?: boolean;
@@ -18,6 +17,18 @@ interface UrgencyWidgetProps {
   showBatchProgress?: boolean;
   showCountdown?: boolean;
   currentParticipants: number;
+  batchUrgency?: {
+    size: number;
+    number: number;
+    participants: number;
+    remaining: number;
+    progress: number;
+    status: 'NEW' | 'ACTIVE' | 'NEARLY_FULL';
+    launch?: {
+      date: string;
+      status: 'UPCOMING' | 'LIVE';
+    } | null;
+  } | null;
 }
 
 export function UrgencyWidget({
@@ -32,6 +43,7 @@ export function UrgencyWidget({
   showBatchProgress,
   showCountdown,
   currentParticipants,
+  batchUrgency,
 }: UrgencyWidgetProps) {
   const [timeLeft, setTimeLeft] = useState<{ days: number; hours: number; minutes: number; seconds: number } | null>(null);
   const [isLaunched, setIsLaunched] = useState(false);
@@ -65,12 +77,17 @@ export function UrgencyWidget({
 
   if (!urgencyEnabled) return null;
 
-  const actualBatchSize = batchSize || 100;
-  const remainingSpots = Math.max(0, actualBatchSize - currentParticipants);
-  const isBatchFull = batchEnabled && remainingSpots === 0;
-  const progressPercent = Math.min(100, Math.max(0, (currentParticipants / actualBatchSize) * 100));
+  // Use batchUrgency data if available, otherwise fall back to calculation
+  const batchData = batchUrgency || {
+    size: batchSize || 100,
+    number: Math.floor(currentParticipants / (batchSize || 100)) + 1,
+    participants: currentParticipants % (batchSize || 100),
+    remaining: (batchSize || 100) - (currentParticipants % (batchSize || 100)),
+    progress: Math.min(100, Math.round(((currentParticipants % (batchSize || 100)) / (batchSize || 100)) * 100)),
+    status: (currentParticipants % (batchSize || 100)) === 0 ? 'NEW' : ((batchSize || 100) - (currentParticipants % (batchSize || 100))) <= 10 ? 'NEARLY_FULL' : 'ACTIVE',
+    launch: null,
+  };
 
-  // Determine what to show
   const displayBatch = batchEnabled && (showRemainingSpots || showBatchProgress);
   const displayCountdown = countdownEnabled && showCountdown;
 
@@ -78,98 +95,122 @@ export function UrgencyWidget({
 
   return (
     <div className="w-full space-y-4 mb-8">
-      {displayBatch && (
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-primary/20 bg-primary/5 p-5 relative overflow-hidden"
-        >
-          {/* Decorative background glow */}
-          <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
-
-          {isBatchFull ? (
-            <div className="flex flex-col items-center justify-center text-center py-2 space-y-2">
-              <Badge variant="success" className="mb-1 text-sm py-1 px-3">
-                🎉 {batchName || "Batch"} Filled
-              </Badge>
-              <p className="text-sm text-muted-foreground max-w-sm">
-                Join the next batch and we'll notify you when invitations begin.
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-4 relative z-10">
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <Zap className="h-4 w-4 text-primary" />
-                    <h3 className="font-semibold text-foreground">
-                      {batchName || "Early Access"}
-                    </h3>
-                  </div>
-                  {batchDescription && (
-                    <p className="text-xs text-muted-foreground">{batchDescription}</p>
-                  )}
-                </div>
-
-                {showRemainingSpots && (
-                  <Badge variant="default" className="w-fit self-start shrink-0 text-sm py-1 font-medium bg-primary text-primary-foreground shadow-sm">
-                    Only {remainingSpots} spots left
-                  </Badge>
-                )}
-              </div>
-
-              {showBatchProgress && (
-                <div className="space-y-2">
-                  <div className="flex h-2.5 overflow-hidden rounded-full bg-primary/10">
-                    <motion.div
-                      className="bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${progressPercent}%` }}
-                      transition={{ duration: 1, ease: "easeOut" }}
-                    />
-                  </div>
-                  <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                    <span className="flex items-center gap-1.5"><Users className="h-3 w-3" /> {currentParticipants} joined</span>
-                    <span>{actualBatchSize} total spots</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </motion.div>
-      )}
-
       {displayCountdown && (
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
           className="rounded-xl border border-border bg-surface p-5 text-center"
         >
-          {isLaunched ? (
+          {isLaunched || (batchData.launch?.status === 'LIVE') ? (
             <div className="space-y-2">
               <div className="mx-auto w-10 h-10 rounded-full bg-success/10 flex items-center justify-center mb-2">
-                <Timer className="h-5 w-5 text-success" />
+                <Rocket className="h-5 w-5 text-success" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">🚀 Invitations Are Now Being Sent</h3>
-              <p className="text-sm text-muted-foreground">We have officially launched. Join the waitlist to secure your spot!</p>
+              <h3 className="text-lg font-bold text-foreground">🚀 We're live!</h3>
+              <p className="text-sm text-muted-foreground">Don't miss out—join the waitlist now to get early access and exclusive updates!</p>
             </div>
           ) : timeLeft ? (
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center justify-center gap-2">
-                <Timer className="h-4 w-4" />
-                Launching In
+                <Rocket className="h-4 w-4" />
+                Be among the first
               </h3>
+              <p className="text-sm text-muted-foreground">We're launching soon. Join the waitlist to get early access.</p>
               <div className="flex justify-center gap-2 sm:gap-4">
-                <CountdownBox value={timeLeft.days} label="Days" />
-                <CountdownBox value={timeLeft.hours} label="Hours" />
-                <CountdownBox value={timeLeft.minutes} label="Minutes" />
-                <CountdownBox value={timeLeft.seconds} label="Seconds" />
+                <CountdownBox value={timeLeft.days} label="DAYS" />
+                <CountdownBox value={timeLeft.hours} label="HOURS" />
+                <CountdownBox value={timeLeft.minutes} label="MINUTES" />
+                <CountdownBox value={timeLeft.seconds} label="SECONDS" />
               </div>
             </div>
           ) : (
             <div className="animate-pulse h-16 bg-muted/30 rounded-lg"></div>
           )}
+        </motion.div>
+      )}
+
+      {displayBatch && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-xl border border-primary/20 bg-primary/5 p-5 relative overflow-hidden"
+        >
+          {/* Decorative background glow */}
+          <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/10 rounded-full blur-2xl pointer-events-none" />
+
+          <div className="space-y-4 relative z-10">
+            {batchData.status === 'NEW' && (
+              <div className="text-center space-y-3">
+                <Badge variant="success" className="mb-1 text-sm py-1 px-3">
+                  🎉 A new {batchData.size === 1 ? 'spot' : 'batch'} just opened!
+                </Badge>
+                <p className="text-sm text-foreground font-medium">
+                  Be among the first {batchData.size} to {batchData.size === 1 ? 'claim it' : 'join this batch'}.
+                </p>
+              </div>
+            )}
+
+            {batchData.status === 'ACTIVE' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <h3 className="font-semibold text-foreground">
+                      🔥 {batchData.remaining} {batchData.remaining === 1 ? 'spot' : 'spots'} left in this batch
+                    </h3>
+                  </div>
+                </div>
+
+                {showBatchProgress && (
+                  <div className="space-y-2">
+                    <div className="flex h-2.5 overflow-hidden rounded-full bg-primary/10" role="progressbar" aria-valuenow={batchData.participants} aria-valuemin={0} aria-valuemax={batchData.size} aria-label={`${batchData.participants} of ${batchData.size} spots in the current batch have been claimed. ${batchData.remaining} spots remaining.`}>
+                      <motion.div
+                        className="bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${batchData.progress}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                      <span className="flex items-center gap-1.5"><Users className="h-3 w-3" /> {batchData.participants} / {batchData.size} joined</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {batchData.status === 'NEARLY_FULL' && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-primary" />
+                    <h3 className="font-semibold text-foreground">
+                      {batchData.remaining === 1 
+                        ? '⚡ Only 1 spot left in this batch!' 
+                        : `🔥 Only ${batchData.remaining} spots left!`}
+                    </h3>
+                  </div>
+                </div>
+
+                {showBatchProgress && (
+                  <div className="space-y-2">
+                    <div className="flex h-2.5 overflow-hidden rounded-full bg-primary/10" role="progressbar" aria-valuenow={batchData.participants} aria-valuemin={0} aria-valuemax={batchData.size} aria-label={`${batchData.participants} of ${batchData.size} spots in the current batch have been claimed. ${batchData.remaining} spots remaining.`}>
+                      <motion.div
+                        className="bg-primary shadow-[0_0_10px_rgba(var(--primary),0.5)] rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${batchData.progress}%` }}
+                        transition={{ duration: 1, ease: "easeOut" }}
+                      />
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
+                      <span className="flex items-center gap-1.5"><Users className="h-3 w-3" /> {batchData.participants} / {batchData.size} joined</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </motion.div>
       )}
     </div>

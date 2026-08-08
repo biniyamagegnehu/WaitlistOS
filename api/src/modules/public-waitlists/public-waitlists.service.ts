@@ -95,6 +95,7 @@ export class PublicWaitlistsService {
           showRemainingSpots: waitlist.showRemainingSpots,
           showBatchProgress: waitlist.showBatchProgress,
           showCountdown: waitlist.showCountdown,
+          batchUrgency: this.calculateBatchUrgency(waitlist, waitlist._count.participants),
         },
         teamLeaderboard: waitlist.teamReferralsEnabled
           ? waitlist.teams
@@ -123,6 +124,52 @@ export class PublicWaitlistsService {
           faqs: waitlist.copy.faqs,
         } : null,
       },
+    };
+  }
+
+  private calculateBatchUrgency(waitlist: any, participantCount: number) {
+    if (!waitlist.urgencyEnabled || !waitlist.batchEnabled || !waitlist.batchSize) {
+      return null;
+    }
+
+    const batchSize = waitlist.batchSize;
+    
+    // Calculate current batch number and participants
+    // When participantCount is exactly divisible by batchSize, we're in the NEXT batch
+    const currentBatchNumber = Math.floor(participantCount / batchSize) + 1;
+    const currentBatchParticipants = participantCount % batchSize;
+    const remainingSpots = batchSize - currentBatchParticipants;
+    const progressPercent = Math.min(100, Math.round((currentBatchParticipants / batchSize) * 100));
+
+    // Determine batch status
+    let batchStatus: 'NEW' | 'ACTIVE' | 'NEARLY_FULL';
+    if (currentBatchParticipants === 0) {
+      batchStatus = 'NEW';
+    } else if (remainingSpots <= 10) {
+      batchStatus = 'NEARLY_FULL';
+    } else {
+      batchStatus = 'ACTIVE';
+    }
+
+    // Determine launch status
+    let launchStatus: 'UPCOMING' | 'LIVE' | null = null;
+    if (waitlist.countdownEnabled && waitlist.launchDate) {
+      const now = new Date();
+      const launchDate = new Date(waitlist.launchDate);
+      launchStatus = launchDate > now ? 'UPCOMING' : 'LIVE';
+    }
+
+    return {
+      size: batchSize,
+      number: currentBatchNumber,
+      participants: currentBatchParticipants,
+      remaining: remainingSpots,
+      progress: progressPercent,
+      status: batchStatus,
+      launch: launchStatus ? {
+        date: waitlist.launchDate,
+        status: launchStatus,
+      } : null,
     };
   }
 }

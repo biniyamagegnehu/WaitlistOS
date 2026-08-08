@@ -364,6 +364,7 @@ export default function PublicWaitlistPageClient() {
         showBatchProgress={waitlist.showBatchProgress}
         showCountdown={waitlist.showCountdown}
         currentParticipants={waitlist.participantCount || 0}
+        batchUrgency={waitlist.batchUrgency}
       />
 
       {/* Section 5: Join Waitlist Form */}

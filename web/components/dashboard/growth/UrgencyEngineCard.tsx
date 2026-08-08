@@ -25,10 +25,7 @@ function buildSchema(currentParticipants: number) {
       urgencyEnabled: z.boolean(),
       batchEnabled: z.boolean(),
       batchName: z.string().optional(),
-      batchSize: z.coerce
-        .number({ invalid_type_error: "Batch size is required." })
-        .int("Batch size must be an integer.")
-        .min(1, "Batch size must be at least 1."),
+      batchSize: z.string().optional(),
       batchDescription: z.string().optional(),
       countdownEnabled: z.boolean(),
       launchDate: z.string().optional(),
@@ -38,7 +35,14 @@ function buildSchema(currentParticipants: number) {
     })
     .superRefine((data, ctx) => {
       if (data.urgencyEnabled && data.batchEnabled) {
-        if (data.batchSize < currentParticipants) {
+        const parsedSize = data.batchSize ? parseInt(data.batchSize, 10) : NaN;
+        if (!data.batchSize || isNaN(parsedSize) || parsedSize < 1) {
+          ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            path: ["batchSize"],
+            message: "Batch size is required and must be at least 1.",
+          });
+        } else if (parsedSize < currentParticipants) {
           ctx.addIssue({
             code: z.ZodIssueCode.custom,
             path: ["batchSize"],
@@ -70,7 +74,7 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
       urgencyEnabled: initialData.urgencyEnabled ?? false,
       batchEnabled: initialData.batchEnabled ?? false,
       batchName: initialData.batchName || "",
-      batchSize: initialData.batchSize || 100,
+      batchSize: initialData.batchSize?.toString() || "100",
       batchDescription: initialData.batchDescription || "",
       countdownEnabled: initialData.countdownEnabled ?? false,
       launchDate: initialData.launchDate
@@ -81,12 +85,12 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
       showCountdown: initialData.showCountdown ?? true,
     },
     mode: "onChange",
-  });
+  }) as any;
 
   const urgencyEnabled = form.watch("urgencyEnabled");
   const batchEnabled = form.watch("batchEnabled");
   const countdownEnabled = form.watch("countdownEnabled");
-  const batchSize = form.watch("batchSize") || 0;
+  const batchSize = parseInt(form.watch("batchSize") || "100", 10);
   const isSaving = form.formState.isSubmitting;
   const isValid = form.formState.isValid;
 
@@ -105,7 +109,7 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
         urgencyEnabled: data.urgencyEnabled,
         batchEnabled: data.batchEnabled,
         batchName: data.batchName || undefined,
-        batchSize: data.batchSize || undefined,
+        batchSize: data.batchSize ? parseInt(data.batchSize, 10) : undefined,
         batchDescription: data.batchDescription || undefined,
         countdownEnabled: data.countdownEnabled,
         launchDate: data.launchDate ? new Date(data.launchDate).toISOString() : undefined,
@@ -119,9 +123,12 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
     }
   };
 
-  const remainingSpots = Math.max(0, batchSize - currentParticipants);
+  // Calculate continuous batch analytics
+  const currentBatchNumber = batchSize > 0 ? Math.floor(currentParticipants / batchSize) + 1 : 1;
+  const currentBatchParticipants = batchSize > 0 ? currentParticipants % batchSize : currentParticipants;
+  const remainingSpots = batchSize > 0 ? Math.max(0, batchSize - currentBatchParticipants) : 0;
   const progressPercent = batchSize > 0
-    ? Math.min(100, Math.round((currentParticipants / batchSize) * 100))
+    ? Math.min(100, Math.round((currentBatchParticipants / batchSize) * 100))
     : 0;
 
   return (
@@ -201,7 +208,7 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                         placeholder="e.g. 100"
                       />
                       <p className="text-xs text-muted-foreground">
-                        Must be greater than or equal to the current participant count ({currentParticipants}).
+                        The number of participants in every batch. When a batch fills, a new batch automatically opens.
                       </p>
                       {form.formState.errors.batchSize && (
                         <p className="text-sm text-destructive mt-1">
@@ -242,7 +249,7 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
                         type="datetime-local"
                         {...form.register("launchDate")}
                       />
-                      <p className="text-xs text-muted-foreground">Must be a future date and time.</p>
+                      <p className="text-xs text-muted-foreground">Show a live countdown on your public waitlist page until launch.</p>
                       {form.formState.errors.launchDate && (
                         <p className="text-sm text-destructive mt-1">
                           {form.formState.errors.launchDate.message}
@@ -306,9 +313,9 @@ export function UrgencyEngineCard({ waitlistId, initialData }: UrgencyEngineCard
           <div className="pt-6 border-t border-border space-y-4">
             <h4 className="text-sm font-semibold text-foreground">Batch Analytics</h4>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-              <AnalyticStat icon={<Percent className="h-4 w-4" />} label="Progress" value={`${progressPercent}%`} />
+              <AnalyticStat icon={<Percent className="h-4 w-4" />} label="Current Batch" value={`#${currentBatchNumber}`} />
               <AnalyticStat icon={<Timer className="h-4 w-4" />} label="Remaining Spots" value={remainingSpots} />
-              <AnalyticStat icon={<AlertCircle className="h-4 w-4" />} label="Joined" value={currentParticipants} />
+              <AnalyticStat icon={<AlertCircle className="h-4 w-4" />} label="In Batch" value={currentBatchParticipants} />
               <AnalyticStat icon={<AlertCircle className="h-4 w-4" />} label="Batch Size" value={batchSize} />
             </div>
           </div>
