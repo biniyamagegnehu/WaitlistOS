@@ -36,6 +36,7 @@ import { AccessTokenGuard } from './modules/auth/guards/access-token.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TeamsModule } from './modules/teams/teams.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { TeamsModule } from './modules/teams/teams.module';
     EngagementModule,
     StreakMilestonesModule,
     TeamsModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

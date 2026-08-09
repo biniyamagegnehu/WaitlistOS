@@ -10,10 +10,16 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
 import { PaymentService } from '../payments/payment.service';
-import { Prisma } from '@prisma/client';
+import { Prisma, TrafficSource } from '@prisma/client';
 import { computeEffectiveStreak } from '../../lib/streak-utils';
 
 type TransactionClient = Prisma.TransactionClient;
+
+const VALID_SOURCES = new Set<string>(Object.values(TrafficSource));
+function toTrafficSource(raw: string | undefined | null): TrafficSource | null {
+  if (raw && VALID_SOURCES.has(raw)) return raw as TrafficSource;
+  return null;
+}
 
 @Injectable()
 export class ParticipantsService {
@@ -65,7 +71,7 @@ export class ParticipantsService {
 
   // ── Create participant ────────────────────────────────────
   async create(dto: CreateParticipantDto) {
-    const { waitlistSlug, email, referralCode: incomingRef } = dto;
+    const { waitlistSlug, email, referralCode: incomingRef, source, medium, campaign, referrer: dtoReferrer, landingPath } = dto;
 
     // 1. Resolve waitlist by slug — 404 if not found
     const waitlist = await this.prisma.waitlist.findUnique({
@@ -141,6 +147,11 @@ export class ParticipantsService {
               email,
               position: initialPosition,
               referralCode: newReferralCode,
+              source: toTrafficSource(source),
+              medium: medium || null,
+              campaign: campaign || null,
+              referrer: dtoReferrer || null,
+              landingPath: landingPath || null,
               ...(referrer ? { referredById: referrer.id } : {}),
             },
           });

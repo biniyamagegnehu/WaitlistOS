@@ -60,4 +60,9 @@ export interface JoinWaitlistInput {
   waitlistSlug: string;
   email: string;
   referralCode?: string;
+  source?: string;
+  medium?: string;
+  campaign?: string;
+  referrer?: string;
+  landingPath?: string;
 }

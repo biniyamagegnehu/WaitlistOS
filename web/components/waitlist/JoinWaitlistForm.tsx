@@ -60,10 +60,41 @@ export default function JoinWaitlistForm({
   const onSubmit = async (data: JoinFormValues) => {
     setServerError("");
     try {
+      // Only forward the fields the backend DTO explicitly accepts.
+      // Do NOT spread the full cookie — it also contains `timestamp` and other
+      // internal fields that the backend will reject (whitelist validation).
+      let source: string | undefined;
+      let medium: string | undefined;
+      let campaign: string | undefined;
+      let referrer: string | undefined;
+      let landingPath: string | undefined;
+
+      try {
+        const attributionCookie = document.cookie
+          .split("; ")
+          .find((row) => row.startsWith("waitlist_attribution="));
+        if (attributionCookie) {
+          const cookieValue = decodeURIComponent(attributionCookie.split("=")[1]);
+          const parsed = JSON.parse(cookieValue);
+          source = parsed.source || undefined;
+          medium = parsed.medium || undefined;
+          campaign = parsed.campaign || undefined;
+          referrer = parsed.referrer || undefined;
+          landingPath = parsed.landingPath || undefined;
+        }
+      } catch {
+        // malformed cookie — proceed without attribution
+      }
+
       const result = await joinWaitlist({
         waitlistSlug,
         email: data.email,
         ...(data.referralCode ? { referralCode: data.referralCode } : {}),
+        ...(source ? { source } : {}),
+        ...(medium ? { medium } : {}),
+        ...(campaign ? { campaign } : {}),
+        ...(referrer ? { referrer } : {}),
+        ...(landingPath ? { landingPath } : {}),
       });
       toast.success("Successfully joined the waitlist!");
       onSuccess(result);

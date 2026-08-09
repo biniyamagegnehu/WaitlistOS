@@ -26,6 +26,13 @@ export async function generateMetadata({
   };
 }
 
+import { AnalyticsTracker } from "@/components/waitlist/AnalyticsTracker";
+
 export default function PublicWaitlistPage() {
-  return <PublicWaitlistPageClient />;
+  return (
+    <>
+      <AnalyticsTracker />
+      <PublicWaitlistPageClient />
+    </>
+  );
 }

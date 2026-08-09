@@ -20,4 +20,25 @@ export class CreateParticipantDto {
     typeof value === 'string' ? value.trim() : value,
   )
   referralCode?: string;
+
+  // Source attribution
+  @IsString()
+  @IsOptional()
+  source?: string; // TrafficSource enum, but accepting string from client
+
+  @IsString()
+  @IsOptional()
+  medium?: string;
+
+  @IsString()
+  @IsOptional()
+  campaign?: string;
+
+  @IsString()
+  @IsOptional()
+  referrer?: string;
+
+  @IsString()
+  @IsOptional()
+  landingPath?: string;
 }

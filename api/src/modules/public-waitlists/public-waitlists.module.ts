@@ -5,8 +5,10 @@ import { BrandingModule } from '../branding/branding.module';
 import { WidgetsModule } from '../widgets/widgets.module';
 import { PaymentModule } from '../payments/payment.module';
 
+import { AnalyticsModule } from '../analytics/analytics.module';
+
 @Module({
-  imports: [BrandingModule, WidgetsModule, PaymentModule],
+  imports: [BrandingModule, WidgetsModule, PaymentModule, AnalyticsModule],
   controllers: [PublicWaitlistsController],
   providers: [PublicWaitlistsService],
 })

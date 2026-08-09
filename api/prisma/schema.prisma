@@ -2,23 +2,13 @@
 
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
-
-
 generator client {
-
   provider = "prisma-client-js"
-
 }
-
-
 
 datasource db {
-
   provider = "postgresql"
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -26,63 +16,39 @@ datasource db {
 
 // ─────────────────────────────────────────────
 
-
-
 enum Role {
-
   USER
 
   ADMIN
-
 }
 
-
-
 enum Provider {
-
   EMAIL
 
   GOOGLE
-
 }
 
-
-
 enum UserStatus {
-
   PENDING_VERIFICATION
 
   ACTIVE
 
   SUSPENDED
-
 }
-
-
 
 enum FileProvider {
-
   CLOUDINARY
-
 }
 
-
-
-
 enum SubscriptionPlanCode {
-
   FREE
 
   STARTER
 
   PRO
-
 }
 
-
-
 enum SubscriptionStatus {
-
   ACTIVE
 
   INACTIVE
@@ -94,33 +60,21 @@ enum SubscriptionStatus {
   EXPIRED
 
   PAST_DUE
-
 }
 
-
-
 enum BillingCycle {
-
   FREE
 
   MONTHLY
-
 }
 
-
-
 enum PaymentProvider {
-
   CHAPA
 
   STRIPE
-
 }
 
-
-
 enum PaymentStatus {
-
   PENDING
 
   SUCCESS
@@ -128,13 +82,9 @@ enum PaymentStatus {
   FAILED
 
   CANCELLED
-
 }
 
-
-
 enum PaymentEventType {
-
   INITIALIZED
 
   WEBHOOK_RECEIVED
@@ -146,13 +96,9 @@ enum PaymentEventType {
   CANCELLED
 
   DUPLICATE
-
 }
 
-
-
 enum RewardType {
-
   POSITION_BOOST
 
   EARLY_ACCESS
@@ -162,30 +108,37 @@ enum RewardType {
   DISCOUNT
 
   CUSTOM
-
 }
 
 enum ParticipantStatus {
-
   WAITING
 
   INVITED
 
   ACCESSED
-
 }
 
 enum RiskLevel {
-
   HEALTHY
 
   MEDIUM_RISK
 
   HIGH_RISK
-
 }
 
-
+enum TrafficSource {
+  DIRECT
+  TWITTER
+  WHATSAPP
+  INSTAGRAM
+  EMAIL
+  PRODUCT_HUNT
+  LINKEDIN
+  FACEBOOK
+  GOOGLE
+  OTHER
+  UNKNOWN
+}
 
 // ─────────────────────────────────────────────
 
@@ -194,98 +147,80 @@ enum RiskLevel {
 // ─────────────────────────────────────────────
 
 model User {
+  id String @id @default(uuid())
 
-  id           String     @id @default(uuid())
-
-  email        String     @unique
+  email String @unique
 
   passwordHash String?
 
-  firstName    String?
+  firstName String?
 
-  lastName     String?
+  lastName String?
 
-  avatar       String?
+  avatar String?
 
-  role         Role       @default(USER)
+  role Role @default(USER)
 
-  provider     Provider   @default(EMAIL)
+  provider Provider @default(EMAIL)
 
-  status       UserStatus @default(PENDING_VERIFICATION)
+  status UserStatus @default(PENDING_VERIFICATION)
 
-  lastLoginAt  DateTime?
+  lastLoginAt DateTime?
 
-  createdAt    DateTime   @default(now())
+  createdAt DateTime @default(now())
 
-  updatedAt    DateTime   @updatedAt
-
-
+  updatedAt DateTime @updatedAt
 
   // ── Email Verification ──────────────────────────
 
-  emailVerifiedAt            DateTime?
+  emailVerifiedAt DateTime?
 
-  emailVerificationToken     String?
+  emailVerificationToken String?
 
   emailVerificationExpiresAt DateTime?
 
-
-
   // ── Password Reset ──────────────────────────────
 
-  passwordResetToken     String?
+  passwordResetToken String?
 
   passwordResetExpiresAt DateTime?
 
-  passwordChangedAt      DateTime?
-
-
+  passwordChangedAt DateTime?
 
   // ── Email Change ────────────────────────────────
 
-  pendingEmail                      String?
+  pendingEmail String?
 
-  pendingEmailVerificationToken     String?
+  pendingEmailVerificationToken String?
 
   pendingEmailVerificationExpiresAt DateTime?
-
-
 
   // ── Two-Factor Authentication (TOTP) ────────────
 
   twoFactorEnabled Boolean @default(false)
 
-  twoFactorSecret  String?
-
-
+  twoFactorSecret String?
 
   // ── Account Lockout ─────────────────────────────
 
-  failedLoginAttempts Int       @default(0)
+  failedLoginAttempts Int @default(0)
 
-  lockedUntil         DateTime?
-
-
+  lockedUntil DateTime?
 
   sessions Session[]
 
-  founder  Founder?
+  founder Founder?
 
-  files    File[]
+  files File[]
 
   subscription Subscription?
 
   payments Payment[]
 
-  aiLogs   AiLog[]
-
-
+  aiLogs AiLog[]
 
   @@map("users")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -294,36 +229,28 @@ model User {
 // ─────────────────────────────────────────────
 
 model Session {
+  id String @id @default(uuid())
 
-  id               String    @id @default(uuid())
-
-  userId           String
+  userId String
 
   refreshTokenHash String
 
-  ipAddress        String?
+  ipAddress String?
 
-  userAgent        String?
+  userAgent String?
 
-  expiresAt        DateTime
+  expiresAt DateTime
 
-  lastUsedAt       DateTime  @default(now())
+  lastUsedAt DateTime @default(now())
 
-  revokedAt        DateTime?
+  revokedAt DateTime?
 
-  createdAt        DateTime  @default(now())
-
-
+  createdAt DateTime @default(now())
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-
-
   @@map("sessions")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -332,42 +259,34 @@ model Session {
 // ─────────────────────────────────────────────
 
 model Founder {
+  id String @id @default(uuid())
 
-  id        String   @id @default(uuid())
+  userId String @unique
 
-  userId    String   @unique
+  email String @unique
 
-  email     String   @unique
-
-  name      String?
+  name String?
 
   // Company Profile
-  companyName        String?
-  industry           String?
-  companyDescription String?
-  country            String?
-  teamSize           String?
-  companyLogo        String?
-  companyWebsite     String?
-  billingEmail       String?
+  companyName         String?
+  industry            String?
+  companyDescription  String?
+  country             String?
+  teamSize            String?
+  companyLogo         String?
+  companyWebsite      String?
+  billingEmail        String?
   onboardingCompleted Boolean @default(false)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now()) @updatedAt
 
-
-
-  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   waitlists Waitlist[]
 
-
-
   @@map("founders")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -376,54 +295,45 @@ model Founder {
 // ─────────────────────────────────────────────
 
 model File {
+  id String @id @default(uuid())
 
-  id               String       @id @default(uuid())
+  publicId String
 
-  publicId         String
+  url String
 
-  url              String
+  secureUrl String
 
-  secureUrl        String
+  originalName String
 
-  originalName     String
+  fileName String
 
-  fileName         String
+  mimeType String
 
-  mimeType         String
+  format String
 
-  format           String
+  bytes Int
 
-  bytes            Int
+  width Int?
 
-  width            Int?
+  height Int?
 
-  height           Int?
+  folder String
 
-  folder           String
-
-  provider         FileProvider @default(CLOUDINARY)
+  provider FileProvider @default(CLOUDINARY)
 
   uploadedByUserId String
 
-  createdAt        DateTime     @default(now())
+  createdAt DateTime @default(now())
 
+  uploadedBy User @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
 
+  waitlistLogos Waitlist[] @relation("WaitlistLogo")
 
-  uploadedBy     User       @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
-
-  waitlistLogos  Waitlist[] @relation("WaitlistLogo")
-
-  brandingLogos  Branding[] @relation("BrandingLogo")
-
-
+  brandingLogos Branding[] @relation("BrandingLogo")
 
   @@index([uploadedByUserId])
-
   @@map("files")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -432,22 +342,20 @@ model File {
 // ─────────────────────────────────────────────
 
 model Waitlist {
+  id String @id @default(uuid())
 
-  id          String   @id @default(uuid())
+  founderId String
 
-  founderId   String
+  name String
 
-  name        String
-
-  tagline     String
+  tagline String
 
   description String?
 
-  slug        String   @unique
+  slug String @unique
 
-  logoId      String?
+  logoId String?
 
-  
   // ── Double-Sided Rewards ────────────────────
   doubleSidedRewardsEnabled              Boolean @default(false)
   referrerRankingBonus                   Int     @default(5)
@@ -457,59 +365,53 @@ model Waitlist {
   totalNewParticipantRankingBonusAwarded Int     @default(0)
 
   // ── Streak Bonuses ──────────────────────────
-  streakBonusesEnabled                   Boolean @default(false)
+  streakBonusesEnabled Boolean @default(false)
 
   // ── Team Referrals ──────────────────────────
-  teamReferralsEnabled                   Boolean @default(false)
-  maxTeamSize                            Int     @default(10)
+  teamReferralsEnabled Boolean @default(false)
+  maxTeamSize          Int     @default(10)
 
   // ── Urgency Engine ──────────────────────────
-  urgencyEnabled                         Boolean @default(false)
-  batchEnabled                           Boolean @default(false)
-  batchName                              String?
-  batchSize                              Int?
-  batchDescription                       String?
-  countdownEnabled                       Boolean @default(false)
-  launchDate                             DateTime?
-  showRemainingSpots                     Boolean @default(true)
-  showBatchProgress                      Boolean @default(true)
-  showCountdown                          Boolean @default(true)
+  urgencyEnabled     Boolean   @default(false)
+  batchEnabled       Boolean   @default(false)
+  batchName          String?
+  batchSize          Int?
+  batchDescription   String?
+  countdownEnabled   Boolean   @default(false)
+  launchDate         DateTime?
+  showRemainingSpots Boolean   @default(true)
+  showBatchProgress  Boolean   @default(true)
+  showCountdown      Boolean   @default(true)
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
+  founder Founder @relation(fields: [founderId], references: [id], onDelete: Cascade)
 
+  logo File? @relation("WaitlistLogo", fields: [logoId], references: [id], onDelete: SetNull)
 
-  founder      Founder       @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  branding Branding?
 
-  logo         File?         @relation("WaitlistLogo", fields: [logoId], references: [id], onDelete: SetNull)
-
-  branding     Branding?
-
-  widget       Widget?
+  widget Widget?
 
   participants Participant[]
 
-  rewards      Reward[]
+  rewards Reward[]
 
   streakMilestones StreakMilestone[]
-  
+
   teams                Team[]
   teamRewardMilestones TeamRewardMilestone[]
 
-  cohorts      Cohort[]
+  cohorts Cohort[]
 
-  copy         WaitlistCopy?
+  copy WaitlistCopy?
 
-
+  attributionVisits AttributionVisit[]
 
   @@index([founderId])
-
   @@map("waitlists")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -518,40 +420,32 @@ model Waitlist {
 // ─────────────────────────────────────────────
 
 model Branding {
+  id String @id @default(uuid())
 
-  id              String   @id @default(uuid())
+  waitlistId String @unique
 
-  waitlistId      String   @unique
+  logoId String?
 
-  logoId          String?
+  primaryColor String
 
-  primaryColor    String
-
-  secondaryColor  String
+  secondaryColor String
 
   backgroundColor String
 
-  buttonColor     String
+  buttonColor String
 
-  font            String
+  font String
 
-  createdAt       DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  updatedAt       DateTime @updatedAt
-
-
+  updatedAt DateTime @updatedAt
 
   waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 
-  logo     File?    @relation("BrandingLogo", fields: [logoId], references: [id], onDelete: SetNull)
-
-
+  logo File? @relation("BrandingLogo", fields: [logoId], references: [id], onDelete: SetNull)
 
   @@map("brandings")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -560,30 +454,22 @@ model Branding {
 // ─────────────────────────────────────────────
 
 model Widget {
+  id String @id @default(uuid())
 
-  id         String   @id @default(uuid())
+  waitlistId String @unique
 
-  waitlistId String   @unique
+  scriptUrl String
 
-  scriptUrl  String
+  embedCode String
 
-  embedCode  String
+  createdAt DateTime @default(now())
 
-  createdAt  DateTime @default(now())
-
-  updatedAt  DateTime @updatedAt
-
-
+  updatedAt DateTime @updatedAt
 
   waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 
-
-
   @@map("widgets")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -592,79 +478,76 @@ model Widget {
 // ─────────────────────────────────────────────
 
 model Participant {
+  id String @id @default(uuid())
 
-  id                 String   @id @default(uuid())
+  waitlistId String
 
-  waitlistId         String
+  email String
 
-  email              String
+  position Int
 
-  position           Int
+  referralCode String @unique
 
-  referralCode       String   @unique
+  referredById String?
 
-  referredById       String?
+  referralCount Int @default(0)
 
-  referralCount      Int      @default(0)
+  positionBoostBonus Int @default(0)
 
-  positionBoostBonus Int      @default(0)
+  currentStreak Int @default(0)
 
-  currentStreak      Int      @default(0)
-
-  longestStreak      Int      @default(0)
+  longestStreak Int @default(0)
 
   lastSuccessfulReferralAt DateTime?
 
-  teamId             String?
+  teamId String?
 
-  status             ParticipantStatus @default(WAITING)
+  status ParticipantStatus @default(WAITING)
 
-  invitedAt          DateTime?
+  invitedAt DateTime?
 
-  accessedAt         DateTime?
+  accessedAt DateTime?
+
+  // ── Source Attribution ───────────────────────
+  source      TrafficSource?
+  medium      String?
+  campaign    String?
+  referrer    String?
+  landingPath String?
 
   lastPositionUpdatedAt DateTime @default(now())
 
-  createdAt          DateTime @default(now())
+  createdAt DateTime @default(now())
 
-  updatedAt          DateTime @default(now()) @updatedAt
+  updatedAt DateTime @default(now()) @updatedAt
 
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 
+  referredBy Participant? @relation("Referrals", fields: [referredById], references: [id])
 
-  waitlist   Waitlist           @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  referrals Participant[] @relation("Referrals")
 
-  referredBy Participant?      @relation("Referrals", fields: [referredById], references: [id])
-
-  referrals  Participant[]      @relation("Referrals")
-
-  participantRewards    ParticipantReward[]
+  participantRewards ParticipantReward[]
 
   participantStreakRewards ParticipantStreakReward[]
 
-  cohortInvitations    CohortInvitation[]
+  cohortInvitations CohortInvitation[]
 
-  referralMessage      ParticipantReferralMessage?
+  referralMessage ParticipantReferralMessage?
 
-  engagement           ParticipantEngagement?
+  engagement ParticipantEngagement?
 
-  engagementLogs       ParticipantEngagementLog[]
+  engagementLogs ParticipantEngagementLog[]
 
   team                   Team?                   @relation("TeamMembers", fields: [teamId], references: [id])
   ownedTeams             Team[]                  @relation("TeamOwner")
   teamInvitations        TeamInvitation[]
   teamParticipantRewards TeamParticipantReward[]
 
-
-
   @@unique([waitlistId, email])
-
   @@index([waitlistId, status])
-
   @@map("participants")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -673,44 +556,36 @@ model Participant {
 // ─────────────────────────────────────────────
 
 model SubscriptionPlan {
+  id String @id @default(uuid())
 
-  id               String               @id @default(uuid())
+  code SubscriptionPlanCode @unique
 
-  code             SubscriptionPlanCode @unique
+  name String
 
-  name             String
+  description String?
 
-  description      String?
+  price Decimal @default(0) @db.Decimal(12, 2)
 
-  price            Decimal              @default(0) @db.Decimal(12, 2)
+  currency String @default("ETB")
 
-  currency         String               @default("ETB")
+  billingCycle BillingCycle
 
-  billingCycle     BillingCycle
+  maxWaitlists Int?
 
-  maxWaitlists     Int?
+  maxParticipants Int?
 
-  maxParticipants  Int?
+  features Json?
 
-  features         Json?
+  isActive Boolean @default(true)
 
-  isActive         Boolean              @default(true)
+  createdAt DateTime @default(now())
 
-  createdAt        DateTime             @default(now())
-
-  updatedAt        DateTime             @updatedAt
-
-
+  updatedAt DateTime @updatedAt
 
   subscriptions Subscription[]
 
-
-
   @@map("subscription_plans")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -719,60 +594,51 @@ model SubscriptionPlan {
 // ─────────────────────────────────────────────
 
 model Subscription {
+  id String @id @default(uuid())
 
-  id                String               @id @default(uuid())
+  userId String @unique
 
-  userId            String               @unique
+  planId String
 
-  planId            String
+  planCode SubscriptionPlanCode
 
-  planCode          SubscriptionPlanCode
+  status SubscriptionStatus @default(ACTIVE)
 
-  status            SubscriptionStatus   @default(ACTIVE)
+  billingCycle BillingCycle @default(FREE)
 
-  billingCycle      BillingCycle         @default(FREE)
+  amount Decimal @default(0) @db.Decimal(12, 2)
 
-  amount            Decimal              @default(0) @db.Decimal(12, 2)
+  currency String @default("ETB")
 
-  currency          String               @default("ETB")
-
-  provider          PaymentProvider?
+  provider PaymentProvider?
 
   providerReference String?
 
-  transactionId     String?
+  transactionId String?
 
-  paymentStatus     PaymentStatus?
+  paymentStatus PaymentStatus?
 
-  startedAt         DateTime?
+  startedAt DateTime?
 
-  expiresAt         DateTime?
+  expiresAt DateTime?
 
-  cancelledAt       DateTime?
+  cancelledAt DateTime?
 
-  createdAt         DateTime             @default(now())
+  createdAt DateTime @default(now())
 
-  updatedAt         DateTime             @updatedAt
+  updatedAt DateTime @updatedAt
 
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-
-  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  plan     SubscriptionPlan @relation(fields: [planId], references: [id])
+  plan SubscriptionPlan @relation(fields: [planId], references: [id])
 
   payments Payment[]
 
-  history  SubscriptionHistory[]
-
-
+  history SubscriptionHistory[]
 
   @@index([planCode, status])
-
   @@map("subscriptions")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -781,54 +647,45 @@ model Subscription {
 // ─────────────────────────────────────────────
 
 model Payment {
+  id String @id @default(uuid())
 
-  id                String               @id @default(uuid())
+  subscriptionId String?
 
-  subscriptionId    String?
+  userId String
 
-  userId            String
+  planCode SubscriptionPlanCode
 
-  planCode          SubscriptionPlanCode
+  amount Decimal @db.Decimal(12, 2)
 
-  amount            Decimal              @db.Decimal(12, 2)
+  currency String
 
-  currency          String
+  provider PaymentProvider @default(CHAPA)
 
-  provider          PaymentProvider      @default(CHAPA)
+  providerReference String @unique
 
-  providerReference String               @unique
+  transactionId String? @unique
 
-  transactionId     String?              @unique
+  paymentStatus PaymentStatus @default(PENDING)
 
-  paymentStatus     PaymentStatus        @default(PENDING)
+  checkoutUrl String?
 
-  checkoutUrl       String?
+  metadata Json?
 
-  metadata          Json?
+  paidAt DateTime?
 
-  paidAt            DateTime?
+  createdAt DateTime @default(now())
 
-  createdAt         DateTime             @default(now())
+  updatedAt DateTime @updatedAt
 
-  updatedAt         DateTime             @updatedAt
-
-
-
-  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   subscription Subscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
 
-  events       PaymentEvent[]
-
-
+  events PaymentEvent[]
 
   @@index([userId, paymentStatus])
-
   @@map("payments")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -837,34 +694,25 @@ model Payment {
 // ─────────────────────────────────────────────
 
 model PaymentEvent {
+  id String @id @default(uuid())
 
-  id             String           @id @default(uuid())
+  paymentId String
 
-  paymentId      String
+  eventType PaymentEventType
 
-  eventType      PaymentEventType
+  payload Json
 
-  payload        Json
+  processed Boolean @default(false)
 
-  processed      Boolean          @default(false)
+  idempotencyKey String @unique
 
-  idempotencyKey String           @unique
-
-  createdAt      DateTime         @default(now())
-
-
+  createdAt DateTime @default(now())
 
   payment Payment @relation(fields: [paymentId], references: [id], onDelete: Cascade)
 
-
-
   @@index([paymentId])
-
   @@map("payment_events")
-
 }
-
-
 
 // ─────────────────────────────────────────────
 
@@ -873,39 +721,31 @@ model PaymentEvent {
 // ─────────────────────────────────────────────
 
 model SubscriptionHistory {
-
-  id             String                @id @default(uuid())
+  id String @id @default(uuid())
 
   subscriptionId String
 
-  userId         String
+  userId String
 
-  fromPlan       SubscriptionPlanCode?
+  fromPlan SubscriptionPlanCode?
 
-  toPlan         SubscriptionPlanCode
+  toPlan SubscriptionPlanCode
 
-  fromStatus     SubscriptionStatus?
+  fromStatus SubscriptionStatus?
 
-  toStatus       SubscriptionStatus
+  toStatus SubscriptionStatus
 
-  reason         String?
+  reason String?
 
-  metadata       Json?
+  metadata Json?
 
-  createdAt      DateTime              @default(now())
-
-
+  createdAt DateTime @default(now())
 
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
-
-
   @@index([subscriptionId])
-
   @@index([userId])
-
   @@map("subscription_history")
-
 }
 
 // ─────────────────────────────────────────────
@@ -994,11 +834,11 @@ model ParticipantStreakReward {
 model Cohort {
   id          String   @id @default(uuid())
   waitlistId  String
-  batchNumber Int      // Cohort #1, #2, #3, etc.
-  size        Int      // Number of participants invited
+  batchNumber Int // Cohort #1, #2, #3, etc.
+  size        Int // Number of participants invited
   createdAt   DateTime @default(now())
 
-  waitlist    Waitlist            @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  waitlist    Waitlist           @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
   invitations CohortInvitation[]
 
   @@unique([waitlistId, batchNumber])
@@ -1037,7 +877,7 @@ model AiLog {
   model     String
   createdAt DateTime @default(now())
 
-  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@index([userId])
   @@map("ai_logs")
@@ -1048,15 +888,15 @@ model AiLog {
 // ─────────────────────────────────────────────
 
 model WaitlistCopy {
-  id           String   @id @default(uuid())
-  waitlistId   String   @unique
-  headline     String
-  subheadline  String
-  cta          String
-  features     Json     // [{title: string, description: string}] x3
-  faqs         Json     // [{question: string, answer: string}] x5
-  generatedAt  DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id          String   @id @default(uuid())
+  waitlistId  String   @unique
+  headline    String
+  subheadline String
+  cta         String
+  features    Json // [{title: string, description: string}] x3
+  faqs        Json // [{question: string, answer: string}] x5
+  generatedAt DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   waitlist Waitlist              @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
   versions WaitlistCopyVersion[]
@@ -1115,17 +955,19 @@ model ParticipantEngagement {
   updatedAt       DateTime  @updatedAt
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
   @@map("participant_engagements")
 }
 
 model ParticipantEngagementLog {
-  id              String    @id @default(uuid())
-  participantId   String
-  riskScore       Int
-  riskLevel       RiskLevel
-  evaluatedAt     DateTime  @default(now())
+  id            String    @id @default(uuid())
+  participantId String
+  riskScore     Int
+  riskLevel     RiskLevel
+  evaluatedAt   DateTime  @default(now())
 
   participant Participant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+
   @@index([participantId])
   @@map("participant_engagement_logs")
 }
@@ -1143,10 +985,10 @@ model Team {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  waitlist Waitlist      @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
-  owner    Participant   @relation("TeamOwner", fields: [ownerId], references: [id])
-  members  Participant[] @relation("TeamMembers")
-  invitations TeamInvitation[]
+  waitlist             Waitlist              @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  owner                Participant           @relation("TeamOwner", fields: [ownerId], references: [id])
+  members              Participant[]         @relation("TeamMembers")
+  invitations          TeamInvitation[]
   teamMilestoneRewards TeamMilestoneReward[]
 
   @@unique([waitlistId, name])
@@ -1184,7 +1026,7 @@ model TeamRewardMilestone {
   createdAt  DateTime   @default(now())
   updatedAt  DateTime   @updatedAt
 
-  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  waitlist             Waitlist              @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
   teamMilestoneRewards TeamMilestoneReward[]
 
   @@unique([waitlistId, milestone])
@@ -1200,8 +1042,8 @@ model TeamMilestoneReward {
   teamRewardMilestoneId String
   unlockedAt            DateTime @default(now())
 
-  team              Team                @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  milestone         TeamRewardMilestone @relation(fields: [teamRewardMilestoneId], references: [id], onDelete: Cascade)
+  team               Team                    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  milestone          TeamRewardMilestone     @relation(fields: [teamRewardMilestoneId], references: [id], onDelete: Cascade)
   participantRewards TeamParticipantReward[]
 
   @@unique([teamId, teamRewardMilestoneId])
@@ -1222,4 +1064,24 @@ model TeamParticipantReward {
 
   @@unique([teamMilestoneRewardId, participantId])
   @@map("team_participant_rewards")
+}
+
+// ─────────────────────────────────────────────
+// AttributionVisit — Anonymous analytics tracking
+// ─────────────────────────────────────────────
+model AttributionVisit {
+  id         String        @id @default(uuid())
+  waitlistId String
+  sessionId  String
+  source     TrafficSource
+  medium     String?
+  campaign   String?
+  timestamp  DateTime      @default(now())
+
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
+  @@index([waitlistId, source])
+  @@index([waitlistId, timestamp])
+  @@index([waitlistId, sessionId])
+  @@map("attribution_visits")
 }
