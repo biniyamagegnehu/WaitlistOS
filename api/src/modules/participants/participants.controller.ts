@@ -6,6 +6,8 @@ import {
   HttpStatus,
   Get,
   Param,
+  Ip,
+  Headers,
 } from '@nestjs/common';
 import { Public } from '../../common/decorators/public.decorator';
 import { ParticipantsService } from './participants.service';
@@ -18,8 +20,12 @@ export class ParticipantsController {
   @Public()
   @Post()
   @HttpCode(HttpStatus.CREATED)
-  create(@Body() createParticipantDto: CreateParticipantDto) {
-    return this.participantsService.create(createParticipantDto);
+  create(
+    @Body() createParticipantDto: CreateParticipantDto,
+    @Ip() ip: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.participantsService.create(createParticipantDto, ip, userAgent);
   }
 
   @Public()

@@ -57,3 +57,6 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
 /generated/prisma
 
+
+# MaxMind GeoLite2 database
+GeoLite2-*.mmdb

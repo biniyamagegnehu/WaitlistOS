@@ -19,4 +19,17 @@ export class AnalyticsController {
     
     return this.analyticsService.getSourceAnalytics(waitlistId, user.userId, fromDate, toDate);
   }
+
+  @Get('audience')
+  async getAudienceAnalytics(
+    @Param('waitlistId') waitlistId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(to) : undefined;
+    
+    return this.analyticsService.getAudienceAnalytics(waitlistId, user.userId, fromDate, toDate);
+  }
 }

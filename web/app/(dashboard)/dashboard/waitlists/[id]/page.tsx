@@ -180,7 +180,12 @@ export default function WaitlistDetailPage() {
                 </Link>
                 <Link href={routes.waitlistAnalyticsSources(waitlist.id)} className="flex-1">
                   <Button variant="secondary" className="w-full">
-                    Analytics
+                    Acquisition
+                  </Button>
+                </Link>
+                <Link href={routes.waitlistAnalyticsAudience(waitlist.id)} className="flex-1">
+                  <Button variant="secondary" className="w-full">
+                    Audience
                   </Button>
                 </Link>
                 <Link href={routes.waitlistShare(waitlist.id)} className="flex-1">

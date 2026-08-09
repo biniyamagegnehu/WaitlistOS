@@ -515,6 +515,11 @@ model Participant {
   referrer    String?
   landingPath String?
 
+  // ── Geo & Device Analytics ─────────────────────
+  countryCode String?
+  deviceType  String?
+  browserName String?
+
   lastPositionUpdatedAt DateTime @default(now())
 
   createdAt DateTime @default(now())
@@ -546,6 +551,10 @@ model Participant {
 
   @@unique([waitlistId, email])
   @@index([waitlistId, status])
+  @@index([waitlistId, createdAt])
+  @@index([waitlistId, countryCode, createdAt])
+  @@index([waitlistId, deviceType, createdAt])
+  @@index([waitlistId, browserName, createdAt])
   @@map("participants")
 }
 

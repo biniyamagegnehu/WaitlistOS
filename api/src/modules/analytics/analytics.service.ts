@@ -156,4 +156,106 @@ export class AnalyticsService {
       },
     });
   }
+
+  async getAudienceAnalytics(
+    waitlistId: string,
+    userId: string,
+    from?: Date,
+    to?: Date,
+  ) {
+    // 1. Enforce ownership
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { id: waitlistId },
+      include: { founder: true },
+    });
+
+    if (!waitlist) throw new NotFoundException('Waitlist not found');
+    if (waitlist.founder.userId !== userId) throw new UnauthorizedException('Access denied');
+
+    const where: Prisma.ParticipantWhereInput = {
+      waitlistId,
+      ...(from || to ? { createdAt: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
+    };
+
+    // 2. Fetch all required aggregations in parallel
+    const [
+      totalSignupsAgg,
+      countryAgg,
+      deviceAgg,
+      browserAgg
+    ] = await Promise.all([
+      this.prisma.participant.count({ where }),
+      this.prisma.participant.groupBy({
+        by: ['countryCode'],
+        where,
+        _count: { _all: true },
+        orderBy: { _count: { countryCode: 'desc' } }
+      }),
+      this.prisma.participant.groupBy({
+        by: ['deviceType'],
+        where,
+        _count: { _all: true },
+        orderBy: { _count: { deviceType: 'desc' } }
+      }),
+      this.prisma.participant.groupBy({
+        by: ['browserName'],
+        where,
+        _count: { _all: true },
+        orderBy: { _count: { browserName: 'desc' } }
+      })
+    ]);
+
+    const totalSignups = totalSignupsAgg;
+
+    // Helper to calculate percentage safely
+    const calcPct = (count: number, total: number) => 
+      total > 0 ? Number(((count / total) * 100).toFixed(2)) : 0;
+
+    // Process Countries
+    const countries = countryAgg.map(c => ({
+      code: c.countryCode || 'Unknown',
+      name: c.countryCode ? this.getCountryName(c.countryCode) : 'Unknown',
+      signups: c._count._all,
+      percentage: calcPct(c._count._all, totalSignups)
+    })).sort((a, b) => b.signups - a.signups);
+
+    // Process Devices
+    const devices = deviceAgg.map(d => ({
+      type: d.deviceType || 'UNKNOWN',
+      label: d.deviceType ? this.capitalize(d.deviceType.toLowerCase()) : 'Unknown',
+      signups: d._count._all,
+      percentage: calcPct(d._count._all, totalSignups)
+    })).sort((a, b) => b.signups - a.signups);
+
+    // Process Browsers
+    const browsers = browserAgg.map(b => ({
+      name: b.browserName || 'Unknown',
+      signups: b._count._all,
+      percentage: calcPct(b._count._all, totalSignups)
+    })).sort((a, b) => b.signups - a.signups);
+
+    const geoAnalyzedSignups = countries.reduce((acc, curr) => curr.code !== 'Unknown' ? acc + curr.signups : acc, 0);
+
+    return {
+      totalSignups,
+      geoAnalyzedSignups,
+      countries,
+      devices,
+      browsers
+    };
+  }
+
+  private capitalize(s: string): string {
+    if (!s) return '';
+    return s.charAt(0).toUpperCase() + s.slice(1);
+  }
+
+  private getCountryName(code: string): string {
+    const displayNames = new Intl.DisplayNames(['en'], { type: 'region' });
+    try {
+      return displayNames.of(code) || code;
+    } catch {
+      return code;
+    }
+  }
 }

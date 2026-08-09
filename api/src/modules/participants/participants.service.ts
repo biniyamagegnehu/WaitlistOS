@@ -12,6 +12,8 @@ import { randomBytes } from 'crypto';
 import { PaymentService } from '../payments/payment.service';
 import { Prisma, TrafficSource } from '@prisma/client';
 import { computeEffectiveStreak } from '../../lib/streak-utils';
+import { GeoLocationService } from '../analytics/geo-location.service';
+import { DeviceDetectionService } from '../analytics/device-detection.service';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -28,6 +30,8 @@ export class ParticipantsService {
     @InjectQueue('emails') private readonly emailsQueue: Queue,
     @InjectQueue('ai-tasks') private readonly aiTasksQueue: Queue,
     private readonly paymentService: PaymentService,
+    private readonly geoLocationService: GeoLocationService,
+    private readonly deviceDetectionService: DeviceDetectionService,
   ) {}
 
   // ── Referral code generator ──────────────────────────────
@@ -70,7 +74,7 @@ export class ParticipantsService {
   }
 
   // ── Create participant ────────────────────────────────────
-  async create(dto: CreateParticipantDto) {
+  async create(dto: CreateParticipantDto, ip?: string, userAgent?: string) {
     const { waitlistSlug, email, referralCode: incomingRef, source, medium, campaign, referrer: dtoReferrer, landingPath } = dto;
 
     // 1. Resolve waitlist by slug — 404 if not found
@@ -115,6 +119,10 @@ export class ParticipantsService {
     // Generate unique referral code for this new participant
     const newReferralCode = await this.generateUniqueCode();
 
+    // Capture Geo & Device metadata (safe fallback)
+    const countryCode = this.geoLocationService.resolveCountry(ip);
+    const deviceInfo = this.deviceDetectionService.detectDevice(userAgent);
+
     // 4. Transaction with SKIP LOCKED retry logic
     const maxRetries = 5;
     const baseRetryDelay = 100; // ms
@@ -152,6 +160,9 @@ export class ParticipantsService {
               campaign: campaign || null,
               referrer: dtoReferrer || null,
               landingPath: landingPath || null,
+              countryCode,
+              deviceType: deviceInfo.deviceType,
+              browserName: deviceInfo.browserName,
               ...(referrer ? { referredById: referrer.id } : {}),
             },
           });

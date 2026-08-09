@@ -40,9 +40,8 @@ function getAllowedOrigins(): string[] {
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { rawBody: true });
 
-  if (process.env.NODE_ENV === 'production') {
-    app.getHttpAdapter().getInstance().set('trust proxy', 1);
-  }
+  // Enable trust proxy so req.ip uses X-Forwarded-For headers (useful for local testing with ModHeader or ngrok)
+  app.getHttpAdapter().getInstance().set('trust proxy', 1);
 
   app.use(
     helmet({
