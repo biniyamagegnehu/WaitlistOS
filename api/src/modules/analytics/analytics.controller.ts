@@ -4,6 +4,8 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { Public } from '../../common/decorators/public.decorator';
 import { CreateFunnelEventDto } from './dto/funnel-event.dto';
 import { FunnelAggregationCron } from './funnel-aggregation.cron';
+import { GrowthAggregationCron } from './growth-aggregation.cron';
+import { ReferralSpikeDetectionCron } from './referral-spike-detection.cron';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 
 @Controller('waitlists/:waitlistId/analytics')
@@ -11,6 +13,8 @@ export class AnalyticsController {
   constructor(
     private readonly analyticsService: AnalyticsService,
     private readonly funnelAggregationCron: FunnelAggregationCron,
+    private readonly growthAggregationCron: GrowthAggregationCron,
+    private readonly referralSpikeDetectionCron: ReferralSpikeDetectionCron,
   ) {}
 
   @Get('sources')
@@ -59,6 +63,37 @@ export class AnalyticsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     await this.funnelAggregationCron.aggregateFunnelEvents();
+  }
+
+  @Post('backfill-growth')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async triggerGrowthBackfill(
+    @Param('waitlistId') waitlistId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.growthAggregationCron.backfillWaitlistGrowth(waitlistId);
+  }
+
+  @Post('detect-spikes')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async triggerSpikeDetection(
+    @Param('waitlistId') waitlistId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    await this.referralSpikeDetectionCron.detectReferralSpikes();
+  }
+
+  @Get('growth-velocity')
+  async getGrowthVelocity(
+    @Param('waitlistId') waitlistId: string,
+    @CurrentUser() user: AuthenticatedUser,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    const fromDate = from ? new Date(from) : undefined;
+    const toDate = to ? new Date(to) : undefined;
+
+    return this.analyticsService.getGrowthVelocity(waitlistId, user.userId, fromDate, toDate);
   }
 }
 

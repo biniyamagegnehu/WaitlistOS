@@ -260,7 +260,7 @@ export default function AnalyticsSourcesPage({ params }: { params: Promise<{ id:
                           ))}
                         </Pie>
                         <RechartsTooltip 
-                          formatter={(value: number, name: string, props: any) => [`${value} (${props.payload.percentage}%)`, name]}
+                          formatter={(value: any, name: any, props: any) => [`${value} (${props.payload.percentage}%)`, name]}
                         />
                       </PieChart>
                     </ResponsiveContainer>

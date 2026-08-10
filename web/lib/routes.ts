@@ -17,6 +17,7 @@ export const routes = {
   waitlistAnalyticsSources: (id: string) => `/dashboard/waitlists/${id}/analytics/sources`,
   waitlistAnalyticsAudience: (id: string) => `/dashboard/waitlists/${id}/analytics/audience`,
   waitlistAnalyticsFunnel: (id: string) => `/dashboard/waitlists/${id}/analytics/funnel`,
+  waitlistAnalyticsGrowthVelocity: (id: string) => `/dashboard/waitlists/${id}/analytics/growth-velocity`,
   settings: "/dashboard/settings",
   settingsTab: (tab: SettingsTab) => `/dashboard/settings?tab=${tab}`,
   billing: "/dashboard/billing",

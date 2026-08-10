@@ -147,6 +147,11 @@ enum FunnelEventType {
   REFERRAL_SHARED
 }
 
+enum GrowthPeriodType {
+  HOUR
+  DAY
+}
+
 // ─────────────────────────────────────────────
 
 // User — Authentication identity
@@ -418,6 +423,10 @@ model Waitlist {
 
   funnelEvents FunnelEvent[]
 
+  growthTimeseries GrowthTimeseries[]
+
+  referralSpikes ReferralSpike[]
+
   @@index([founderId])
   @@map("waitlists")
 }
@@ -557,6 +566,8 @@ model Participant {
   ownedTeams             Team[]                  @relation("TeamOwner")
   teamInvitations        TeamInvitation[]
   teamParticipantRewards TeamParticipantReward[]
+
+  referralSpikes         ReferralSpike[]          @relation("ReferrerSpikes")
 
   @@unique([waitlistId, email])
   @@index([waitlistId, status])
@@ -1137,4 +1148,46 @@ model DailyFunnelStats {
   @@unique([waitlistId, date, eventType])
   @@index([waitlistId, date])
   @@map("daily_funnel_stats")
+}
+
+// ─────────────────────────────────────────────
+// GrowthTimeseries — Signup growth time series data
+// ─────────────────────────────────────────────
+model GrowthTimeseries {
+  id          String          @id @default(uuid())
+  waitlistId  String
+  periodStart DateTime
+  periodType  GrowthPeriodType
+  signupCount Int            @default(0)
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  waitlist    Waitlist        @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
+  @@unique([waitlistId, periodStart, periodType])
+  @@index([waitlistId, periodStart])
+  @@index([waitlistId, periodType, periodStart])
+  @@map("growth_timeseries")
+}
+
+// ─────────────────────────────────────────────
+// ReferralSpike — Detected viral referral moments
+// ─────────────────────────────────────────────
+model ReferralSpike {
+  id                  String   @id @default(uuid())
+  waitlistId          String
+  referrerParticipantId String
+  startAt             DateTime
+  endAt               DateTime
+  signupCount         Int
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  waitlist            Waitlist   @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  referrer            Participant @relation("ReferrerSpikes", fields: [referrerParticipantId], references: [id])
+
+  @@index([waitlistId, startAt])
+  @@index([waitlistId, referrerParticipantId])
+  @@index([waitlistId, endAt])
+  @@map("referral_spikes")
 }

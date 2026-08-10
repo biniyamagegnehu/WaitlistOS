@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException, UnauthorizedException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { TrafficSource, FunnelEventType, Prisma } from '@prisma/client';
+import { TrafficSource, FunnelEventType, GrowthPeriodType, Prisma } from '@prisma/client';
 
 export interface SourcePerformance {
   source: TrafficSource | 'DIRECT' | 'UNKNOWN';
@@ -33,6 +33,30 @@ export interface ConversionFunnelResponse {
   overallSignupConversion: number | null;
   referralShareRate: number | null;
   steps: FunnelStep[];
+}
+
+export interface GrowthDataPoint {
+  timestamp: string;
+  signupCount: number;
+}
+
+export interface ReferralSpikeData {
+  id: string;
+  referrerParticipantId: string;
+  startAt: string;
+  endAt: string;
+  signupCount: number;
+}
+
+export interface GrowthVelocityResponse {
+  hourly: GrowthDataPoint[];
+  daily: GrowthDataPoint[];
+  spikes: ReferralSpikeData[];
+  summary: {
+    totalSignups: number;
+    peakHour: { timestamp: string; signupCount: number } | null;
+    spikeCount: number;
+  };
 }
 
 @Injectable()
@@ -454,14 +478,8 @@ export class AnalyticsService {
     ];
 
     // 9. Calculate overall metrics
-    const overallSignupConversion = pageVisits > 0 ? (signupSubmitted / pageVisits) * 100 : null;
+    const overallSignupConversion = signupSubmitted > 0 ? (signupSubmitted / pageVisits) * 100 : null;
     const referralShareRate = signupSubmitted > 0 ? (referralShared / signupSubmitted) * 100 : null;
-
-    // 10. Round all percentages to 2 decimal places
-    steps.forEach(step => {
-      if (step.conversionRate !== null) step.conversionRate = Number(step.conversionRate.toFixed(2));
-      if (step.dropOffRate !== null) step.dropOffRate = Number(step.dropOffRate.toFixed(2));
-    });
 
     return {
       pageVisits,
@@ -471,6 +489,102 @@ export class AnalyticsService {
       overallSignupConversion: overallSignupConversion !== null ? Number(overallSignupConversion.toFixed(2)) : null,
       referralShareRate: referralShareRate !== null ? Number(referralShareRate.toFixed(2)) : null,
       steps,
+    };
+  }
+
+  // ─────────────────────────────────────────────
+  // Growth Velocity Analytics
+  // ─────────────────────────────────────────────
+
+  async getGrowthVelocity(
+    waitlistId: string,
+    userId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<GrowthVelocityResponse> {
+    // 1. Enforce ownership
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { id: waitlistId },
+      include: { founder: true },
+    });
+
+    if (!waitlist) throw new NotFoundException('Waitlist not found');
+    if (waitlist.founder.userId !== userId) throw new UnauthorizedException('Access denied');
+
+    // 2. Build date filters
+    const dateFilter: Prisma.GrowthTimeseriesWhereInput = {
+      waitlistId,
+      ...(from || to ? { periodStart: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
+    };
+
+    const spikeFilter: Prisma.ReferralSpikeWhereInput = {
+      waitlistId,
+      ...(from || to ? { startAt: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
+    };
+
+    // 3. Fetch hourly data
+    const hourlyData = await this.prisma.growthTimeseries.findMany({
+      where: { ...dateFilter, periodType: GrowthPeriodType.HOUR },
+      orderBy: { periodStart: 'asc' },
+    });
+
+    // 4. Fetch daily data
+    const dailyData = await this.prisma.growthTimeseries.findMany({
+      where: { ...dateFilter, periodType: GrowthPeriodType.DAY },
+      orderBy: { periodStart: 'asc' },
+    });
+
+    // 5. Fetch referral spikes
+    const spikes = await this.prisma.referralSpike.findMany({
+      where: spikeFilter,
+      include: {
+        referrer: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+      },
+      orderBy: { startAt: 'asc' },
+    });
+
+    // 6. Calculate summary metrics
+    const totalSignups = dailyData.reduce((sum, record) => sum + record.signupCount, 0);
+
+    // Find peak hour (from hourly data)
+    let peakHour: { timestamp: string; signupCount: number } | null = null;
+    if (hourlyData.length > 0) {
+      const maxHour = hourlyData.reduce((max, current) => 
+        current.signupCount > max.signupCount ? current : max
+      , hourlyData[0]);
+      peakHour = {
+        timestamp: maxHour.periodStart.toISOString(),
+        signupCount: maxHour.signupCount,
+      };
+    }
+
+    // 7. Format response
+    return {
+      hourly: hourlyData.map(record => ({
+        timestamp: record.periodStart.toISOString(),
+        signupCount: record.signupCount,
+      })),
+      daily: dailyData.map(record => ({
+        timestamp: record.periodStart.toISOString(),
+        signupCount: record.signupCount,
+      })),
+      spikes: spikes.map(spike => ({
+        id: spike.id,
+        referrerParticipantId: spike.referrerParticipantId,
+        startAt: spike.startAt.toISOString(),
+        endAt: spike.endAt.toISOString(),
+        signupCount: spike.signupCount,
+      })),
+      summary: {
+        totalSignups,
+        peakHour,
+        spikeCount: spikes.length,
+      },
     };
   }
 }

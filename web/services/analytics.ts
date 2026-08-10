@@ -111,3 +111,45 @@ export async function getConversionFunnel(
   const response = await api.get<ConversionFunnelResponse>(url);
   return response.data;
 }
+
+export interface GrowthDataPoint {
+  timestamp: string;
+  signupCount: number;
+}
+
+export interface ReferralSpikeData {
+  id: string;
+  referrerParticipantId: string;
+  startAt: string;
+  endAt: string;
+  signupCount: number;
+}
+
+export interface GrowthVelocitySummary {
+  totalSignups: number;
+  peakHour: { timestamp: string; signupCount: number } | null;
+  spikeCount: number;
+}
+
+export interface GrowthVelocityResponse {
+  hourly: GrowthDataPoint[];
+  daily: GrowthDataPoint[];
+  spikes: ReferralSpikeData[];
+  summary: GrowthVelocitySummary;
+}
+
+export async function getGrowthVelocity(
+  waitlistId: string,
+  from?: string,
+  to?: string
+): Promise<GrowthVelocityResponse> {
+  const params = new URLSearchParams();
+  if (from) params.append("from", from);
+  if (to) params.append("to", to);
+
+  const query = params.toString();
+  const url = `/waitlists/${waitlistId}/analytics/growth-velocity${query ? `?${query}` : ""}`;
+
+  const response = await api.get<GrowthVelocityResponse>(url);
+  return response.data;
+}

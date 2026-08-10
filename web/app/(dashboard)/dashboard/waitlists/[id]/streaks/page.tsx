@@ -23,12 +23,12 @@ import { z } from "zod";
 import toast from "react-hot-toast";
 
 const streakMilestoneSchema = z.object({
-  days: z.coerce.number({ invalid_type_error: "Streak day is required." })
+  days: z.coerce.number()
     .int("Streak day must be an integer.")
     .min(2, "Streak day must be at least 2.")
     .max(365, "Streak day cannot exceed 365."),
   title: z.string().min(1, "Title is required"),
-  value: z.coerce.number({ invalid_type_error: "Ranking bonus is required." })
+  value: z.coerce.number()
     .int("Ranking bonus must be an integer.")
     .min(1, "Ranking bonus must be at least 1.")
     .max(100, "Ranking bonus cannot exceed 100."),
@@ -99,9 +99,9 @@ export default function StreakMilestonesPage() {
   const openEditDialog = (milestone: StreakMilestoneDto) => {
     setEditingMilestone(milestone);
     form.reset({
-      days: milestone.days,
+      days: milestone.days ?? 2,
       title: milestone.title || "",
-      value: milestone.value,
+      value: milestone.value ?? 1,
       description: milestone.description || "",
     });
     setIsDialogOpen(true);
