@@ -1,17 +1,17 @@
-import { IsString, IsEmail, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateParticipantDto {
   @IsString()
   @IsNotEmpty()
-  waitlistSlug: string;
+  waitlistSlug!: string;
 
   @IsEmail()
   @IsNotEmpty()
   @Transform(({ value }) =>
     typeof value === 'string' ? value.trim().toLowerCase() : value,
   )
-  email: string;
+  email!: string;
 
   // Optional referral code passed via ?ref= query param
   @IsString()
@@ -41,4 +41,9 @@ export class CreateParticipantDto {
   @IsString()
   @IsOptional()
   landingPath?: string;
+
+  // Funnel analytics session ID
+  @IsUUID()
+  @IsOptional()
+  sessionId?: string;
 }

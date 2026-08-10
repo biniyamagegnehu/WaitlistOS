@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Copy, RefreshCw, Hash, Briefcase, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import toast from "react-hot-toast";
 import { ReferralMessages as ReferralMessagesType } from "@/types/participant";
 import { api } from "@/lib/axios";
+import { trackFunnelEvent } from "./AnalyticsTracker";
 
 interface ReferralMessagesProps {
   participantId: string;
@@ -18,6 +19,7 @@ export function ReferralMessages({ participantId, primaryColor = "var(--primary)
   const [messages, setMessages] = useState<ReferralMessagesType | null>(null);
   const [loading, setLoading] = useState(true);
   const [regenerating, setRegenerating] = useState(false);
+  const referralSharedTracked = useRef(false);
 
   const fetchMessages = async () => {
     try {
@@ -82,7 +84,40 @@ export function ReferralMessages({ participantId, primaryColor = "var(--primary)
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text).then(() => {
       toast.success("Message copied to clipboard");
+
+      // Track REFERRAL_SHARED funnel event (once per session)
+      if (!referralSharedTracked.current) {
+        referralSharedTracked.current = true;
+        const sessionId = getCookie("waitlist_session");
+        if (sessionId) {
+          // Get waitlistId from the participant data
+          // For now, we'll need to fetch participant data or pass it as prop
+          // Let's add a simpler approach - track by participantId
+          trackReferralSharedEvent(participantId, sessionId);
+        }
+      }
     });
+  };
+
+  const trackReferralSharedEvent = (participantId: string, sessionId: string) => {
+    // Fetch participant to get waitlistId
+    api.get(`/participants/${participantId}`)
+      .then((res) => {
+        if (res.data.success && res.data.data?.waitlistId) {
+          trackFunnelEvent(res.data.data.waitlistId, sessionId, "REFERRAL_SHARED");
+        }
+      })
+      .catch(() => {
+        // Fail silently
+      });
+  };
+
+  const getCookie = (name: string): string | undefined => {
+    if (typeof document === "undefined") return undefined;
+    const match = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(`${name}=`));
+    return match ? decodeURIComponent(match.split("=")[1]) : undefined;
   };
 
   if (loading && !messages) {

@@ -15,6 +15,27 @@ export interface AnalyticsResponse {
   sources: SourcePerformance[];
 }
 
+export type FunnelEventType = "PAGE_VISIT" | "FORM_FOCUS" | "SIGNUP_SUBMITTED" | "REFERRAL_SHARED";
+
+export interface FunnelStep {
+  type: FunnelEventType;
+  label: string;
+  count: number;
+  conversionRate: number | null;
+  dropOff: number | null;
+  dropOffRate: number | null;
+}
+
+export interface ConversionFunnelResponse {
+  pageVisits: number;
+  formFocus: number;
+  signupSubmitted: number;
+  referralShared: number;
+  overallSignupConversion: number | null;
+  referralShareRate: number | null;
+  steps: FunnelStep[];
+}
+
 export async function getWaitlistAnalytics(
   waitlistId: string,
   from?: string,
@@ -72,5 +93,21 @@ export async function getAudienceAnalytics(
   const url = `/waitlists/${waitlistId}/analytics/audience${query ? `?${query}` : ""}`;
 
   const response = await api.get<AudienceAnalyticsResponse>(url);
+  return response.data;
+}
+
+export async function getConversionFunnel(
+  waitlistId: string,
+  from?: string,
+  to?: string
+): Promise<ConversionFunnelResponse> {
+  const params = new URLSearchParams();
+  if (from) params.append("from", from);
+  if (to) params.append("to", to);
+
+  const query = params.toString();
+  const url = `/waitlists/${waitlistId}/analytics/conversion-funnel${query ? `?${query}` : ""}`;
+
+  const response = await api.get<ConversionFunnelResponse>(url);
   return response.data;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { CheckCircle, Users, Trophy, TrendingUp } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
@@ -17,6 +17,7 @@ import { getShareableReferralUrl } from "@/lib/referral";
 import { ReferralMessages } from "@/components/waitlist/ReferralMessages";
 import { TeamSection } from "@/components/waitlist/TeamSection";
 import { UrgencyWidget } from "@/components/public/UrgencyWidget";
+import { trackFunnelEvent } from "./AnalyticsTracker";
 
 export default function PublicWaitlistPageClient() {
   const params = useParams();
@@ -29,6 +30,7 @@ export default function PublicWaitlistPageClient() {
   const [notFound, setNotFound] = useState(false);
   const [joined, setJoined] = useState<JoinResponse | null>(null);
   const [copied, setCopied] = useState(false);
+  const referralSharedTracked = useRef(false);
 
   useEffect(() => {
     if (!slug) return;
@@ -54,7 +56,24 @@ export default function PublicWaitlistPageClient() {
     navigator.clipboard.writeText(link).then(() => {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
+
+      // Track REFERRAL_SHARED funnel event (once per session)
+      if (!referralSharedTracked.current && joined && waitlistData) {
+        referralSharedTracked.current = true;
+        const sessionId = getCookie("waitlist_session");
+        if (sessionId) {
+          trackFunnelEvent(waitlistData.waitlist.id, sessionId, "REFERRAL_SHARED");
+        }
+      }
     });
+  };
+
+  const getCookie = (name: string): string | undefined => {
+    if (typeof document === "undefined") return undefined;
+    const match = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith(`${name}=`));
+    return match ? decodeURIComponent(match.split("=")[1]) : undefined;
   };
 
   if (loading) {

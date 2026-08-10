@@ -16,6 +16,7 @@ export const routes = {
   waitlistOpenGates: (id: string) => `/dashboard/waitlists/${id}/open-gates`,
   waitlistAnalyticsSources: (id: string) => `/dashboard/waitlists/${id}/analytics/sources`,
   waitlistAnalyticsAudience: (id: string) => `/dashboard/waitlists/${id}/analytics/audience`,
+  waitlistAnalyticsFunnel: (id: string) => `/dashboard/waitlists/${id}/analytics/funnel`,
   settings: "/dashboard/settings",
   settingsTab: (tab: SettingsTab) => `/dashboard/settings?tab=${tab}`,
   billing: "/dashboard/billing",

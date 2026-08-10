@@ -188,6 +188,11 @@ export default function WaitlistDetailPage() {
                     Audience
                   </Button>
                 </Link>
+                <Link href={routes.waitlistAnalyticsFunnel(waitlist.id)} className="flex-1">
+                  <Button variant="secondary" className="w-full">
+                    Funnel
+                  </Button>
+                </Link>
                 <Link href={routes.waitlistShare(waitlist.id)} className="flex-1">
                   <Button className="w-full">
                     <Share2 className="h-4 w-4 mr-2" />

@@ -3,6 +3,7 @@ import {
   ConflictException,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
@@ -10,10 +11,11 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
 import { PaymentService } from '../payments/payment.service';
-import { Prisma, TrafficSource } from '@prisma/client';
+import { Prisma, TrafficSource, FunnelEventType } from '@prisma/client';
 import { computeEffectiveStreak } from '../../lib/streak-utils';
 import { GeoLocationService } from '../analytics/geo-location.service';
 import { DeviceDetectionService } from '../analytics/device-detection.service';
+import { AnalyticsService } from '../analytics/analytics.service';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -25,6 +27,8 @@ function toTrafficSource(raw: string | undefined | null): TrafficSource | null {
 
 @Injectable()
 export class ParticipantsService {
+  private readonly logger = new Logger(ParticipantsService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     @InjectQueue('emails') private readonly emailsQueue: Queue,
@@ -32,6 +36,7 @@ export class ParticipantsService {
     private readonly paymentService: PaymentService,
     private readonly geoLocationService: GeoLocationService,
     private readonly deviceDetectionService: DeviceDetectionService,
+    private readonly analyticsService: AnalyticsService,
   ) {}
 
   // ── Referral code generator ──────────────────────────────
@@ -75,7 +80,7 @@ export class ParticipantsService {
 
   // ── Create participant ────────────────────────────────────
   async create(dto: CreateParticipantDto, ip?: string, userAgent?: string) {
-    const { waitlistSlug, email, referralCode: incomingRef, source, medium, campaign, referrer: dtoReferrer, landingPath } = dto;
+    const { waitlistSlug, email, referralCode: incomingRef, source, medium, campaign, referrer: dtoReferrer, landingPath, sessionId } = dto;
 
     // 1. Resolve waitlist by slug — 404 if not found
     const waitlist = await this.prisma.waitlist.findUnique({
@@ -427,6 +432,20 @@ export class ParticipantsService {
         removeOnComplete: true,
       },
     );
+
+    // 8. Track SIGNUP_SUBMITTED funnel event if sessionId provided
+    if (sessionId) {
+      try {
+        await this.analyticsService.recordFunnelEvent(
+          waitlist.id,
+          sessionId,
+          FunnelEventType.SIGNUP_SUBMITTED,
+        );
+      } catch (error) {
+        // Fail silently - analytics should not break signup flow
+        this.logger.warn(`Failed to record SIGNUP_SUBMITTED funnel event: ${(error as Error).message}`);
+      }
+    }
 
     return {
       success: true,

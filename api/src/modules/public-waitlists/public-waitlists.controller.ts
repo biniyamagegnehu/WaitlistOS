@@ -29,7 +29,7 @@ export class PublicWaitlistsController {
 
   @Public()
   @Post(':slug/visit')
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   async recordVisit(
     @Param('slug') slug: string,
     @Body() body: { sessionId?: string; source?: string; medium?: string; campaign?: string },
@@ -38,12 +38,14 @@ export class PublicWaitlistsController {
     if (!body?.sessionId) return;
 
     const source = toTrafficSource(body.source ?? 'DIRECT');
-    await this.analyticsService.recordVisit(
+    const waitlist = await this.analyticsService.recordVisit(
       slug,
       body.sessionId,
       source,
       body.medium,
       body.campaign,
     );
+
+    return { success: true, data: { waitlist } };
   }
 }

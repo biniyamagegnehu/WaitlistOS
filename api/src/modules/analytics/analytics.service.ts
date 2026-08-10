@@ -1,6 +1,6 @@
-import { Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { Injectable, NotFoundException, UnauthorizedException, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { TrafficSource, Prisma } from '@prisma/client';
+import { TrafficSource, FunnelEventType, Prisma } from '@prisma/client';
 
 export interface SourcePerformance {
   source: TrafficSource | 'DIRECT' | 'UNKNOWN';
@@ -16,8 +16,29 @@ export interface AnalyticsResponse {
   sources: SourcePerformance[];
 }
 
+export interface FunnelStep {
+  type: FunnelEventType;
+  label: string;
+  count: number;
+  conversionRate: number | null;
+  dropOff: number | null;
+  dropOffRate: number | null;
+}
+
+export interface ConversionFunnelResponse {
+  pageVisits: number;
+  formFocus: number;
+  signupSubmitted: number;
+  referralShared: number;
+  overallSignupConversion: number | null;
+  referralShareRate: number | null;
+  steps: FunnelStep[];
+}
+
 @Injectable()
 export class AnalyticsService {
+  private readonly logger = new Logger(AnalyticsService.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async getSourceAnalytics(
@@ -143,10 +164,10 @@ export class AnalyticsService {
     });
 
     if (existingVisit) {
-      return existingVisit;
+      return waitlist;
     }
 
-    return this.prisma.attributionVisit.create({
+    await this.prisma.attributionVisit.create({
       data: {
         waitlistId: waitlist.id,
         sessionId,
@@ -155,6 +176,8 @@ export class AnalyticsService {
         campaign,
       },
     });
+
+    return waitlist;
   }
 
   async getAudienceAnalytics(
@@ -257,5 +280,197 @@ export class AnalyticsService {
     } catch {
       return code;
     }
+  }
+
+  // ─────────────────────────────────────────────
+  // Funnel Event Tracking
+  // ─────────────────────────────────────────────
+
+  async recordFunnelEvent(
+    waitlistId: string,
+    sessionId: string,
+    eventType: FunnelEventType,
+  ) {
+    // Validate waitlist exists
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { id: waitlistId },
+    });
+    if (!waitlist) {
+      throw new NotFoundException('Waitlist not found');
+    }
+
+    // Deduplication: Check if event already exists for this session
+    const existingEvent = await this.prisma.funnelEvent.findFirst({
+      where: {
+        waitlistId,
+        sessionId,
+        eventType,
+      },
+    });
+
+    if (existingEvent) {
+      return existingEvent;
+    }
+
+    // Create new event
+    return this.prisma.funnelEvent.create({
+      data: {
+        waitlistId,
+        sessionId,
+        eventType,
+      },
+    });
+  }
+
+  async recordFunnelEventBySlug(
+    waitlistSlug: string,
+    sessionId: string,
+    eventType: FunnelEventType,
+  ) {
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { slug: waitlistSlug },
+    });
+    if (!waitlist) {
+      throw new NotFoundException('Waitlist not found');
+    }
+
+    return this.recordFunnelEvent(waitlist.id, sessionId, eventType);
+  }
+
+  // ─────────────────────────────────────────────
+  // Conversion Funnel Analytics
+  // ─────────────────────────────────────────────
+
+  async getConversionFunnel(
+    waitlistId: string,
+    userId: string,
+    from?: Date,
+    to?: Date,
+  ): Promise<ConversionFunnelResponse> {
+    // 1. Enforce ownership
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { id: waitlistId },
+      include: { founder: true },
+    });
+
+    if (!waitlist) throw new NotFoundException('Waitlist not found');
+    if (waitlist.founder.userId !== userId) throw new UnauthorizedException('Access denied');
+
+    // 2. Define today's date range (for real-time raw events)
+    const today = new Date();
+    const startOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+    const endOfToday = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59, 999);
+
+    // 3. Determine date range for historical aggregated stats
+    // If no date range specified, use all time except today (today uses raw events)
+    const historicalFrom = from || new Date(0);
+    const historicalTo = to ? (to < startOfToday ? to : startOfToday) : startOfToday;
+
+    // 4. Fetch aggregated stats for historical dates (excluding today)
+    const statsWhere: Prisma.DailyFunnelStatsWhereInput = {
+      waitlistId,
+      date: {
+        gte: historicalFrom,
+        lt: historicalTo,
+      },
+    };
+
+    const stats = await this.prisma.dailyFunnelStats.findMany({
+      where: statsWhere,
+      orderBy: { date: 'asc' },
+    });
+
+    // 5. Sum historical counts by event type
+    const countsByType = new Map<FunnelEventType, number>();
+    Object.values(FunnelEventType).forEach(type => countsByType.set(type, 0));
+
+    for (const stat of stats) {
+      const current = countsByType.get(stat.eventType) || 0;
+      countsByType.set(stat.eventType, current + stat.count);
+    }
+
+    // 6. Fetch raw events for today (real-time data)
+    // Build date filter for raw events
+    const rawEventFrom = from && from >= startOfToday ? from : startOfToday;
+    const rawEventTo = to && to <= endOfToday ? to : endOfToday;
+
+    const eventsWhere: Prisma.FunnelEventWhereInput = {
+      waitlistId,
+      createdAt: {
+        gte: rawEventFrom,
+        lte: rawEventTo,
+      },
+    };
+
+    const todayEvents = await this.prisma.funnelEvent.findMany({
+      where: eventsWhere,
+    });
+
+    // 7. Add today's raw event counts
+    for (const event of todayEvents) {
+      const current = countsByType.get(event.eventType) || 0;
+      countsByType.set(event.eventType, current + 1);
+    }
+
+    const pageVisits = countsByType.get(FunnelEventType.PAGE_VISIT) || 0;
+    const formFocus = countsByType.get(FunnelEventType.FORM_FOCUS) || 0;
+    const signupSubmitted = countsByType.get(FunnelEventType.SIGNUP_SUBMITTED) || 0;
+    const referralShared = countsByType.get(FunnelEventType.REFERRAL_SHARED) || 0;
+
+    // 8. Calculate conversion rates and drop-offs
+    const steps: FunnelStep[] = [
+      {
+        type: FunnelEventType.PAGE_VISIT,
+        label: 'Page Visit',
+        count: pageVisits,
+        conversionRate: null,
+        dropOff: null,
+        dropOffRate: null,
+      },
+      {
+        type: FunnelEventType.FORM_FOCUS,
+        label: 'Form Focus',
+        count: formFocus,
+        conversionRate: pageVisits > 0 ? (formFocus / pageVisits) * 100 : null,
+        dropOff: pageVisits > 0 ? pageVisits - formFocus : null,
+        dropOffRate: pageVisits > 0 ? ((pageVisits - formFocus) / pageVisits) * 100 : null,
+      },
+      {
+        type: FunnelEventType.SIGNUP_SUBMITTED,
+        label: 'Signup Submitted',
+        count: signupSubmitted,
+        conversionRate: formFocus > 0 ? (signupSubmitted / formFocus) * 100 : null,
+        dropOff: formFocus > 0 ? formFocus - signupSubmitted : null,
+        dropOffRate: formFocus > 0 ? ((formFocus - signupSubmitted) / formFocus) * 100 : null,
+      },
+      {
+        type: FunnelEventType.REFERRAL_SHARED,
+        label: 'Referral Link Shared',
+        count: referralShared,
+        conversionRate: signupSubmitted > 0 ? (referralShared / signupSubmitted) * 100 : null,
+        dropOff: signupSubmitted > 0 ? signupSubmitted - referralShared : null,
+        dropOffRate: signupSubmitted > 0 ? ((signupSubmitted - referralShared) / signupSubmitted) * 100 : null,
+      },
+    ];
+
+    // 9. Calculate overall metrics
+    const overallSignupConversion = pageVisits > 0 ? (signupSubmitted / pageVisits) * 100 : null;
+    const referralShareRate = signupSubmitted > 0 ? (referralShared / signupSubmitted) * 100 : null;
+
+    // 10. Round all percentages to 2 decimal places
+    steps.forEach(step => {
+      if (step.conversionRate !== null) step.conversionRate = Number(step.conversionRate.toFixed(2));
+      if (step.dropOffRate !== null) step.dropOffRate = Number(step.dropOffRate.toFixed(2));
+    });
+
+    return {
+      pageVisits,
+      formFocus,
+      signupSubmitted,
+      referralShared,
+      overallSignupConversion: overallSignupConversion !== null ? Number(overallSignupConversion.toFixed(2)) : null,
+      referralShareRate: referralShareRate !== null ? Number(referralShareRate.toFixed(2)) : null,
+      steps,
+    };
   }
 }

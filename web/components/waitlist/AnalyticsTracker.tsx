@@ -20,6 +20,7 @@ export function AnalyticsTracker() {
   const params = useParams();
   const slug = params?.slug as string;
   const tracked = useRef(false);
+  const waitlistIdRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!slug || tracked.current) return;
@@ -53,15 +54,42 @@ export function AnalyticsTracker() {
       }
     }
 
-    // ── Ping backend ─────────────────────────────────────────────────
+    // ── Ping backend for visit tracking ────────────────────────────────
     fetch(`${API_BASE}/w/${slug}/visit`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ sessionId, source, medium, campaign }),
-    }).catch(() => {
-      // Fail silently — analytics must never break UX
-    });
+    })
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success && data.data?.waitlist?.id) {
+          waitlistIdRef.current = data.data.waitlist.id;
+          // Track PAGE_VISIT funnel event
+          trackFunnelEvent(data.data.waitlist.id, sessionId, "PAGE_VISIT");
+        }
+      })
+      .catch(() => {
+        // Fail silently — analytics must never break UX
+      });
   }, [slug]);
 
   return null;
+}
+
+// ── Funnel Event Tracking Helper ────────────────────────────────────────
+export function trackFunnelEvent(
+  waitlistId: string,
+  sessionId: string,
+  eventType: "PAGE_VISIT" | "FORM_FOCUS" | "SIGNUP_SUBMITTED" | "REFERRAL_SHARED",
+) {
+  const API_BASE =
+    (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3000") + "/api";
+
+  fetch(`${API_BASE}/analytics/funnel/events`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ waitlistId, sessionId, eventType }),
+  }).catch(() => {
+    // Fail silently — analytics must never break UX
+  });
 }

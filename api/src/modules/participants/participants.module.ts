@@ -1,12 +1,14 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
-import { ParticipantsService } from './participants.service';
 import { ParticipantsController } from './participants.controller';
+import { ParticipantsService } from './participants.service';
+import { PrismaModule } from '../../prisma/prisma.module';
+import { BullModule } from '@nestjs/bull';
 import { PaymentModule } from '../payments/payment.module';
 import { AnalyticsModule } from '../analytics/analytics.module';
 
 @Module({
   imports: [
+    PrismaModule,
     BullModule.registerQueue(
       { name: 'emails' },
       { name: 'ai-tasks' },
@@ -16,5 +18,6 @@ import { AnalyticsModule } from '../analytics/analytics.module';
   ],
   controllers: [ParticipantsController],
   providers: [ParticipantsService],
+  exports: [ParticipantsService],
 })
 export class ParticipantsModule {}

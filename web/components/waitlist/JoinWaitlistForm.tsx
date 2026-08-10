@@ -5,11 +5,42 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { joinWaitlist, JoinWaitlistError } from "../../services/participants";
 import { JoinResponse, JoinErrorCode } from "../../types/participant";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
 import toast from "react-hot-toast";
+import { trackFunnelEvent } from "./AnalyticsTracker";
+
+/** Read a document cookie by name (only works for non-httpOnly cookies). */
+function getCookie(name: string): string | undefined {
+  if (typeof document === "undefined") return undefined;
+  const match = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${name}=`));
+  return match ? decodeURIComponent(match.split("=")[1]) : undefined;
+}
+
+const API_BASE =
+  (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3000") + "/api";
+
+function trackFunnelEventBySlug(
+  waitlistSlug: string,
+  sessionId: string,
+  eventType: "PAGE_VISIT" | "FORM_FOCUS" | "SIGNUP_SUBMITTED" | "REFERRAL_SHARED",
+) {
+  // First fetch waitlist to get ID
+  fetch(`${API_BASE}/w/${waitlistSlug}`)
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.success && data.data?.waitlist?.id) {
+        trackFunnelEvent(data.data.waitlist.id, sessionId, eventType);
+      }
+    })
+    .catch(() => {
+      // Fail silently
+    });
+}
 
 const joinSchema = z.object({
   email: z
@@ -43,6 +74,7 @@ export default function JoinWaitlistForm({
   onSuccess,
 }: JoinWaitlistFormProps) {
   const [serverError, setServerError] = useState<string>("");
+  const formFocusTracked = useRef(false);
 
   const {
     register,
@@ -56,6 +88,19 @@ export default function JoinWaitlistForm({
       referralCode: initialReferralCode || "",
     },
   });
+
+  // Track FORM_FOCUS on first interaction with any form field
+  const handleFocus = () => {
+    if (!formFocusTracked.current) {
+      formFocusTracked.current = true;
+      const sessionId = getCookie("waitlist_session");
+      if (sessionId) {
+        // We need the waitlistId - fetch it from the waitlist data
+        // For now, we'll track by slug in a separate call
+        trackFunnelEventBySlug(waitlistSlug, sessionId, "FORM_FOCUS");
+      }
+    }
+  };
 
   const onSubmit = async (data: JoinFormValues) => {
     setServerError("");
@@ -95,6 +140,7 @@ export default function JoinWaitlistForm({
         ...(campaign ? { campaign } : {}),
         ...(referrer ? { referrer } : {}),
         ...(landingPath ? { landingPath } : {}),
+        sessionId: getCookie("waitlist_session"),
       });
       toast.success("Successfully joined the waitlist!");
       onSuccess(result);
@@ -121,6 +167,7 @@ export default function JoinWaitlistForm({
         disabled={isSubmitting}
         error={errors.email?.message}
         {...register("email")}
+        onFocus={handleFocus}
         required
       />
 

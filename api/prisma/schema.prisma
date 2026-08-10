@@ -140,6 +140,13 @@ enum TrafficSource {
   UNKNOWN
 }
 
+enum FunnelEventType {
+  PAGE_VISIT
+  FORM_FOCUS
+  SIGNUP_SUBMITTED
+  REFERRAL_SHARED
+}
+
 // ─────────────────────────────────────────────
 
 // User — Authentication identity
@@ -408,6 +415,8 @@ model Waitlist {
   copy WaitlistCopy?
 
   attributionVisits AttributionVisit[]
+
+  funnelEvents FunnelEvent[]
 
   @@index([founderId])
   @@map("waitlists")
@@ -1093,4 +1102,39 @@ model AttributionVisit {
   @@index([waitlistId, timestamp])
   @@index([waitlistId, sessionId])
   @@map("attribution_visits")
+}
+
+// ─────────────────────────────────────────────
+// FunnelEvent — Anonymous conversion funnel tracking
+// ─────────────────────────────────────────────
+model FunnelEvent {
+  id        String         @id @default(uuid())
+  waitlistId String
+  sessionId String
+  eventType FunnelEventType
+  createdAt DateTime       @default(now())
+
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
+  @@index([waitlistId])
+  @@index([waitlistId, eventType])
+  @@index([waitlistId, createdAt])
+  @@index([waitlistId, sessionId, eventType])
+  @@map("funnel_events")
+}
+
+// ─────────────────────────────────────────────
+// DailyFunnelStats — Aggregated daily funnel statistics
+// ─────────────────────────────────────────────
+model DailyFunnelStats {
+  id        String         @id @default(uuid())
+  waitlistId String
+  date      DateTime       @db.Date
+  eventType FunnelEventType
+  count      Int           @default(0)
+  updatedAt DateTime       @updatedAt
+
+  @@unique([waitlistId, date, eventType])
+  @@index([waitlistId, date])
+  @@map("daily_funnel_stats")
 }
