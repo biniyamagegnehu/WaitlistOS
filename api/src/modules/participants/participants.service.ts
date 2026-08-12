@@ -125,8 +125,10 @@ export class ParticipantsService {
     const newReferralCode = await this.generateUniqueCode();
 
     // Capture Geo & Device metadata (safe fallback)
+    this.logger.log(`Signup attempt - IP: ${ip}, UserAgent: ${userAgent?.substring(0, 50)}...`);
     const countryCode = this.geoLocationService.resolveCountry(ip);
     const deviceInfo = this.deviceDetectionService.detectDevice(userAgent);
+    this.logger.log(`Resolved - CountryCode: ${countryCode}, DeviceType: ${deviceInfo.deviceType}, Browser: ${deviceInfo.browserName}`);
 
     // 4. Transaction with SKIP LOCKED retry logic
     const maxRetries = 5;
@@ -165,6 +167,7 @@ export class ParticipantsService {
               campaign: campaign || null,
               referrer: dtoReferrer || null,
               landingPath: landingPath || null,
+              ipAddress: ip,
               countryCode,
               deviceType: deviceInfo.deviceType,
               browserName: deviceInfo.browserName,

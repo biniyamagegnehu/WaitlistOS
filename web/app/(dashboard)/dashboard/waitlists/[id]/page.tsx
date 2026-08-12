@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, ExternalLink, Share2, ChevronDown, ChevronUp, Activity, AlertTriangle } from "lucide-react";
+import { useParams, usePathname } from "next/navigation";
+import { ArrowLeft, ExternalLink, Share2, ChevronDown, ChevronUp, Activity, AlertTriangle, BarChart3 } from "lucide-react";
 import { ParticipantTable } from "@/components/dashboard/ParticipantTable";
 import { AiCopywriter } from "@/components/dashboard/AiCopywriter";
 import { ExportButton } from "@/components/dashboard/ExportButton";
@@ -21,12 +21,20 @@ import { routes } from "@/lib/routes";
 import { GrowthSummaryCard } from "@/components/dashboard/growth/GrowthSummaryCard";
 export default function WaitlistDetailPage() {
   const params = useParams();
+  const pathname = usePathname();
   const waitlistId = params?.id as string;
 
   const [detail, setDetail] = React.useState<DashboardWaitlistDetail | null>(null);
   const [isLoading, setIsLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
   const [isExpanded, setIsExpanded] = React.useState(true);
+  const [isAnalyticsExpanded, setIsAnalyticsExpanded] = React.useState(false);
+
+  // Auto-expand Analytics if on an analytics route
+  React.useEffect(() => {
+    const isAnalyticsRoute = pathname?.includes('/analytics/');
+    setIsAnalyticsExpanded(isAnalyticsRoute);
+  }, [pathname]);
 
   const loadPage = React.useCallback(async (options: {
     page: number;
@@ -178,32 +186,68 @@ export default function WaitlistDetailPage() {
                     Open Gates
                   </Button>
                 </Link>
-                <Link href={routes.waitlistAnalyticsSources(waitlist.id)} className="flex-1">
-                  <Button variant="secondary" className="w-full">
-                    Acquisition
-                  </Button>
-                </Link>
-                <Link href={routes.waitlistAnalyticsAudience(waitlist.id)} className="flex-1">
-                  <Button variant="secondary" className="w-full">
-                    Audience
-                  </Button>
-                </Link>
-                <Link href={routes.waitlistAnalyticsFunnel(waitlist.id)} className="flex-1">
-                  <Button variant="secondary" className="w-full">
-                    Funnel
-                  </Button>
-                </Link>
-                <Link href={routes.waitlistAnalyticsGrowthVelocity(waitlist.id)} className="flex-1">
-                  <Button variant="secondary" className="w-full">
-                    Growth Velocity
-                  </Button>
-                </Link>
                 <Link href={routes.waitlistShare(waitlist.id)} className="flex-1">
                   <Button className="w-full">
                     <Share2 className="h-4 w-4 mr-2" />
                     Share
                   </Button>
                 </Link>
+              </div>
+
+              {/* Analytics Section */}
+              <div className="pt-4 border-t border-border mt-4">
+                <button
+                  onClick={() => setIsAnalyticsExpanded(!isAnalyticsExpanded)}
+                  className="flex items-center justify-between w-full text-left"
+                  aria-expanded={isAnalyticsExpanded}
+                >
+                  <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                    <BarChart3 className="h-4 w-4" />
+                    Analytics
+                  </div>
+                  {isAnalyticsExpanded ? (
+                    <ChevronUp className="h-4 w-4 text-muted-foreground" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
+
+                {isAnalyticsExpanded && (
+                  <div className="grid gap-3 mt-3 sm:grid-cols-2">
+                    <Link href={routes.waitlistAnalyticsSources(waitlist.id)}>
+                      <Button
+                        variant={pathname?.includes('/analytics/sources') ? "primary" : "secondary"}
+                        className="w-full justify-start"
+                      >
+                        Source Attribution
+                      </Button>
+                    </Link>
+                    <Link href={routes.waitlistAnalyticsAudience(waitlist.id)}>
+                      <Button
+                        variant={pathname?.includes('/analytics/audience') ? "primary" : "secondary"}
+                        className="w-full justify-start"
+                      >
+                        Geo & Device
+                      </Button>
+                    </Link>
+                    <Link href={routes.waitlistAnalyticsFunnel(waitlist.id)}>
+                      <Button
+                        variant={pathname?.includes('/analytics/funnel') ? "primary" : "secondary"}
+                        className="w-full justify-start"
+                      >
+                        Conversion Funnel
+                      </Button>
+                    </Link>
+                    <Link href={routes.waitlistAnalyticsGrowthVelocity(waitlist.id)}>
+                      <Button
+                        variant={pathname?.includes('/analytics/growth-velocity') ? "primary" : "secondary"}
+                        className="w-full justify-start"
+                      >
+                        Growth Velocity
+                      </Button>
+                    </Link>
+                  </div>
+                )}
               </div>
             </div>
           )}
