@@ -6,12 +6,14 @@ import {
   HttpStatus,
   Get,
   Param,
-  Ip,
   Headers,
+  Req,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { Public } from '../../common/decorators/public.decorator';
 import { ParticipantsService } from './participants.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
+import { getClientIp, getProxyCountryCode } from '../../common/utils/client-ip.util';
 
 @Controller('participants')
 export class ParticipantsController {
@@ -22,10 +24,15 @@ export class ParticipantsController {
   @HttpCode(HttpStatus.CREATED)
   create(
     @Body() createParticipantDto: CreateParticipantDto,
-    @Ip() ip: string,
+    @Req() request: Request,
     @Headers('user-agent') userAgent: string,
   ) {
-    return this.participantsService.create(createParticipantDto, ip, userAgent);
+    return this.participantsService.create(
+      createParticipantDto,
+      getClientIp(request) ?? undefined,
+      userAgent,
+      getProxyCountryCode(request) ?? undefined,
+    );
   }
 
   @Public()

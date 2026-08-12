@@ -79,7 +79,12 @@ export class ParticipantsService {
   }
 
   // ── Create participant ────────────────────────────────────
-  async create(dto: CreateParticipantDto, ip?: string, userAgent?: string) {
+  async create(
+    dto: CreateParticipantDto,
+    ip?: string,
+    userAgent?: string,
+    proxyCountryCode?: string,
+  ) {
     const { waitlistSlug, email, referralCode: incomingRef, source, medium, campaign, referrer: dtoReferrer, landingPath, sessionId } = dto;
 
     // 1. Resolve waitlist by slug — 404 if not found
@@ -126,7 +131,7 @@ export class ParticipantsService {
 
     // Capture Geo & Device metadata (safe fallback)
     this.logger.log(`Signup attempt - IP: ${ip}, UserAgent: ${userAgent?.substring(0, 50)}...`);
-    const countryCode = this.geoLocationService.resolveCountry(ip);
+    const countryCode = proxyCountryCode ?? this.geoLocationService.resolveCountry(ip);
     const deviceInfo = this.deviceDetectionService.detectDevice(userAgent);
     this.logger.log(`Resolved - CountryCode: ${countryCode}, DeviceType: ${deviceInfo.deviceType}, Browser: ${deviceInfo.browserName}`);
 

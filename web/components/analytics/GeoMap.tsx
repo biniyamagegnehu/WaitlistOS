@@ -6,6 +6,33 @@ import { scaleLinear } from "d3-scale";
 
 const geoUrl = "/world-110m.json";
 
+// world-110m uses display names rather than ISO alpha-2 properties. Keep the
+// few common naming differences explicit, then compare normalized labels.
+const TOPOLOGY_NAME_BY_COUNTRY_CODE: Record<string, string> = {
+  US: "United States of America",
+  GB: "United Kingdom",
+  RU: "Russia",
+  CD: "Dem. Rep. Congo",
+  DO: "Dominican Rep.",
+  BO: "Bolivia",
+  CI: "Côte d'Ivoire",
+  IR: "Iran",
+  KR: "South Korea",
+  KP: "North Korea",
+  SY: "Syria",
+  TZ: "Tanzania",
+  VE: "Venezuela",
+  VN: "Vietnam",
+};
+
+function normalizeCountryName(name: string): string {
+  return name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/gi, "")
+    .toLowerCase();
+}
+
 interface GeoMapProps {
   data: {
     code: string;
@@ -26,7 +53,16 @@ interface TooltipState {
 export function GeoMap({ data }: GeoMapProps) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
-  const mapData = useMemo(() => data.filter(d => d.code !== "Unknown"), [data]);
+  const mapData = useMemo(
+    () =>
+      data
+        .filter((country) => country.code !== "Unknown")
+        .map((country) => ({
+          ...country,
+          topologyName: TOPOLOGY_NAME_BY_COUNTRY_CODE[country.code] ?? country.name,
+        })),
+    [data],
+  );
 
   const maxSignups = useMemo(() => {
     return Math.max(...mapData.map(d => d.signups), 1);
@@ -61,10 +97,11 @@ export function GeoMap({ data }: GeoMapProps) {
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
             geographies.map((geo) => {
+              const topologyName = String(geo.properties.name ?? "");
               const d = mapData.find(
-                (s) =>
-                  s.name === geo.properties.name ||
-                  s.code === geo.properties.iso_a2
+                (country) =>
+                  normalizeCountryName(country.topologyName) ===
+                  normalizeCountryName(topologyName),
               );
               const hasData = !!d;
 
@@ -72,13 +109,13 @@ export function GeoMap({ data }: GeoMapProps) {
                 <Geography
                   key={geo.rsmKey}
                   geography={geo}
-                  fill={hasData ? colorScale(d!.signups) : "hsl(var(--muted))"}
-                  stroke="hsl(var(--background))"
+                  fill={hasData ? colorScale(d!.signups) : "var(--surface-muted)"}
+                  stroke="var(--border)"
                   strokeWidth={0.5}
                   style={{
                     default: { outline: "none" },
                     hover: {
-                      fill: hasData ? "#2563eb" : "hsl(var(--muted-foreground))",
+                      fill: hasData ? "#2563eb" : "var(--muted-foreground)",
                       outline: "none",
                       cursor: hasData ? "pointer" : "default",
                     },
