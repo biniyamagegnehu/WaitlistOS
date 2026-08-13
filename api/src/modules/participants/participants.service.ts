@@ -11,19 +11,14 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParticipantDto } from './dto/create-participant.dto';
 import { randomBytes } from 'crypto';
 import { PaymentService } from '../payments/payment.service';
-import { Prisma, TrafficSource, FunnelEventType } from '@prisma/client';
+import { Prisma, FunnelEventType } from '@prisma/client';
 import { computeEffectiveStreak } from '../../lib/streak-utils';
 import { GeoLocationService } from '../analytics/geo-location.service';
 import { DeviceDetectionService } from '../analytics/device-detection.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { resolveTrafficSource, sanitizeAttributionValue } from './source-attribution.util';
 
 type TransactionClient = Prisma.TransactionClient;
-
-const VALID_SOURCES = new Set<string>(Object.values(TrafficSource));
-function toTrafficSource(raw: string | undefined | null): TrafficSource | null {
-  if (raw && VALID_SOURCES.has(raw)) return raw as TrafficSource;
-  return null;
-}
 
 @Injectable()
 export class ParticipantsService {
@@ -167,11 +162,11 @@ export class ParticipantsService {
               email,
               position: initialPosition,
               referralCode: newReferralCode,
-              source: toTrafficSource(source),
-              medium: medium || null,
-              campaign: campaign || null,
-              referrer: dtoReferrer || null,
-              landingPath: landingPath || null,
+              source: resolveTrafficSource(source, dtoReferrer),
+              medium: sanitizeAttributionValue(medium),
+              campaign: sanitizeAttributionValue(campaign),
+              referrer: sanitizeAttributionValue(dtoReferrer),
+              landingPath: sanitizeAttributionValue(landingPath),
               ipAddress: ip,
               countryCode,
               deviceType: deviceInfo.deviceType,

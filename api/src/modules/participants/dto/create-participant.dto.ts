@@ -1,4 +1,4 @@
-import { IsString, IsEmail, IsNotEmpty, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsEmail, IsNotEmpty, IsOptional, IsUUID, MaxLength } from 'class-validator';
 import { Transform } from 'class-transformer';
 
 export class CreateParticipantDto {
@@ -28,18 +28,22 @@ export class CreateParticipantDto {
 
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   medium?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   campaign?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   referrer?: string;
 
   @IsString()
   @IsOptional()
+  @MaxLength(100)
   landingPath?: string;
 
   // Funnel analytics session ID

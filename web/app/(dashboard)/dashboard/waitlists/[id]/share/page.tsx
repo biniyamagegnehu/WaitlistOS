@@ -13,6 +13,8 @@ import { getDashboardWaitlistDetail } from "@/services/dashboard";
 import type { DashboardWaitlistDetail } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
+import { SocialShareButtons } from "@/components/waitlist/SocialShareButtons";
+import { trackFunnelEvent } from "@/components/waitlist/AnalyticsTracker";
 
 export default function ShareWaitlistPage() {
   const params = useParams();
@@ -50,6 +52,18 @@ export default function ShareWaitlistPage() {
   const getEmbedCode = (slug: string) => {
     const scriptUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/w/${slug}/widget.js`;
     return `<script src="${scriptUrl}" defer></script>`;
+  };
+
+  const trackShareClick = () => {
+    if (!waitlistId || typeof window === "undefined") return;
+    const key = `waitlist_share_session_${waitlistId}`;
+    let sessionId = window.sessionStorage.getItem(key);
+    if (!sessionId) {
+      sessionId = crypto.randomUUID();
+      window.sessionStorage.setItem(key, sessionId);
+    }
+    // This records a button click, never a confirmed social post.
+    trackFunnelEvent(waitlistId, sessionId, "REFERRAL_SHARED");
   };
 
   if (isLoading) {
@@ -138,6 +152,10 @@ export default function ShareWaitlistPage() {
                   </Button>
                 </Link>
               </div>
+            </div>
+            <div className="space-y-2 pt-2">
+              <p className="text-sm font-medium text-foreground">Share with attribution</p>
+              <SocialShareButtons waitlistSlug={waitlist.slug} title={`Join ${waitlist.name}`} onShare={trackShareClick} />
             </div>
           </CardContent>
         </Card>

@@ -7,6 +7,7 @@ export type TrafficSource =
   | 'PRODUCT_HUNT'
   | 'LINKEDIN'
   | 'FACEBOOK'
+  | 'TELEGRAM'
   | 'GOOGLE'
   | 'OTHER'
   | 'UNKNOWN';
@@ -47,18 +48,19 @@ export class AttributionResolver {
 
   private static normalizeSource(rawSource: string): TrafficSource {
     const s = rawSource.trim().toLowerCase();
-    if (!s) return 'OTHER';
+    if (!s) return 'UNKNOWN';
 
     if (s.includes('twitter') || s === 'x' || s === 'x.com') return 'TWITTER';
     if (s.includes('whatsapp')) return 'WHATSAPP';
     if (s.includes('instagram')) return 'INSTAGRAM';
     if (s.includes('linkedin') || s === 'lnkd.in') return 'LINKEDIN';
     if (s.includes('facebook') || s === 'fb') return 'FACEBOOK';
+    if (s.includes('telegram') || s === 't.me') return 'TELEGRAM';
     if (s.includes('google')) return 'GOOGLE';
     if (s.includes('producthunt') || s === 'product-hunt') return 'PRODUCT_HUNT';
     if (s === 'email') return 'EMAIL';
 
-    return 'OTHER';
+    return 'UNKNOWN';
   }
 
   private static normalizeReferrer(referrer: string): TrafficSource {
@@ -71,10 +73,11 @@ export class AttributionResolver {
       if (host.includes('instagram.com') || host === 'l.instagram.com') return 'INSTAGRAM';
       if (host.includes('linkedin.com') || host === 'lnkd.in') return 'LINKEDIN';
       if (host.includes('facebook.com') || host === 'm.facebook.com') return 'FACEBOOK';
+      if (host === 't.me' || host.includes('telegram.org')) return 'TELEGRAM';
       if (host.includes('google.')) return 'GOOGLE';
       if (host.includes('producthunt.com')) return 'PRODUCT_HUNT';
 
-      return 'OTHER';
+      return 'UNKNOWN';
     } catch {
       return 'UNKNOWN';
     }

@@ -18,6 +18,7 @@ import { ReferralMessages } from "@/components/waitlist/ReferralMessages";
 import { TeamSection } from "@/components/waitlist/TeamSection";
 import { UrgencyWidget } from "@/components/public/UrgencyWidget";
 import { trackFunnelEvent } from "./AnalyticsTracker";
+import { SocialShareButtons } from "@/components/waitlist/SocialShareButtons";
 
 export default function PublicWaitlistPageClient() {
   const params = useParams();
@@ -66,6 +67,14 @@ export default function PublicWaitlistPageClient() {
         }
       }
     });
+  };
+
+  const trackReferralShare = () => {
+    if (!referralSharedTracked.current && joined && waitlistData) {
+      referralSharedTracked.current = true;
+      const sessionId = getCookie("waitlist_session");
+      if (sessionId) trackFunnelEvent(waitlistData.waitlist.id, sessionId, "REFERRAL_SHARED");
+    }
   };
 
   const getCookie = (name: string): string | undefined => {
@@ -273,6 +282,12 @@ export default function PublicWaitlistPageClient() {
               Share to move up
             </p>
             <p className="break-all font-mono text-sm text-foreground">{fullReferralLink}</p>
+            <SocialShareButtons
+              waitlistSlug={waitlist.slug}
+              referralCode={joined.referralCode}
+              title={`Join ${waitlist.name}`}
+              onShare={trackReferralShare}
+            />
             <Button
               onClick={() => handleCopy(fullReferralLink)}
               className="w-full"

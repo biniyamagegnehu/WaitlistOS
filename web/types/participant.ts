@@ -65,4 +65,5 @@ export interface JoinWaitlistInput {
   campaign?: string;
   referrer?: string;
   landingPath?: string;
+  sessionId?: string;
 }

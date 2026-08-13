@@ -52,6 +52,7 @@ export function middleware(request: NextRequest) {
         medium: resolved.medium ?? null,
         campaign: resolved.campaign ?? null,
         referrer: resolved.referrer ?? null,
+        landingPath: `${url.pathname}${url.search}`,
         timestamp: new Date().toISOString(),
       }),
       {
