@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { AnalyticsController, FunnelAnalyticsController } from './analytics.controller';
+import { AnalyticsController, FunnelAnalyticsController, AnalyticsWorkspaceController } from './analytics.controller';
 import { AnalyticsService } from './analytics.service';
 import { GeoLocationService } from './geo-location.service';
 import { DeviceDetectionService } from './device-detection.service';
@@ -11,7 +11,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 
 @Module({
   imports: [PrismaModule, ScheduleModule.forRoot()],
-  controllers: [AnalyticsController, FunnelAnalyticsController],
+  controllers: [AnalyticsController, FunnelAnalyticsController, AnalyticsWorkspaceController],
   providers: [AnalyticsService, GeoLocationService, DeviceDetectionService, FunnelAggregationCron, GrowthAggregationCron, ReferralSpikeDetectionCron],
   exports: [AnalyticsService, GeoLocationService, DeviceDetectionService],
 })

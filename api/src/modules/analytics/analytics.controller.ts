@@ -112,3 +112,29 @@ export class FunnelAnalyticsController {
     );
   }
 }
+
+/** Founder-scoped analytics workspace. Omit waitlistId to aggregate all owned waitlists. */
+@Controller('analytics')
+export class AnalyticsWorkspaceController {
+  constructor(private readonly analyticsService: AnalyticsService) {}
+
+  @Get('source-attribution')
+  getSourceAttribution(@CurrentUser() user: AuthenticatedUser, @Query('waitlistId') waitlistId?: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.analyticsService.getSourceAnalytics(waitlistId, user.userId, from ? new Date(from) : undefined, to ? new Date(to) : undefined);
+  }
+
+  @Get('geo-device')
+  getGeoDevice(@CurrentUser() user: AuthenticatedUser, @Query('waitlistId') waitlistId?: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.analyticsService.getAudienceAnalytics(waitlistId, user.userId, from ? new Date(from) : undefined, to ? new Date(to) : undefined);
+  }
+
+  @Get('conversion-funnel')
+  getConversionFunnel(@CurrentUser() user: AuthenticatedUser, @Query('waitlistId') waitlistId?: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.analyticsService.getConversionFunnel(waitlistId, user.userId, from ? new Date(from) : undefined, to ? new Date(to) : undefined);
+  }
+
+  @Get('growth-velocity')
+  getGrowthVelocity(@CurrentUser() user: AuthenticatedUser, @Query('waitlistId') waitlistId?: string, @Query('from') from?: string, @Query('to') to?: string) {
+    return this.analyticsService.getGrowthVelocity(waitlistId, user.userId, from ? new Date(from) : undefined, to ? new Date(to) : undefined);
+  }
+}

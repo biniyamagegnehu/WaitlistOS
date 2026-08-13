@@ -65,29 +65,36 @@ export class AnalyticsService {
 
   constructor(private readonly prisma: PrismaService) {}
 
+  /** Resolves an optional waitlist filter without ever trusting a client ID. */
+  private async getAuthorizedWaitlistIds(userId: string, waitlistId?: string): Promise<string[]> {
+    const waitlists = await this.prisma.waitlist.findMany({
+      where: { founder: { userId }, ...(waitlistId ? { id: waitlistId } : {}) },
+      select: { id: true },
+    });
+
+    if (waitlistId && waitlists.length === 0) {
+      throw new UnauthorizedException('Access denied');
+    }
+
+    return waitlists.map((waitlist) => waitlist.id);
+  }
+
   async getSourceAnalytics(
-    waitlistId: string,
+    waitlistId: string | undefined,
     userId: string,
     from?: Date,
     to?: Date,
   ): Promise<AnalyticsResponse> {
-    // 1. Enforce ownership
-    const waitlist = await this.prisma.waitlist.findUnique({
-      where: { id: waitlistId },
-      include: { founder: true },
-    });
-
-    if (!waitlist) throw new NotFoundException('Waitlist not found');
-    if (waitlist.founder.userId !== userId) throw new UnauthorizedException('Access denied');
+    const waitlistIds = await this.getAuthorizedWaitlistIds(userId, waitlistId);
 
     // 2. Build date filters
     const visitWhere: Prisma.AttributionVisitWhereInput = {
-      waitlistId,
+      waitlistId: { in: waitlistIds },
       ...(from || to ? { timestamp: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
     };
 
     const signupWhere: Prisma.ParticipantWhereInput = {
-      waitlistId,
+      waitlistId: { in: waitlistIds },
       ...(from || to ? { createdAt: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
     };
 
@@ -205,22 +212,15 @@ export class AnalyticsService {
   }
 
   async getAudienceAnalytics(
-    waitlistId: string,
+    waitlistId: string | undefined,
     userId: string,
     from?: Date,
     to?: Date,
   ) {
-    // 1. Enforce ownership
-    const waitlist = await this.prisma.waitlist.findUnique({
-      where: { id: waitlistId },
-      include: { founder: true },
-    });
-
-    if (!waitlist) throw new NotFoundException('Waitlist not found');
-    if (waitlist.founder.userId !== userId) throw new UnauthorizedException('Access denied');
+    const waitlistIds = await this.getAuthorizedWaitlistIds(userId, waitlistId);
 
     const where: Prisma.ParticipantWhereInput = {
-      waitlistId,
+      waitlistId: { in: waitlistIds },
       ...(from || to ? { createdAt: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
     };
 
@@ -366,19 +366,12 @@ export class AnalyticsService {
   // ─────────────────────────────────────────────
 
   async getConversionFunnel(
-    waitlistId: string,
+    waitlistId: string | undefined,
     userId: string,
     from?: Date,
     to?: Date,
   ): Promise<ConversionFunnelResponse> {
-    // 1. Enforce ownership
-    const waitlist = await this.prisma.waitlist.findUnique({
-      where: { id: waitlistId },
-      include: { founder: true },
-    });
-
-    if (!waitlist) throw new NotFoundException('Waitlist not found');
-    if (waitlist.founder.userId !== userId) throw new UnauthorizedException('Access denied');
+    const waitlistIds = await this.getAuthorizedWaitlistIds(userId, waitlistId);
 
     // 2. Define today's date range (for real-time raw events)
     const today = new Date();
@@ -392,7 +385,7 @@ export class AnalyticsService {
 
     // 4. Fetch aggregated stats for historical dates (excluding today)
     const statsWhere: Prisma.DailyFunnelStatsWhereInput = {
-      waitlistId,
+      waitlistId: { in: waitlistIds },
       date: {
         gte: historicalFrom,
         lt: historicalTo,
@@ -419,7 +412,7 @@ export class AnalyticsService {
     const rawEventTo = to && to <= endOfToday ? to : endOfToday;
 
     const eventsWhere: Prisma.FunnelEventWhereInput = {
-      waitlistId,
+      waitlistId: { in: waitlistIds },
       createdAt: {
         gte: rawEventFrom,
         lte: rawEventTo,
@@ -497,41 +490,38 @@ export class AnalyticsService {
   // ─────────────────────────────────────────────
 
   async getGrowthVelocity(
-    waitlistId: string,
+    waitlistId: string | undefined,
     userId: string,
     from?: Date,
     to?: Date,
   ): Promise<GrowthVelocityResponse> {
-    // 1. Enforce ownership
-    const waitlist = await this.prisma.waitlist.findUnique({
-      where: { id: waitlistId },
-      include: { founder: true },
-    });
-
-    if (!waitlist) throw new NotFoundException('Waitlist not found');
-    if (waitlist.founder.userId !== userId) throw new UnauthorizedException('Access denied');
+    const waitlistIds = await this.getAuthorizedWaitlistIds(userId, waitlistId);
 
     // 2. Build date filters
     const dateFilter: Prisma.GrowthTimeseriesWhereInput = {
-      waitlistId,
+      waitlistId: { in: waitlistIds },
       ...(from || to ? { periodStart: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
     };
 
     const spikeFilter: Prisma.ReferralSpikeWhereInput = {
-      waitlistId,
+      waitlistId: { in: waitlistIds },
       ...(from || to ? { startAt: { ...(from && { gte: from }), ...(to && { lte: to }) } } : {}),
     };
 
     // 3. Fetch hourly data
-    const hourlyData = await this.prisma.growthTimeseries.findMany({
+    const hourlyData = await this.prisma.growthTimeseries.groupBy({
+      by: ['periodStart'],
       where: { ...dateFilter, periodType: GrowthPeriodType.HOUR },
       orderBy: { periodStart: 'asc' },
+      _sum: { signupCount: true },
     });
 
     // 4. Fetch daily data
-    const dailyData = await this.prisma.growthTimeseries.findMany({
+    const dailyData = await this.prisma.growthTimeseries.groupBy({
+      by: ['periodStart'],
       where: { ...dateFilter, periodType: GrowthPeriodType.DAY },
       orderBy: { periodStart: 'asc' },
+      _sum: { signupCount: true },
     });
 
     // 5. Fetch referral spikes
@@ -549,17 +539,17 @@ export class AnalyticsService {
     });
 
     // 6. Calculate summary metrics
-    const totalSignups = dailyData.reduce((sum, record) => sum + record.signupCount, 0);
+    const totalSignups = dailyData.reduce((sum, record) => sum + (record._sum.signupCount ?? 0), 0);
 
     // Find peak hour (from hourly data)
     let peakHour: { timestamp: string; signupCount: number } | null = null;
     if (hourlyData.length > 0) {
       const maxHour = hourlyData.reduce((max, current) => 
-        current.signupCount > max.signupCount ? current : max
+        (current._sum.signupCount ?? 0) > (max._sum.signupCount ?? 0) ? current : max
       , hourlyData[0]);
       peakHour = {
         timestamp: maxHour.periodStart.toISOString(),
-        signupCount: maxHour.signupCount,
+        signupCount: maxHour._sum.signupCount ?? 0,
       };
     }
 
@@ -567,11 +557,11 @@ export class AnalyticsService {
     return {
       hourly: hourlyData.map(record => ({
         timestamp: record.periodStart.toISOString(),
-        signupCount: record.signupCount,
+        signupCount: record._sum.signupCount ?? 0,
       })),
       daily: dailyData.map(record => ({
         timestamp: record.periodStart.toISOString(),
-        signupCount: record.signupCount,
+        signupCount: record._sum.signupCount ?? 0,
       })),
       spikes: spikes.map(spike => ({
         id: spike.id,

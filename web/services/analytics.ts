@@ -153,3 +153,24 @@ export async function getGrowthVelocity(
   const response = await api.get<GrowthVelocityResponse>(url);
   return response.data;
 }
+
+function analyticsWorkspaceUrl(path: string, waitlistId?: string, from?: string) {
+  const params = new URLSearchParams();
+  if (waitlistId) params.set("waitlistId", waitlistId);
+  if (from) params.set("from", from);
+  const query = params.toString();
+  return `/analytics/${path}${query ? `?${query}` : ""}`;
+}
+
+export async function getWorkspaceSourceAnalytics(waitlistId?: string, from?: string) {
+  return (await api.get<AnalyticsResponse>(analyticsWorkspaceUrl("source-attribution", waitlistId, from))).data;
+}
+export async function getWorkspaceAudienceAnalytics(waitlistId?: string, from?: string) {
+  return (await api.get<AudienceAnalyticsResponse>(analyticsWorkspaceUrl("geo-device", waitlistId, from))).data;
+}
+export async function getWorkspaceConversionFunnel(waitlistId?: string, from?: string) {
+  return (await api.get<ConversionFunnelResponse>(analyticsWorkspaceUrl("conversion-funnel", waitlistId, from))).data;
+}
+export async function getWorkspaceGrowthVelocity(waitlistId?: string, from?: string) {
+  return (await api.get<GrowthVelocityResponse>(analyticsWorkspaceUrl("growth-velocity", waitlistId, from))).data;
+}
