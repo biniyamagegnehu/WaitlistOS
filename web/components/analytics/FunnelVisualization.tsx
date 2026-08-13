@@ -1,68 +1,52 @@
 "use client";
 
-import { FunnelStep } from "@/services/analytics";
+import { Bar, BarChart, CartesianGrid, LabelList, XAxis, YAxis } from "recharts";
+import { ChartContainer, ChartTooltip, type ChartConfig } from "@/components/ui/chart";
+import type { FunnelStep } from "@/services/analytics";
 
 interface FunnelVisualizationProps {
   steps: FunnelStep[];
 }
 
+const chartConfig = {
+  count: { label: "Users", color: "var(--primary)" },
+} satisfies ChartConfig;
+
+const percentage = (value: number | null) => value === null ? "—" : `${Math.max(0, Math.min(100, value)).toFixed(0)}%`;
+
 export function FunnelVisualization({ steps }: FunnelVisualizationProps) {
-  const maxCount = Math.max(...steps.map((s) => s.count));
-
-  const getBarWidth = (count: number) => {
-    if (maxCount === 0) return 0;
-    return (count / maxCount) * 100;
-  };
-
-  const getBarColor = (index: number) => {
-    const colors = [
-      "bg-blue-500",
-      "bg-indigo-500",
-      "bg-purple-500",
-      "bg-pink-500",
-    ];
-    return colors[index % colors.length];
-  };
+  const chartData = steps.map((step, index) => ({
+    ...step,
+    stage: step.label,
+    previousStage: index === 0 ? null : steps[index - 1]?.label,
+  }));
 
   return (
-    <div className="space-y-4">
-      {steps.map((step, index) => (
-        <div key={step.type} className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span className="font-medium">{step.label}</span>
-            <div className="flex items-center gap-4">
-              {step.conversionRate !== null && index > 0 && (
-                <span className="text-muted-foreground">
-                  {step.conversionRate.toFixed(1)}% conversion
-                </span>
-              )}
-              <span className="font-bold">{step.count.toLocaleString()}</span>
-            </div>
-          </div>
-          
-          <div className="relative h-12 rounded-lg bg-muted overflow-hidden">
-            <div
-              className={`absolute left-0 top-0 h-full transition-all duration-500 ease-out ${getBarColor(index)}`}
-              style={{ width: `${getBarWidth(step.count)}%` }}
-            />
-            <div className="absolute inset-0 flex items-center px-4">
-              {step.dropOff !== null && step.dropOff > 0 && (
-                <div className="flex items-center gap-2 text-sm text-white font-medium">
-                  <span className="opacity-90">
-                    -{step.dropOff.toLocaleString()} ({step.dropOffRate?.toFixed(1)}%)
-                  </span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {step.dropOff !== null && step.dropOff > 0 && (
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span>↓ {step.dropOff.toLocaleString()} users dropped off</span>
-            </div>
-          )}
-        </div>
-      ))}
-    </div>
+    <ChartContainer config={chartConfig} className="h-[300px] sm:h-[340px]" aria-label="Conversion funnel chart showing event counts by stage">
+      <BarChart data={chartData} layout="vertical" margin={{ top: 8, right: 62, bottom: 8, left: 16 }} barCategoryGap="22%">
+        <CartesianGrid horizontal={false} strokeDasharray="3 3" />
+        <XAxis type="number" hide />
+        <YAxis dataKey="stage" type="category" width={126} tickLine={false} axisLine={false} className="text-xs" />
+        <ChartTooltip
+          cursor={{ fill: "var(--surface-muted)" }}
+          content={({ active, payload }) => {
+            const item = payload?.[0]?.payload as (typeof chartData)[number] | undefined;
+            if (!active || !item) return null;
+            const startingPoint = !item.previousStage;
+            return (
+              <div className="min-w-56 rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-md">
+                <p className="font-medium text-foreground">{item.stage}</p>
+                <p className="mt-1 flex justify-between gap-6 text-muted-foreground"><span>Users</span><span className="font-medium text-foreground">{item.count.toLocaleString()}</span></p>
+                <p className="mt-1 text-muted-foreground">Conversion{startingPoint ? ": Starting point" : ` from ${item.previousStage}: ${percentage(item.conversionRate)}`}</p>
+                <p className="text-muted-foreground">Drop-off{startingPoint ? ": N/A" : ` from ${item.previousStage}: ${percentage(item.dropOffRate)}`}</p>
+              </div>
+            );
+          }}
+        />
+        <Bar dataKey="count" fill="var(--color-count)" radius={[0, 6, 6, 0]}>
+          <LabelList dataKey="count" position="right" formatter={(value) => Number(value).toLocaleString()} className="fill-foreground text-xs font-medium" />
+        </Bar>
+      </BarChart>
+    </ChartContainer>
   );
 }
