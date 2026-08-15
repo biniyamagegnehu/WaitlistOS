@@ -118,6 +118,12 @@ enum ParticipantStatus {
   ACCESSED
 }
 
+enum SignupStatus {
+  PARTIAL
+
+  COMPLETED
+}
+
 enum RiskLevel {
   HEALTHY
 
@@ -146,6 +152,11 @@ enum FunnelEventType {
   FORM_FOCUS
   SIGNUP_SUBMITTED
   REFERRAL_SHARED
+  EMAIL_SUBMITTED
+  QUESTIONS_STARTED
+  QUESTIONS_COMPLETED
+  SIGNUP_COMPLETED
+  REFERRAL_STEP_VIEWED
 }
 
 enum GrowthPeriodType {
@@ -422,6 +433,8 @@ model Waitlist {
 
   pageConfig WaitlistPageConfig?
 
+  signupConfig WaitlistSignupConfig?
+
   attributionVisits AttributionVisit[]
 
   funnelEvents FunnelEvent[]
@@ -446,6 +459,19 @@ model WaitlistPageConfig {
   waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 
   @@map("waitlist_page_configs")
+}
+
+model WaitlistSignupConfig {
+  id         String   @id @default(uuid())
+  waitlistId String   @unique
+  enabled    Boolean  @default(false)
+  steps      Json     @default("[]")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
+  @@map("waitlist_signup_configs")
 }
 
 // ─────────────────────────────────────────────
@@ -543,6 +569,10 @@ model Participant {
 
   accessedAt DateTime?
 
+  signupStatus SignupStatus @default(COMPLETED)
+
+  customFields Json?
+
   // ── Source Attribution ───────────────────────
   source      TrafficSource?
   medium      String?
@@ -551,7 +581,7 @@ model Participant {
   landingPath String?
 
   // ── Geo & Device Analytics ─────────────────────
-  ipAddress  String?
+  ipAddress   String?
   countryCode String?
   deviceType  String?
   browserName String?
@@ -585,7 +615,7 @@ model Participant {
   teamInvitations        TeamInvitation[]
   teamParticipantRewards TeamParticipantReward[]
 
-  referralSpikes         ReferralSpike[]          @relation("ReferrerSpikes")
+  referralSpikes ReferralSpike[] @relation("ReferrerSpikes")
 
   @@unique([waitlistId, email])
   @@index([waitlistId, status])
@@ -1137,11 +1167,11 @@ model AttributionVisit {
 // FunnelEvent — Anonymous conversion funnel tracking
 // ─────────────────────────────────────────────
 model FunnelEvent {
-  id        String         @id @default(uuid())
+  id         String          @id @default(uuid())
   waitlistId String
-  sessionId String
-  eventType FunnelEventType
-  createdAt DateTime       @default(now())
+  sessionId  String
+  eventType  FunnelEventType
+  createdAt  DateTime        @default(now())
 
   waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 
@@ -1156,12 +1186,12 @@ model FunnelEvent {
 // DailyFunnelStats — Aggregated daily funnel statistics
 // ─────────────────────────────────────────────
 model DailyFunnelStats {
-  id        String         @id @default(uuid())
+  id         String          @id @default(uuid())
   waitlistId String
-  date      DateTime       @db.Date
-  eventType FunnelEventType
-  count      Int           @default(0)
-  updatedAt DateTime       @updatedAt
+  date       DateTime        @db.Date
+  eventType  FunnelEventType
+  count      Int             @default(0)
+  updatedAt  DateTime        @updatedAt
 
   @@unique([waitlistId, date, eventType])
   @@index([waitlistId, date])
@@ -1172,15 +1202,15 @@ model DailyFunnelStats {
 // GrowthTimeseries — Signup growth time series data
 // ─────────────────────────────────────────────
 model GrowthTimeseries {
-  id          String          @id @default(uuid())
+  id          String           @id @default(uuid())
   waitlistId  String
   periodStart DateTime
   periodType  GrowthPeriodType
-  signupCount Int            @default(0)
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  signupCount Int              @default(0)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
 
-  waitlist    Waitlist        @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
 
   @@unique([waitlistId, periodStart, periodType])
   @@index([waitlistId, periodStart])
@@ -1192,17 +1222,17 @@ model GrowthTimeseries {
 // ReferralSpike — Detected viral referral moments
 // ─────────────────────────────────────────────
 model ReferralSpike {
-  id                  String   @id @default(uuid())
-  waitlistId          String
+  id                    String   @id @default(uuid())
+  waitlistId            String
   referrerParticipantId String
-  startAt             DateTime
-  endAt               DateTime
-  signupCount         Int
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  startAt               DateTime
+  endAt                 DateTime
+  signupCount           Int
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
-  waitlist            Waitlist   @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
-  referrer            Participant @relation("ReferrerSpikes", fields: [referrerParticipantId], references: [id])
+  waitlist Waitlist    @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  referrer Participant @relation("ReferrerSpikes", fields: [referrerParticipantId], references: [id])
 
   @@index([waitlistId, startAt])
   @@index([waitlistId, referrerParticipantId])
