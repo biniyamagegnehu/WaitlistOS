@@ -127,6 +127,7 @@ export class WaitlistsService {
           ...(dto.showRemainingSpots !== undefined && { showRemainingSpots: dto.showRemainingSpots }),
           ...(dto.showBatchProgress !== undefined && { showBatchProgress: dto.showBatchProgress }),
           ...(dto.showCountdown !== undefined && { showCountdown: dto.showCountdown }),
+          ...(dto.themeMode !== undefined && { themeMode: dto.themeMode }),
         },
         include: { logo: true },
       });

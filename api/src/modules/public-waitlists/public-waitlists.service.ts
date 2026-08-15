@@ -97,6 +97,7 @@ export class PublicWaitlistsService {
           showRemainingSpots: waitlist.showRemainingSpots,
           showBatchProgress: waitlist.showBatchProgress,
           showCountdown: waitlist.showCountdown,
+          themeMode: waitlist.themeMode,
           batchUrgency: this.calculateBatchUrgency(waitlist, waitlist._count.participants),
         },
         teamLeaderboard: waitlist.teamReferralsEnabled

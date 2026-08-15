@@ -5,7 +5,9 @@ import {
   Matches,
   MaxLength,
   MinLength,
+  IsEnum,
 } from 'class-validator';
+import { ThemeMode } from '@prisma/client';
 
 export class UpdateWaitlistDto {
   @IsOptional()
@@ -88,4 +90,8 @@ export class UpdateWaitlistDto {
 
   @IsOptional()
   showCountdown?: boolean;
+
+  @IsOptional()
+  @IsEnum(ThemeMode)
+  themeMode?: ThemeMode;
 }
