@@ -37,6 +37,7 @@ import { RolesGuard } from './common/guards/roles.guard';
 import { ScheduleModule } from '@nestjs/schedule';
 import { TeamsModule } from './modules/teams/teams.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { WaitlistSignupConfigModule } from './modules/waitlist-signup-config/waitlist-signup-config.module';
 
 @Module({
   imports: [
@@ -78,6 +79,7 @@ import { AnalyticsModule } from './modules/analytics/analytics.module';
     StreakMilestonesModule,
     TeamsModule,
     AnalyticsModule,
+    WaitlistSignupConfigModule,
   ],
   controllers: [AppController],
   providers: [
