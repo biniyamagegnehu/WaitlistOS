@@ -48,7 +48,7 @@ export default function EditWaitlistPage() {
     fetchWaitlist();
   }, [waitlistId]);
 
-  const onSubmit = async (data: CreateWaitlistFormData & { logoId?: string; slug?: string }) => {
+  const onSubmit = async (data: CreateWaitlistFormData & { logoId?: string; slug?: string; themeMode?: "SYSTEM" | "LIGHT" | "DARK" }) => {
     setServerError("");
 
     try {
@@ -58,11 +58,13 @@ export default function EditWaitlistPage() {
         description?: string;
         slug?: string;
         logoId?: string;
+        themeMode?: "SYSTEM" | "LIGHT" | "DARK";
       } = {
         name: data.name,
         tagline: data.tagline,
         description: data.description,
         slug: data.slug,
+        themeMode: data.themeMode,
       };
 
       if (data.logoId) {
@@ -151,10 +153,11 @@ export default function EditWaitlistPage() {
           mode="edit"
           initialValues={{
             name: waitlistData?.waitlist.name,
-            tagline: waitlistData?.waitlist.slug,
+            tagline: waitlistData?.waitlist.tagline,
             description: waitlistData?.waitlist.description || "",
             logoUrl: waitlistData?.waitlist.logoUrl || null,
             slug: waitlistData?.waitlist.slug,
+            themeMode: waitlistData?.waitlist.themeMode || "SYSTEM",
           }}
           onSubmit={onSubmit}
           submitButtonText="Save changes"

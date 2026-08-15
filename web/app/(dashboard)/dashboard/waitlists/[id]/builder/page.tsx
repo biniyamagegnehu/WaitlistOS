@@ -21,20 +21,23 @@ export default function PageBuilderPage() {
   const waitlistId = params?.id as string;
   const [config, setConfig] = React.useState<PageConfig | null>(null);
   const [version, setVersion] = React.useState(1);
+  // Always reflects the latest version synchronously — avoids stale closure in save/publish
+  const versionRef = React.useRef(1);
   const [selectedId, setSelectedId] = React.useState<string | null>(null);
+  const [previewTheme, setPreviewTheme] = React.useState<"light" | "dark" | "system">("light");
   const [state, setState] = React.useState<SaveState>("loading");
   const [history, setHistory] = React.useState<PageConfig[]>([]);
   const [future, setFuture] = React.useState<PageConfig[]>([]);
   const pending = React.useRef<PageConfig | null>(null);
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  React.useEffect(() => { if (waitlistId) getPageBuilder(waitlistId).then((data) => { setConfig(data.draftConfig); setVersion(data.version); setSelectedId(data.draftConfig.sections[0]?.id ?? null); setState("saved"); }).catch(() => setState("failed")); }, [waitlistId]);
+  React.useEffect(() => { if (waitlistId) getPageBuilder(waitlistId).then((data) => { setConfig(data.draftConfig); setVersion(data.version); versionRef.current = data.version; setSelectedId(data.draftConfig.sections[0]?.id ?? null); setState("saved"); }).catch(() => setState("failed")); }, [waitlistId]);
   const save = React.useCallback(async () => {
     if (!pending.current) return;
     const next = pending.current; pending.current = null; setState("saving");
-    try { const result = await savePageBuilder(waitlistId, next, version); setVersion(result.version); setState("saved"); }
+    try { const result = await savePageBuilder(waitlistId, next, versionRef.current); versionRef.current = result.version; setVersion(result.version); setState("saved"); }
     catch { pending.current = next; setState("failed"); }
-  }, [version, waitlistId]);
+  }, [waitlistId]);
   const update = (next: PageConfig, record = true) => { if (record && config) { setHistory((items) => [...items.slice(-39), config]); setFuture([]); } setConfig(next); pending.current = next; setState("saving"); if (saveTimer.current) clearTimeout(saveTimer.current); saveTimer.current = setTimeout(() => void save(), 1800); };
   React.useEffect(() => () => { if (saveTimer.current) clearTimeout(saveTimer.current); }, []);
   const sections = config?.sections ?? []; const selected = sections.find((section) => section.id === selectedId);
@@ -46,12 +49,27 @@ export default function PageBuilderPage() {
   const resetSelected = () => { if (!selected) return; const reset = { ...defaultSection(selected.type), id: selected.id, order: selected.order }; update({ ...config!, sections: sections.map((section) => section.id === selected.id ? reset : section) }); };
   const undo = () => { const previous = history.at(-1); if (!previous || !config) return; setHistory((items) => items.slice(0, -1)); setFuture((items) => [config, ...items]); update(previous, false); };
   const redo = () => { const next = future[0]; if (!next || !config) return; setFuture((items) => items.slice(1)); setHistory((items) => [...items, config]); update(next, false); };
-  const publish = async () => { if (!config) return; if (pending.current) await save(); setState("publishing"); try { await publishPageBuilder(waitlistId, version); setState("published"); } catch { setState("failed"); } };
+  const publish = async () => {
+    if (!config) return;
+    // Flush any pending auto-save first, then publish using the latest version from ref
+    if (pending.current || saveTimer.current) {
+      if (saveTimer.current) { clearTimeout(saveTimer.current); saveTimer.current = null; }
+      await save();
+    }
+    setState("publishing");
+    try { await publishPageBuilder(waitlistId, versionRef.current); setState("published"); }
+    catch { setState("failed"); }
+  };
   if (!config) return <div className="py-16 text-center text-sm text-muted-foreground">{state === "failed" ? "Unable to load the page builder." : "Loading builder…"}</div>;
 
-  return <div className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><Link href={routes.waitlist(waitlistId)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Back to waitlist</Link><h1 className="mt-2 text-2xl font-semibold">Visual Page Builder</h1></div><div className="flex items-center gap-2"><Button size="sm" variant="ghost" onClick={undo} disabled={!history.length} aria-label="Undo"><Undo2 className="h-4 w-4"/></Button><Button size="sm" variant="ghost" onClick={redo} disabled={!future.length} aria-label="Redo"><Redo2 className="h-4 w-4"/></Button><span className="text-sm text-muted-foreground">{state === "saving" ? "Saving…" : state === "saved" ? "Saved" : state === "published" ? "Published successfully" : state === "failed" ? "Save failed" : state}</span><Button variant="secondary" onClick={() => void save()} disabled={state === "saving"}>{state === "failed" ? "Retry save" : "Save"}</Button><Button onClick={() => void publish()} loading={state === "publishing"}>Publish</Button></div></div>
+  return <div className="space-y-5"><div className="flex flex-wrap items-center justify-between gap-3"><div><Link href={routes.waitlist(waitlistId)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><ArrowLeft className="h-4 w-4" />Back to waitlist</Link><h1 className="mt-2 text-2xl font-semibold">Visual Page Builder</h1></div><div className="flex items-center gap-2">
+    <div className="mr-2 flex items-center rounded-md border border-border bg-surface p-1">
+      <button onClick={() => setPreviewTheme("light")} className={`rounded-sm px-2 py-1 text-xs font-medium ${previewTheme === "light" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Light</button>
+      <button onClick={() => setPreviewTheme("dark")} className={`rounded-sm px-2 py-1 text-xs font-medium ${previewTheme === "dark" ? "bg-background shadow-sm text-foreground" : "text-muted-foreground hover:text-foreground"}`}>Dark</button>
+    </div>
+    <Button size="sm" variant="ghost" onClick={undo} disabled={!history.length} aria-label="Undo"><Undo2 className="h-4 w-4"/></Button><Button size="sm" variant="ghost" onClick={redo} disabled={!future.length} aria-label="Redo"><Redo2 className="h-4 w-4"/></Button><span className="text-sm text-muted-foreground">{state === "saving" ? "Saving…" : state === "saved" ? "Saved" : state === "published" ? "Published successfully" : state === "failed" ? "Save failed" : state}</span><Button variant="secondary" onClick={() => void save()} disabled={state === "saving"}>{state === "failed" ? "Retry save" : "Save"}</Button><Button onClick={() => void publish()} loading={state === "publishing"}>Publish</Button></div></div>
     <div className="grid gap-4 xl:grid-cols-[260px_minmax(0,1fr)_300px]"><Card><CardContent className="space-y-2 p-3"><p className="px-2 pt-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">Sections</p>{sections.map((section, index) => <div key={section.id} draggable onDragStart={(event) => event.dataTransfer.setData("text/plain", section.id)} onDragOver={(event) => event.preventDefault()} onDrop={(event) => { event.preventDefault(); reorder(event.dataTransfer.getData("text/plain"), section.id); }} className={`flex items-center gap-1 rounded-lg p-1 ${section.id === selectedId ? "bg-surface-muted" : ""}`}><GripVertical className="h-4 w-4 cursor-grab text-muted-foreground" aria-label="Drag to reorder"/><button className="min-w-0 flex-1 truncate px-1 text-left text-sm" onClick={() => setSelectedId(section.id)}>{sectionLabel[section.type]}</button><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => update({ ...config, sections: sections.map((item) => item.id === section.id ? { ...item, visible: !item.visible } : item) })} aria-label={section.visible ? `Hide ${sectionLabel[section.type]}` : `Show ${sectionLabel[section.type]}`}>{section.visible ? <Eye className="h-4 w-4"/> : <EyeOff className="h-4 w-4"/>}</Button><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => move(section.id, -1)} disabled={index === 0} aria-label="Move section up">↑</Button><Button size="sm" variant="ghost" className="h-7 w-7 p-0" onClick={() => move(section.id, 1)} disabled={index === sections.length - 1} aria-label="Move section down">↓</Button><Button size="sm" variant="ghost" className="h-7 w-7 p-0 text-destructive" onClick={() => { update({ ...config, sections: normalize(sections.filter((item) => item.id !== section.id)) }); setSelectedId(null); }} aria-label={`Remove ${sectionLabel[section.type]}`}><Trash2 className="h-4 w-4"/></Button></div>)}<div className="border-t border-border pt-3"><p className="mb-2 px-2 text-xs font-medium text-muted-foreground">Add section</p><div className="grid grid-cols-2 gap-1">{PAGE_SECTION_TYPES.map((type) => <Button key={type} size="sm" variant="secondary" onClick={() => add(type)} disabled={singletonSections.includes(type) && sections.some((section) => section.type === type)}><Plus className="mr-1 h-3.5 w-3.5"/>{sectionLabel[type]}</Button>)}</div></div></CardContent></Card>
-      <Card><CardContent className="min-h-[640px] bg-surface-muted p-5"><div className="mx-auto max-w-2xl space-y-4 rounded-xl bg-background p-6 shadow-sm"><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Live draft preview</p>{sections.filter((section) => section.visible).map((section) => <PreviewSection key={section.id} section={section} />)}</div></CardContent></Card>
+      <Card><CardContent className="min-h-[640px] bg-surface-muted p-5"><div className={`mx-auto max-w-2xl space-y-4 rounded-xl p-6 shadow-sm ${previewTheme === "dark" ? "dark" : "light"} bg-background text-foreground`}><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Live draft preview</p>{sections.filter((section) => section.visible).map((section) => <PreviewSection key={section.id} section={section} />)}</div></CardContent></Card>
       <Card><CardContent className="space-y-4 p-5">{selected ? <><div className="flex items-start justify-between gap-2"><div><p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Settings</p><h2 className="mt-1 font-semibold">{sectionLabel[selected.type]}</h2></div><div className="flex gap-1"><Button size="sm" variant="ghost" onClick={() => duplicate(selected)} disabled={singletonSections.includes(selected.type)} aria-label="Duplicate section"><Copy className="h-4 w-4"/></Button><Button size="sm" variant="ghost" onClick={resetSelected} aria-label="Reset section"><RotateCcw className="h-4 w-4"/></Button></div></div><SectionSettings section={selected} onChange={changeContent}/></> : <p className="text-sm text-muted-foreground">Select a section to edit its settings.</p>}</CardContent></Card></div></div>;
 }
 
