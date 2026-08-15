@@ -52,8 +52,25 @@ function buildSegments(pathname: string): BreadcrumbSegment[] {
       return;
     }
 
+    // If this segment is literally "participants" and comes after a waitlist ID,
+    // it should link back to the waitlist detail page (which shows the participant table).
+    if (part === "participants") {
+      // The waitlist ID is the part before this one
+      const waitlistId = parts[index - 1];
+      const waitlistHref = `/dashboard/waitlists/${waitlistId}`;
+      crumbs.push({ label: "Participants", href: waitlistHref });
+      return;
+    }
+
+    // If the previous segment is "participants", this is a participant detail page — show it as last crumb
+    if (parts[index - 1] === "participants") {
+      crumbs.push({ label: "Participant Details" });
+      return;
+    }
+
+    // Legacy: if the part comes right after a waitlist ID (e.g. old pattern), label it "Participants"
     if (parts[index - 1] === "waitlists") {
-      crumbs.push({ label: "Participants" });
+      crumbs.push({ label: "Participants", href: index < parts.length - 1 ? href : undefined });
       return;
     }
 
