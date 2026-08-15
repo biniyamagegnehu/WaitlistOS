@@ -27,7 +27,7 @@ const API_BASE =
 function trackFunnelEventBySlug(
   waitlistSlug: string,
   sessionId: string,
-  eventType: "PAGE_VISIT" | "FORM_FOCUS" | "SIGNUP_SUBMITTED" | "REFERRAL_SHARED",
+  eventType: "PAGE_VISIT" | "FORM_FOCUS" | "SIGNUP_SUBMITTED" | "QUESTIONS_STARTED" | "QUESTIONS_COMPLETED" | "SIGNUP_COMPLETED" | "REFERRAL_STEP_VIEWED" | "REFERRAL_SHARED",
 ) {
   // First fetch waitlist to get ID
   fetch(`${API_BASE}/w/${waitlistSlug}`)

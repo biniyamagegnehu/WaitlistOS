@@ -91,6 +91,28 @@ export interface TeamLeaderboardEntry {
   totalReferrals: number;
 }
 
+export interface SignupStep {
+  id: string;
+  type: 'QUESTIONS' | 'REFERRAL';
+  enabled: boolean;
+  fields?: Array<{
+    id: string;
+    type: 'TEXT' | 'NUMBER' | 'SINGLE_SELECT' | 'DROPDOWN';
+    label: string;
+    required: boolean;
+    options?: { label: string; value: string }[];
+    min?: number;
+    max?: number;
+  }>;
+}
+
+export interface SignupConfig {
+  id: string;
+  waitlistId: string;
+  enabled: boolean;
+  steps: SignupStep[];
+}
+
 export interface PublicWaitlistResponse {
   waitlist: WaitlistSummary;
   branding: WaitlistBranding | null;
@@ -99,6 +121,7 @@ export interface PublicWaitlistResponse {
   copy?: Pick<WaitlistCopy, 'headline' | 'subheadline' | 'cta' | 'features' | 'faqs'> | null;
   teamLeaderboard?: TeamLeaderboardEntry[];
   pageConfig?: PageConfig | null;
+  signupConfig?: SignupConfig | null;
 }
 
 export interface UploadedFile {

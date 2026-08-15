@@ -54,6 +54,7 @@ export interface JoinResponse {
   rewardProgress?: RewardProgress;
   unlockedRewards?: UnlockedReward[];
   streak?: ParticipantStreak;
+  signupStatus?: 'PARTIAL' | 'COMPLETED';
 }
 
 export interface JoinWaitlistInput {
