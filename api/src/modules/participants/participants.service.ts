@@ -16,6 +16,8 @@ import { computeEffectiveStreak } from '../../lib/streak-utils';
 import { GeoLocationService } from '../analytics/geo-location.service';
 import { DeviceDetectionService } from '../analytics/device-detection.service';
 import { AnalyticsService } from '../analytics/analytics.service';
+import { WaitlistsService } from '../waitlists/waitlists.service';
+import { CustomFieldValidator } from './validators/custom-field.validator';
 import { resolveTrafficSource, sanitizeAttributionValue } from './source-attribution.util';
 
 type TransactionClient = Prisma.TransactionClient;
@@ -85,7 +87,7 @@ export class ParticipantsService {
     // 1. Resolve waitlist by slug — 404 if not found
     const waitlist = await this.prisma.waitlist.findUnique({
       where: { slug: waitlistSlug },
-      include: { founder: true, streakMilestones: { orderBy: { days: 'asc' } } },
+      include: { founder: true, streakMilestones: { orderBy: { days: 'asc' } }, signupConfig: true },
     });
     if (!waitlist) {
       throw new NotFoundException('WAITLIST_NOT_FOUND');
@@ -98,7 +100,31 @@ export class ParticipantsService {
       where: { waitlistId_email: { waitlistId: waitlist.id, email } },
     });
     if (existing) {
+      if (existing.signupStatus === 'PARTIAL') {
+        const referralLink = `/r/${existing.referralCode}`;
+        return {
+          success: true,
+          id: existing.id,
+          email: existing.email,
+          position: existing.position,
+          referralCode: existing.referralCode,
+          referralCount: existing.referralCount,
+          referralLink,
+          signupStatus: existing.signupStatus,
+        };
+      }
       throw new ConflictException('EMAIL_ALREADY_JOINED');
+    }
+
+    // Determine initial signupStatus based on config
+    let initialSignupStatus: 'PARTIAL' | 'COMPLETED' = 'COMPLETED';
+    if (waitlist.signupConfig?.enabled) {
+      const steps = Array.isArray(waitlist.signupConfig.steps) ? waitlist.signupConfig.steps : [];
+      const hasQuestions = steps.some((s: any) => s.type === 'QUESTIONS' && s.enabled);
+      const hasReferral = steps.some((s: any) => s.type === 'REFERRAL' && s.enabled);
+      if (hasQuestions || hasReferral) {
+        initialSignupStatus = 'PARTIAL';
+      }
     }
 
     // 3. Resolve referrer (if code provided)
@@ -171,6 +197,7 @@ export class ParticipantsService {
               countryCode,
               deviceType: deviceInfo.deviceType,
               browserName: deviceInfo.browserName,
+              signupStatus: initialSignupStatus,
               ...(referrer ? { referredById: referrer.id } : {}),
             },
           });
@@ -436,7 +463,7 @@ export class ParticipantsService {
       },
     );
 
-    // 8. Track SIGNUP_SUBMITTED funnel event if sessionId provided
+    // 8. Track SIGNUP_SUBMITTED (and EMAIL_SUBMITTED) funnel events if sessionId provided
     if (sessionId) {
       try {
         await this.analyticsService.recordFunnelEvent(
@@ -444,9 +471,14 @@ export class ParticipantsService {
           sessionId,
           FunnelEventType.SIGNUP_SUBMITTED,
         );
+        await this.analyticsService.recordFunnelEvent(
+          waitlist.id,
+          sessionId,
+          FunnelEventType.EMAIL_SUBMITTED,
+        );
       } catch (error) {
         // Fail silently - analytics should not break signup flow
-        this.logger.warn(`Failed to record SIGNUP_SUBMITTED funnel event: ${(error as Error).message}`);
+        this.logger.warn(`Failed to record funnel events: ${(error as Error).message}`);
       }
     }
 
@@ -458,6 +490,7 @@ export class ParticipantsService {
       referralCode: participant.referralCode,
       referralCount: participant.referralCount,
       referralLink,
+      signupStatus: participant.signupStatus,
     };
   }
 
@@ -481,5 +514,69 @@ export class ParticipantsService {
       },
     );
     return { success: true, message: 'Regeneration queued' };
+  }
+
+  // ── Signup Progress ───────────────────────────────────────
+  async updateSignupProgress(id: string, dto: import('./dto/update-signup-progress.dto').UpdateSignupProgressDto) {
+    const participant = await this.prisma.participant.findUnique({
+      where: { id },
+      include: { waitlist: { include: { signupConfig: true } } },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('PARTICIPANT_NOT_FOUND');
+    }
+
+    if (participant.signupStatus === 'COMPLETED') {
+      return { success: true, data: participant };
+    }
+
+    const { customFields, completeStep, sessionId } = dto;
+    let newStatus = participant.signupStatus;
+    let newFields = participant.customFields as Record<string, any> || {};
+
+    if (customFields) {
+      // Basic validation based on config
+      const config = participant.waitlist.signupConfig;
+      if (config && config.enabled) {
+        const steps: any[] = Array.isArray(config.steps) ? config.steps : [];
+        const questionStep = steps.find((s) => s.type === 'QUESTIONS' && s.enabled);
+        if (questionStep && Array.isArray(questionStep.fields)) {
+          CustomFieldValidator.validateAll(questionStep.fields, customFields);
+        }
+      }
+      newFields = { ...newFields, ...customFields };
+    }
+
+    if (completeStep) {
+      newStatus = 'COMPLETED' as typeof newStatus;
+    }
+
+    const updated = await this.prisma.participant.update({
+      where: { id },
+      data: {
+        customFields: newFields,
+        signupStatus: newStatus,
+      },
+    });
+
+    if (completeStep && sessionId) {
+      try {
+        await this.analyticsService.recordFunnelEvent(
+          participant.waitlistId,
+          sessionId,
+          FunnelEventType.QUESTIONS_COMPLETED,
+        );
+        await this.analyticsService.recordFunnelEvent(
+          participant.waitlistId,
+          sessionId,
+          FunnelEventType.SIGNUP_COMPLETED,
+        );
+      } catch (e) {
+        this.logger.warn(`Failed to record funnel events: ${(e as Error).message}`);
+      }
+    }
+
+    return { success: true, data: updated };
   }
 }

@@ -25,6 +25,21 @@ export async function joinWaitlist(data: JoinWaitlistInput): Promise<JoinRespons
   }
 }
 
+export async function updateSignupProgress(
+  participantId: string,
+  payload: {
+    customFields?: Record<string, unknown>;
+    completeStep?: boolean;
+    sessionId?: string;
+  },
+): Promise<{ success: boolean; data: unknown }> {
+  const response = await api.patch<{ success: boolean; data: unknown }>(
+    `/participants/${participantId}/signup-progress`,
+    payload,
+  );
+  return response.data;
+}
+
 function isJoinErrorCode(value: unknown): value is JoinErrorCode {
   return (
     value === "WAITLIST_NOT_FOUND" ||

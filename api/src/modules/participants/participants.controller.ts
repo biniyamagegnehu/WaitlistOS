@@ -1,6 +1,7 @@
 import {
   Controller,
   Post,
+  Patch,
   Body,
   HttpCode,
   HttpStatus,
@@ -35,6 +36,7 @@ export class ParticipantsController {
     );
   }
 
+
   @Public()
   @Get(':id/referral-messages')
   getReferralMessages(@Param('id') id: string) {
@@ -46,5 +48,14 @@ export class ParticipantsController {
   @HttpCode(HttpStatus.OK)
   regenerateReferralMessages(@Param('id') id: string) {
     return this.participantsService.regenerateReferralMessages(id);
+  }
+
+  @Public()
+  @Patch(':id/signup-progress')
+  updateSignupProgress(
+    @Param('id') id: string,
+    @Body() updateSignupProgressDto: import('./dto/update-signup-progress.dto').UpdateSignupProgressDto,
+  ) {
+    return this.participantsService.updateSignupProgress(id, updateSignupProgressDto);
   }
 }
