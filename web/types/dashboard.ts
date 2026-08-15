@@ -39,6 +39,7 @@ export interface DashboardWaitlist {
   showRemainingSpots: boolean;
   showBatchProgress: boolean;
   showCountdown: boolean;
+  themeMode?: "SYSTEM" | "LIGHT" | "DARK";
 }
 
 export interface PaginationMetadata {

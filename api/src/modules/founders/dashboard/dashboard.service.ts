@@ -32,6 +32,7 @@ export interface DashboardWaitlist {
   showRemainingSpots: boolean;
   showBatchProgress: boolean;
   showCountdown: boolean;
+  themeMode?: 'SYSTEM' | 'LIGHT' | 'DARK';
 }
 
 export interface DashboardParticipant {
@@ -408,6 +409,7 @@ export class DashboardService {
         showRemainingSpots: waitlist.showRemainingSpots,
         showBatchProgress: waitlist.showBatchProgress,
         showCountdown: waitlist.showCountdown,
+        themeMode: waitlist.themeMode,
       },
       participants: waitlist.participants,
       pagination: {

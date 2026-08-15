@@ -159,6 +159,7 @@ export async function updateWaitlist(
     referrerRankingBonus?: number;
     newParticipantRankingBonus?: number;
     streakBonusesEnabled?: boolean;
+    themeMode?: 'SYSTEM' | 'LIGHT' | 'DARK';
   }
 ): Promise<DashboardWaitlist> {
   const response = await api.patch<DashboardWaitlist>(

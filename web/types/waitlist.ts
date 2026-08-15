@@ -67,6 +67,7 @@ export interface WaitlistSummary {
     status: 'NEW' | 'ACTIVE' | 'NEARLY_FULL';
     launch: { date: string; status: 'UPCOMING' | 'LIVE' } | null;
   } | null;
+  themeMode?: 'SYSTEM' | 'LIGHT' | 'DARK';
 }
 
 export interface CreateWaitlistInput {
