@@ -35,6 +35,7 @@ export interface DashboardWaitlist {
 }
 
 export interface DashboardParticipant {
+  id: string;
   email: string;
   position: number;
   referralCount: number;
@@ -338,6 +339,7 @@ export class DashboardService {
           skip,
           take: pageSize,
           select: {
+            id: true,
             email: true,
             position: true,
             referralCount: true,
@@ -1279,6 +1281,65 @@ export class DashboardService {
       data: Buffer.from(pdfBuffer),
       filename: 'waitlists.pdf',
       contentType: 'application/pdf',
+    };
+  }
+
+  // ── GET individual participant details ──────────────────────────────────
+  async getParticipantDetail(waitlistId: string, participantId: string, userId: string) {
+    const founderId = await this.getFounderId(userId);
+
+    // Validate ownership
+    const waitlist = await this.prisma.waitlist.findFirst({
+      where: { id: waitlistId, founderId },
+      include: {
+        signupConfig: true,
+      },
+    });
+
+    if (!waitlist) {
+      throw new NotFoundException(`Waitlist ${waitlistId} not found or not owned by this founder`);
+    }
+
+    const participant = await this.prisma.participant.findFirst({
+      where: { id: participantId, waitlistId },
+      include: {
+        referredBy: {
+          select: { id: true, email: true }
+        },
+        referrals: {
+          select: { id: true, email: true, createdAt: true },
+          orderBy: { createdAt: 'desc' }
+        },
+        participantRewards: {
+          include: {
+            reward: true
+          },
+          orderBy: { unlockedAt: 'desc' }
+        },
+        participantStreakRewards: {
+          include: {
+            streakMilestone: true
+          },
+          orderBy: { unlockedAt: 'desc' }
+        },
+        team: {
+          select: {
+            id: true,
+            name: true,
+            _count: { select: { members: true } }
+          }
+        },
+        engagement: true,
+      }
+    });
+
+    if (!participant) {
+      throw new NotFoundException(`Participant ${participantId} not found in this waitlist`);
+    }
+
+    return {
+      participant,
+      signupConfig: waitlist.signupConfig,
     };
   }
 }

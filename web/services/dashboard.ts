@@ -85,6 +85,11 @@ export async function getDashboardWaitlistDetail(
   return response.data;
 }
 
+export async function getParticipantDetail(waitlistId: string, participantId: string) {
+  const response = await api.get(`/dashboard/waitlists/${waitlistId}/participants/${participantId}`);
+  return response.data;
+}
+
 export async function exportWaitlistCsv(waitlistId: string): Promise<void> {
   const response = await api.get<Blob>(`/dashboard/waitlists/${waitlistId}/export`, {
     responseType: "blob",

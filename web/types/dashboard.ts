@@ -1,4 +1,5 @@
 export interface DashboardParticipant {
+  id: string;
   email: string;
   position: number;
   referralCount: number;

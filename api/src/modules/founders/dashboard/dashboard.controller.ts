@@ -51,6 +51,16 @@ export class DashboardController {
     });
   }
 
+  // ── GET /dashboard/waitlists/:waitlistId/participants/:participantId ─────
+  @Get('waitlists/:waitlistId/participants/:participantId')
+  getParticipantDetail(
+    @Param('waitlistId') waitlistId: string,
+    @Param('participantId') participantId: string,
+    @CurrentUser() user: AuthenticatedUser,
+  ) {
+    return this.dashboardService.getParticipantDetail(waitlistId, participantId, user.userId);
+  }
+
   // ── GET /dashboard/waitlists/:id/export ──────────────────────────────────
   @Get('waitlists/:id/export')
   async exportCsv(

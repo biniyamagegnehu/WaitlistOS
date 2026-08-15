@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from "react";
+import { useRouter } from "next/navigation";
 import type { DashboardParticipant, PaginationMetadata } from "@/types/dashboard";
 import {
   Table,
@@ -57,6 +58,7 @@ export function ParticipantTable({
   initialPagination,
   onLoadPage 
 }: ParticipantTableProps) {
+  const router = useRouter();
   const [participants, setParticipants] = React.useState<DashboardParticipant[]>(initialParticipants);
   const [pagination, setPagination] = React.useState<PaginationMetadata | undefined>(initialPagination);
   const [loading, setLoading] = React.useState(false);
@@ -255,7 +257,12 @@ export function ParticipantTable({
                   </TableRow>
                 ) : (
                   participants.map((p) => (
-                    <TableRow key={p.email} id={`participant-row-${p.position}`}>
+                    <TableRow 
+                      key={p.email} 
+                      id={`participant-row-${p.position}`}
+                      className="cursor-pointer hover:bg-muted"
+                      onClick={() => router.push(`/dashboard/waitlists/${waitlistId}/participants/${p.id || p.email}`)}
+                    >
                       <TableCell className="text-muted-foreground">#{p.position}</TableCell>
                       <TableCell className="font-medium text-foreground">{p.email}</TableCell>
                       <TableCell>
