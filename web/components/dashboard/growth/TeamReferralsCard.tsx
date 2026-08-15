@@ -21,7 +21,7 @@ import toast from "react-hot-toast";
 const teamReferralsSchema = z.object({
   teamReferralsEnabled: z.boolean(),
   maxTeamSize: z.coerce
-    .number({ invalid_type_error: "Team size is required." })
+    .number({ message: "Team size is required." })
     .int("Team size must be an integer.")
     .min(2, "Team size must be at least 2.")
     .max(100, "Team size cannot exceed 100."),
@@ -39,7 +39,7 @@ export function TeamReferralsCard({ waitlistId, initialData }: TeamReferralsCard
   const [analyticsLoading, setAnalyticsLoading] = React.useState(false);
 
   const form = useForm<TeamReferralsFormData>({
-    resolver: zodResolver(teamReferralsSchema),
+    resolver: zodResolver(teamReferralsSchema) as any,
     defaultValues: {
       teamReferralsEnabled: initialData.teamReferralsEnabled ?? false,
       maxTeamSize: initialData.maxTeamSize ?? 10,

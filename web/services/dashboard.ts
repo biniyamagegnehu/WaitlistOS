@@ -11,6 +11,16 @@ export async function getPageBuilder(waitlistId: string): Promise<PageBuilderRes
   return response.data.data;
 }
 
+export async function getSignupConfig(waitlistId: string) {
+  const response = await api.get<{ success: boolean; data: any }>(`/waitlists/${waitlistId}/signup-config`);
+  return response.data.data;
+}
+
+export async function updateSignupConfig(waitlistId: string, enabled: boolean, steps: any[]) {
+  const response = await api.patch<{ success: boolean; data: any }>(`/waitlists/${waitlistId}/signup-config`, { enabled, steps });
+  return response.data.data;
+}
+
 export async function savePageBuilder(waitlistId: string, config: PageConfig, version: number): Promise<PageBuilderResponse> {
   const response = await api.patch<{ success: boolean; data: PageBuilderResponse }>(`/waitlists/${waitlistId}/page-builder`, { config, version });
   return response.data.data;

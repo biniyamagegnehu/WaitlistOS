@@ -16,12 +16,12 @@ const doubleSidedRewardsSchema = z
   .object({
     doubleSidedRewardsEnabled: z.boolean(),
     referrerRankingBonus: z.coerce
-      .number({ invalid_type_error: "Ranking bonus is required." })
+      .number({ message: "Ranking bonus is required." })
       .int("Ranking bonus must be an integer.")
       .min(1, "Ranking bonus must be at least 1.")
       .max(100, "Ranking bonus cannot exceed 100."),
     newParticipantRankingBonus: z.coerce
-      .number({ invalid_type_error: "Ranking bonus is required." })
+      .number({ message: "Ranking bonus is required." })
       .int("Ranking bonus must be an integer.")
       .min(1, "Ranking bonus must be at least 1.")
       .max(100, "Ranking bonus cannot exceed 100."),
@@ -49,7 +49,7 @@ export function DoubleSidedRewardsCard({
   initialData: DashboardWaitlist;
 }) {
   const form = useForm<DoubleSidedRewardsFormData>({
-    resolver: zodResolver(doubleSidedRewardsSchema),
+    resolver: zodResolver(doubleSidedRewardsSchema) as any,
     defaultValues: {
       doubleSidedRewardsEnabled: initialData.doubleSidedRewardsEnabled ?? false,
       referrerRankingBonus: initialData.referrerRankingBonus || 3,
