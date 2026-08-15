@@ -40,7 +40,20 @@ export default function PublicWaitlistPageClient() {
       getPublicWaitlistBySlug(slug)
         .then((data) => {
           if (!data) setNotFound(true);
-          else setWaitlistData(data);
+          else {
+            setWaitlistData(data);
+            // Apply the founder-configured theme
+            // (the server script handles initial load; this handles SPA navigation / polls)
+            const mode = data.waitlist?.themeMode ?? "SYSTEM";
+            if (mode === "DARK") {
+              document.documentElement.classList.add("dark");
+            } else if (mode === "LIGHT") {
+              document.documentElement.classList.remove("dark");
+            } else {
+              const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+              document.documentElement.classList.toggle("dark", prefersDark);
+            }
+          }
         })
         .catch(() => setNotFound(true))
         .finally(() => setLoading(false));
