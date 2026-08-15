@@ -12,6 +12,8 @@ import { CreateWaitlistDto } from './dto/create-waitlist.dto';
 import { UpdateWaitlistDto } from './dto/update-waitlist.dto';
 import { SlugService } from './services/slug.service';
 import { PaymentService } from '../payments/payment.service';
+import { defaultPageConfig, upgradePageConfig, validatePageConfig } from './page-config';
+import { Prisma } from '@prisma/client';
 
 @Injectable()
 export class WaitlistsService {
@@ -194,6 +196,34 @@ export class WaitlistsService {
     return this.findOwnedWaitlist(waitlistId, founder.id);
   }
 
+  async getPageBuilder(waitlistId: string, userId: string) {
+    const waitlist = await this.findOwnedWaitlistOrThrow(waitlistId, userId);
+    const config = await this.prisma.waitlistPageConfig.findUnique({ where: { waitlistId: waitlist.id } });
+    return { success: true, data: { draftConfig: config ? upgradePageConfig(config.draftConfig) : defaultPageConfig(), publishedConfig: config?.publishedConfig ? upgradePageConfig(config.publishedConfig) : null, version: config?.version ?? 1 } };
+  }
+
+  async updatePageBuilder(waitlistId: string, input: unknown, version: number, userId: string) {
+    const waitlist = await this.findOwnedWaitlistOrThrow(waitlistId, userId);
+    const config = validatePageConfig(input);
+    const configJson = toPrismaJson(config);
+    const existing = await this.prisma.waitlistPageConfig.findUnique({ where: { waitlistId: waitlist.id } });
+    if (existing && existing.version !== version) throw new ConflictException('PAGE_CONFIG_STALE');
+    const saved = existing
+      ? await this.prisma.waitlistPageConfig.update({ where: { waitlistId: waitlist.id }, data: { draftConfig: configJson, version: { increment: 1 } } })
+      : await this.prisma.waitlistPageConfig.create({ data: { waitlistId: waitlist.id, draftConfig: configJson } });
+    return { success: true, data: { draftConfig: saved.draftConfig, publishedConfig: saved.publishedConfig, version: saved.version } };
+  }
+
+  async publishPageBuilder(waitlistId: string, version: number, userId: string) {
+    const waitlist = await this.findOwnedWaitlistOrThrow(waitlistId, userId);
+    const existing = await this.prisma.waitlistPageConfig.findUnique({ where: { waitlistId: waitlist.id } });
+    if (!existing) throw new NotFoundException('Page configuration not found');
+    if (existing.version !== version) throw new ConflictException('PAGE_CONFIG_STALE');
+    const config = validatePageConfig(existing.draftConfig);
+    const published = await this.prisma.waitlistPageConfig.update({ where: { waitlistId: waitlist.id }, data: { publishedConfig: toPrismaJson(config) } });
+    return { success: true, data: { publishedConfig: published.publishedConfig, version: published.version } };
+  }
+
   private async getFounderByUserId(userId: string) {
     const founder = await this.prisma.founder.findUnique({
       where: { userId },
@@ -247,4 +277,9 @@ export class WaitlistsService {
       },
     };
   }
+}
+
+/** Page configs are validated plain JSON; this bridges the structural Prisma JSON type. */
+function toPrismaJson(value: unknown): Prisma.InputJsonValue {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonValue;
 }

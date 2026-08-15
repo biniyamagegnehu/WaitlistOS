@@ -1,4 +1,5 @@
 import type { WaitlistCopy } from "./copywriter";
+import type { PageConfig } from "./page-builder";
 
 export interface WaitlistBranding {
   logoUrl: string | null;
@@ -57,6 +58,15 @@ export interface WaitlistSummary {
   showRemainingSpots?: boolean;
   showBatchProgress?: boolean;
   showCountdown?: boolean;
+  batchUrgency?: {
+    size: number;
+    number: number;
+    participants: number;
+    remaining: number;
+    progress: number;
+    status: 'NEW' | 'ACTIVE' | 'NEARLY_FULL';
+    launch: { date: string; status: 'UPCOMING' | 'LIVE' } | null;
+  } | null;
 }
 
 export interface CreateWaitlistInput {
@@ -88,6 +98,7 @@ export interface PublicWaitlistResponse {
   widget: WaitlistWidget | null;
   copy?: Pick<WaitlistCopy, 'headline' | 'subheadline' | 'cta' | 'features' | 'faqs'> | null;
   teamLeaderboard?: TeamLeaderboardEntry[];
+  pageConfig?: PageConfig | null;
 }
 
 export interface UploadedFile {

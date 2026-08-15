@@ -15,6 +15,7 @@ import { UpdateWaitlistDto } from './dto/update-waitlist.dto';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import type { AuthenticatedUser } from '../auth/interfaces/jwt-payload.interface';
 import { Public } from '../../common/decorators/public.decorator';
+import { UpdatePageConfigDto } from './dto/update-page-config.dto';
 
 @Controller('waitlists')
 export class WaitlistsController {
@@ -36,6 +37,21 @@ export class WaitlistsController {
     @CurrentUser() user: AuthenticatedUser,
   ) {
     return this.waitlistsService.update(id, updateWaitlistDto, user.userId);
+  }
+
+  @Get(':id/page-builder')
+  getPageBuilder(@Param('id') id: string, @CurrentUser() user: AuthenticatedUser) {
+    return this.waitlistsService.getPageBuilder(id, user.userId);
+  }
+
+  @Patch(':id/page-builder')
+  updatePageBuilder(@Param('id') id: string, @Body() dto: UpdatePageConfigDto, @CurrentUser() user: AuthenticatedUser) {
+    return this.waitlistsService.updatePageBuilder(id, dto.config, dto.version, user.userId);
+  }
+
+  @Post(':id/page-builder/publish')
+  publishPageBuilder(@Param('id') id: string, @Body() dto: Pick<UpdatePageConfigDto, 'version'>, @CurrentUser() user: AuthenticatedUser) {
+    return this.waitlistsService.publishPageBuilder(id, dto.version, user.userId);
   }
 
   @Delete(':id')

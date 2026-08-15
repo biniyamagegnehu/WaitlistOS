@@ -4,6 +4,22 @@ import type {
   DashboardWaitlist,
   DashboardWaitlistDetail,
 } from "@/types/dashboard";
+import type { PageBuilderResponse, PageConfig } from "@/types/page-builder";
+
+export async function getPageBuilder(waitlistId: string): Promise<PageBuilderResponse> {
+  const response = await api.get<{ success: boolean; data: PageBuilderResponse }>(`/waitlists/${waitlistId}/page-builder`);
+  return response.data.data;
+}
+
+export async function savePageBuilder(waitlistId: string, config: PageConfig, version: number): Promise<PageBuilderResponse> {
+  const response = await api.patch<{ success: boolean; data: PageBuilderResponse }>(`/waitlists/${waitlistId}/page-builder`, { config, version });
+  return response.data.data;
+}
+
+export async function publishPageBuilder(waitlistId: string, version: number): Promise<PageBuilderResponse> {
+  const response = await api.post<{ success: boolean; data: PageBuilderResponse }>(`/waitlists/${waitlistId}/page-builder/publish`, { version });
+  return response.data.data;
+}
 
 export async function getDashboardOverview(): Promise<DashboardOverview> {
   const response = await api.get<DashboardOverview>("/dashboard/overview");

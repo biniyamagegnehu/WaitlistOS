@@ -106,6 +106,23 @@ export default function PublicWaitlistPageClient() {
 
   const { waitlist, branding, copy } = waitlistData;
   const primaryColor = branding?.primaryColor ?? "var(--primary)";
+  const publishedSections = waitlistData.pageConfig?.sections ?? [];
+  const section = (type: string) => publishedSections.find((item) => item.type === type);
+  const visible = (type: string) => section(type)?.visible ?? true;
+  const sectionContent = (type: string) => (section(type)?.content ?? {}) as Record<string, unknown>;
+  const heroContent = sectionContent("HERO");
+  const featuresContent = sectionContent("FEATURES");
+  const faqContent = sectionContent("FAQ");
+  const signupContent = sectionContent("SIGNUP");
+  const socialProofContent = sectionContent("SOCIAL_PROOF");
+  const footerContent = sectionContent("FOOTER");
+  const parseItems = <T,>(value: unknown): T[] | null => {
+    try { const parsed = typeof value === "string" ? JSON.parse(value) : value; return Array.isArray(parsed) ? parsed as T[] : null; } catch { return null; }
+  };
+  const configuredFeatures = parseItems<{ title?: string; description?: string }>(featuresContent.items);
+  const configuredFaqs = parseItems<{ question?: string; answer?: string }>(faqContent.items);
+  const featureColumns = Math.min(Math.max(Number(featuresContent.columns) || 3, 1), 4);
+  const featureGridClass = { 1: "sm:grid-cols-1", 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-4" }[featureColumns];
 
   if (joined) {
     const fullReferralLink = getShareableReferralUrl(joined.referralCode, window.location.origin);
@@ -307,6 +324,7 @@ export default function PublicWaitlistPageClient() {
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 pb-16">
       {/* Section 1: Hero Card */}
+      {Boolean(visible("HERO")) && <>
       <Card className="overflow-hidden shadow-sm">
         <CardContent className="p-8 text-center space-y-6">
           {branding?.logoUrl && (
@@ -322,8 +340,8 @@ export default function PublicWaitlistPageClient() {
             </div>
           )}
           <div>
-            <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">{waitlist.name}</h1>
-            <p className="text-lg font-medium text-muted-foreground">{waitlist.tagline}</p>
+            <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">{typeof heroContent.headline === "string" && heroContent.headline ? heroContent.headline : waitlist.name}</h1>
+            <p className="text-lg font-medium text-muted-foreground">{typeof heroContent.subheadline === "string" && heroContent.subheadline ? heroContent.subheadline : waitlist.tagline}</p>
           </div>
           {waitlist.description && (
             <p className="mx-auto max-w-xl text-sm text-muted-foreground leading-relaxed">
@@ -332,9 +350,12 @@ export default function PublicWaitlistPageClient() {
           )}
         </CardContent>
       </Card>
+      </>}
+
+      {visible("SOCIAL_PROOF") && Boolean(socialProofContent.title || socialProofContent.description || socialProofContent.screenshotUrl) && <Card className="overflow-hidden border-border/50"><CardContent className="grid gap-5 p-6 sm:grid-cols-2 sm:items-center"><div><h2 className="text-xl font-semibold">{String(socialProofContent.title || "Loved by early adopters")}</h2>{Boolean(socialProofContent.description) && <p className="mt-2 text-sm text-muted-foreground">{String(socialProofContent.description)}</p>}</div>{typeof socialProofContent.screenshotUrl === "string" && Boolean(socialProofContent.screenshotUrl) && <Image src={socialProofContent.screenshotUrl} alt="Social proof" width={720} height={480} unoptimized className="max-h-56 w-full rounded-lg border border-border object-cover"/>}</CardContent></Card>}
 
       {/* Section 2: Marketing Content */}
-      {copy && (
+      {visible("SOCIAL_PROOF") && copy && (
         <div className="text-center space-y-6 py-8">
           <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">{copy.headline}</h2>
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">{copy.subheadline}</p>
@@ -350,9 +371,9 @@ export default function PublicWaitlistPageClient() {
       )}
 
       {/* Section 3: Features */}
-      {copy?.features && copy.features.length > 0 && (
-        <div className="grid gap-6 sm:grid-cols-3 py-8">
-          {copy.features.map((feature, idx) => (
+      {visible("FEATURES") && ((configuredFeatures?.length ?? 0) > 0 || (copy?.features?.length ?? 0) > 0) && (
+        <div className={`grid gap-6 py-8 ${featureGridClass}`}>
+          {(configuredFeatures?.length ? configuredFeatures : copy?.features ?? []).map((feature, idx) => (
             <Card key={idx} className="bg-surface shadow-sm border-border/50">
               <CardContent className="p-6 space-y-3 text-center sm:text-left">
                 <h3 className="font-semibold text-foreground">{feature.title}</h3>
@@ -364,11 +385,11 @@ export default function PublicWaitlistPageClient() {
       )}
 
       {/* Section 4: FAQs */}
-      {copy?.faqs && copy.faqs.length > 0 && (
+      {visible("FAQ") && ((configuredFaqs?.length ?? 0) > 0 || (copy?.faqs?.length ?? 0) > 0) && (
         <div className="py-8 space-y-6">
-          <h3 className="text-2xl font-bold tracking-tight text-center mb-6">Frequently Asked Questions</h3>
+          <h3 className="text-2xl font-bold tracking-tight text-center mb-6">{typeof faqContent.title === "string" && faqContent.title ? faqContent.title : "Frequently Asked Questions"}</h3>
           <div className="space-y-4">
-            {copy.faqs.map((faq, idx) => (
+            {(configuredFaqs?.length ? configuredFaqs : copy?.faqs ?? []).map((faq, idx) => (
               <details key={idx} className="group rounded-lg border border-border bg-surface p-4 shadow-sm transition-all [&_summary::-webkit-details-marker]:hidden">
                 <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
                   {faq.question}
@@ -386,7 +407,7 @@ export default function PublicWaitlistPageClient() {
       )}
 
       {/* Section 4.5: Urgency Engine */}
-      <UrgencyWidget
+      {visible("COUNTDOWN") && <UrgencyWidget
         urgencyEnabled={waitlist.urgencyEnabled}
         batchEnabled={waitlist.batchEnabled}
         batchName={waitlist.batchName}
@@ -399,15 +420,15 @@ export default function PublicWaitlistPageClient() {
         showCountdown={waitlist.showCountdown}
         currentParticipants={waitlist.participantCount || 0}
         batchUrgency={waitlist.batchUrgency}
-      />
+      />}
 
       {/* Section 5: Join Waitlist Form */}
-      <Card id="join-form" className="shadow-sm border-border/50">
+      {visible("SIGNUP") && <Card id="join-form" className="shadow-sm border-border/50">
         <CardContent className="p-8 text-center space-y-6">
           <div>
-            <h3 className="text-2xl font-bold tracking-tight text-foreground">Join the Waitlist</h3>
+            <h3 className="text-2xl font-bold tracking-tight text-foreground">{typeof signupContent.title === "string" && signupContent.title ? signupContent.title : "Join the Waitlist"}</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              {refCode
+              {typeof signupContent.subtitle === "string" && signupContent.subtitle ? signupContent.subtitle : refCode
                 ? "You were referred! Join now to secure your spot."
                 : "Enter your email to secure your spot in line."}
             </p>
@@ -418,7 +439,7 @@ export default function PublicWaitlistPageClient() {
             onSuccess={(data) => setJoined(data)}
           />
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Section 6: Leaderboard (Individual + Team) */}
       <LeaderboardSection
@@ -426,6 +447,12 @@ export default function PublicWaitlistPageClient() {
         teamLeaderboard={waitlistData?.teamLeaderboard}
         teamReferralsEnabled={waitlist.teamReferralsEnabled ?? false}
       />
+
+      {visible("FOOTER") && <footer className="border-t border-border pt-6 text-center text-sm text-muted-foreground">
+        {typeof footerContent.text === "string" && footerContent.text
+          ? footerContent.text
+          : `© ${new Date().getFullYear()} ${waitlist.name}. All rights reserved.`}
+      </footer>}
     </div>
   );
 }

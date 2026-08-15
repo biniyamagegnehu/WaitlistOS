@@ -103,6 +103,11 @@ export default function WaitlistDetailPage() {
                 Share
               </Button>
             </Link>
+            <Link href={routes.waitlistBuilder(waitlist.id)}>
+              <Button variant="secondary" size="sm">
+                Page builder
+              </Button>
+            </Link>
             <Link
               href={routes.waitlistPublic(waitlist.slug)}
               target="_blank"

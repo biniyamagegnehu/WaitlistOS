@@ -420,6 +420,8 @@ model Waitlist {
 
   copy WaitlistCopy?
 
+  pageConfig WaitlistPageConfig?
+
   attributionVisits AttributionVisit[]
 
   funnelEvents FunnelEvent[]
@@ -430,6 +432,20 @@ model Waitlist {
 
   @@index([founderId])
   @@map("waitlists")
+}
+
+model WaitlistPageConfig {
+  id              String   @id @default(uuid())
+  waitlistId      String   @unique
+  draftConfig     Json
+  publishedConfig Json?
+  version         Int      @default(1)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+
+  @@map("waitlist_page_configs")
 }
 
 // ─────────────────────────────────────────────
