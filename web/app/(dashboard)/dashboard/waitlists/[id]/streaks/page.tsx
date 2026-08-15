@@ -53,7 +53,8 @@ export default function StreakMilestonesPage() {
   const [milestoneToDelete, setMilestoneToDelete] = React.useState<StreakMilestoneDto | null>(null);
 
   const form = useForm<StreakMilestoneFormData>({
-    resolver: zodResolver(streakMilestoneSchema),
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    resolver: zodResolver(streakMilestoneSchema) as any,
     defaultValues: {
       days: 2 as any,
       title: "",
@@ -144,14 +145,14 @@ export default function StreakMilestonesPage() {
 
     const earlier = milestones.filter(m => m.id !== editingMilestone?.id && m.days < data.days);
     const highestEarlier = earlier.sort((a, b) => b.days - a.days)[0];
-    if (highestEarlier && data.value < highestEarlier.value) {
+    if (highestEarlier && highestEarlier.value !== null && data.value < highestEarlier.value) {
       form.setError("value", { type: "manual", message: "Later milestones should provide equal or greater rewards." });
       return;
     }
 
     const later = milestones.filter(m => m.id !== editingMilestone?.id && m.days > data.days);
     const lowestLater = later.sort((a, b) => a.days - b.days)[0];
-    if (lowestLater && data.value > lowestLater.value) {
+    if (lowestLater && lowestLater.value !== null && data.value > lowestLater.value) {
       form.setError("value", { type: "manual", message: "Earlier milestones should provide equal or less rewards." });
       return;
     }

@@ -183,6 +183,11 @@ export default function WaitlistDetailPage() {
                     Open Gates
                   </Button>
                 </Link>
+                <Link href={`/dashboard/waitlists/${waitlist.id}/signup-config`} className="flex-1">
+                  <Button variant="secondary" className="w-full">
+                    Signup Config
+                  </Button>
+                </Link>
                 <Link href={routes.waitlistShare(waitlist.id)} className="flex-1">
                   <Button className="w-full">
                     <Share2 className="h-4 w-4 mr-2" />

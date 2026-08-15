@@ -30,6 +30,7 @@ export class PublicWaitlistsService {
         },
         copy: true,
         pageConfig: true,
+        signupConfig: true,
         teamRewardMilestones: {
           orderBy: { milestone: 'asc' },
         },
@@ -125,6 +126,7 @@ export class PublicWaitlistsService {
           faqs: waitlist.copy.faqs,
         } : null,
         pageConfig: waitlist.pageConfig?.publishedConfig ?? null,
+        signupConfig: waitlist.signupConfig ?? null,
       },
     };
   }

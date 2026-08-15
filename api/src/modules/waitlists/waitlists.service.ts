@@ -251,6 +251,12 @@ export class WaitlistsService {
     return waitlist;
   }
 
+  /** Public helper — verify a userId owns the given waitlistId. Throws on mismatch. */
+  async assertOwnership(waitlistId: string, userId: string): Promise<void> {
+    const founder = await this.getFounderByUserId(userId);
+    await this.findOwnedWaitlist(waitlistId, founder.id);
+  }
+
   private formatWaitlistResponse(
     waitlist: {
       id: string;

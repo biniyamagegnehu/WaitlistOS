@@ -29,11 +29,11 @@ import toast from "react-hot-toast";
 
 const milestoneSchema = z.object({
   milestone: z.coerce
-    .number({ invalid_type_error: "Referral milestone is required." })
+    .number({ message: "Referral milestone is required." })
     .int("Referral milestone must be an integer.")
     .min(5, "Referral milestone must be at least 5."),
   value: z.coerce
-    .number({ invalid_type_error: "Ranking bonus is required." })
+    .number({ message: "Ranking bonus is required." })
     .int("Ranking bonus must be an integer.")
     .min(1, "Ranking bonus must be at least 1.")
     .max(100, "Ranking bonus cannot exceed 100."),
@@ -58,7 +58,7 @@ export default function TeamMilestonesPage() {
   const [milestoneToDelete, setMilestoneToDelete] = React.useState<TeamMilestoneDto | null>(null);
 
   const form = useForm<MilestoneFormData>({
-    resolver: zodResolver(milestoneSchema),
+    resolver: zodResolver(milestoneSchema) as any,
     defaultValues: { milestone: 5 as any, value: 1 as any, title: "" },
     mode: "onChange",
   });
