@@ -52,7 +52,7 @@ export function DeviceChart({ data }: DeviceChartProps) {
               })}
             </Pie>
             <RechartsTooltip
-              formatter={(value: number, name: string, props: any) => [`${value} (${props.payload.percentage}%)`, props.payload.label]}
+              formatter={(value: any, name: any, props: any) => [`${value} (${props.payload.percentage}%)`, props.payload.label]}
             />
           </PieChart>
         </ResponsiveContainer>

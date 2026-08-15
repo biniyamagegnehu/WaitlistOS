@@ -45,7 +45,7 @@ export function BrowserChart({ data }: BrowserChartProps) {
             <YAxis dataKey="name" type="category" axisLine={false} tickLine={false} width={80} style={{ fontSize: '12px' }} />
             <RechartsTooltip
               cursor={{ fill: 'transparent' }}
-              formatter={(value: number, name: string, props: any) => [`${value} (${props.payload.percentage}%)`, "Signups"]}
+              formatter={(value: any, name: any, props: any) => [`${value} (${props.payload.percentage}%)`, "Signups"]}
             />
             <Bar dataKey="signups" radius={[0, 4, 4, 0]} barSize={20}>
               {chartData.map((entry, index) => (

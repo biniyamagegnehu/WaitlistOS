@@ -80,7 +80,7 @@ export function AnalyticsTracker() {
 export function trackFunnelEvent(
   waitlistId: string,
   sessionId: string,
-  eventType: "PAGE_VISIT" | "FORM_FOCUS" | "SIGNUP_SUBMITTED" | "REFERRAL_SHARED",
+  eventType: "PAGE_VISIT" | "FORM_FOCUS" | "SIGNUP_SUBMITTED" | "QUESTIONS_STARTED" | "QUESTIONS_COMPLETED" | "SIGNUP_COMPLETED" | "REFERRAL_STEP_VIEWED" | "REFERRAL_SHARED",
 ) {
   const API_BASE =
     (process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:3000") + "/api";

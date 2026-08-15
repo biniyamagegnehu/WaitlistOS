@@ -4,7 +4,7 @@ import { useEffect, useState, useRef } from "react";
 import Image from "next/image";
 import { CheckCircle, Users, Trophy, TrendingUp } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
-import JoinWaitlistForm from "@/components/waitlist/JoinWaitlistForm";
+import MultiStepSignupForm from "@/components/waitlist/MultiStepSignupForm";
 import { getPublicWaitlistBySlug } from "@/services/api";
 import { JoinResponse } from "@/types/participant";
 import type { PublicWaitlistResponse, TeamLeaderboardEntry } from "@/types/waitlist";
@@ -433,9 +433,11 @@ export default function PublicWaitlistPageClient() {
                 : "Enter your email to secure your spot in line."}
             </p>
           </div>
-          <JoinWaitlistForm
+          <MultiStepSignupForm
             waitlistSlug={slug}
+            waitlistId={waitlist.id}
             referralCode={refCode}
+            signupConfig={waitlistData?.signupConfig}
             onSuccess={(data) => setJoined(data)}
           />
         </CardContent>
