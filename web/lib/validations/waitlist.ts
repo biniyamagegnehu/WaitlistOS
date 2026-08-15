@@ -22,6 +22,7 @@ export const createWaitlistSchema = z.object({
     .string()
     .max(2000, "Description must be at most 2000 characters")
     .optional(),
+  themeMode: z.enum(["SYSTEM", "LIGHT", "DARK"]).optional(),
 });
 
 export type CreateWaitlistFormData = z.infer<typeof createWaitlistSchema>;

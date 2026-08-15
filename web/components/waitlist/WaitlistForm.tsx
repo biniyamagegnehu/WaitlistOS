@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload } from "lucide-react";
+import { Upload, Sun, Moon, Monitor } from "lucide-react";
 import { uploadFile } from "@/services/files";
 import { getApiErrorMessage } from "@/lib/errors";
 import toast from "react-hot-toast";
@@ -27,8 +27,9 @@ export interface WaitlistFormProps {
     description?: string;
     logoUrl?: string | null;
     slug?: string;
+    themeMode?: "SYSTEM" | "LIGHT" | "DARK";
   };
-  onSubmit: (data: CreateWaitlistFormData & { logoId?: string; slug?: string }) => Promise<void>;
+  onSubmit: (data: CreateWaitlistFormData & { logoId?: string; slug?: string; themeMode?: "SYSTEM" | "LIGHT" | "DARK" }) => Promise<void>;
   submitButtonText: string;
   serverError?: string;
 }
@@ -58,6 +59,7 @@ export function WaitlistForm({
       tagline: initialValues?.tagline || "",
       description: initialValues?.description || "",
       slug: initialValues?.slug || "",
+      themeMode: initialValues?.themeMode || "SYSTEM",
     },
     mode: "onSubmit",
   });
@@ -186,6 +188,37 @@ export function WaitlistForm({
               error={errors.slug?.message}
               {...register("slug")}
             />
+          )}
+
+          {mode === "edit" && (
+            <div className="space-y-3 pt-2">
+              <div>
+                <label className="block text-sm font-medium text-foreground">Theme</label>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Choose how your public waitlist handles light and dark mode.
+                </p>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-accent hover:text-accent-foreground">
+                  <input type="radio" value="SYSTEM" className="peer sr-only" {...register("themeMode")} />
+                  <div className="pointer-events-none absolute inset-0 rounded-md border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5" />
+                  <Monitor className="z-10 mb-2 h-5 w-5 text-muted-foreground peer-checked:text-primary" />
+                  <span className="z-10 text-sm font-medium text-foreground">System</span>
+                </label>
+                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-accent hover:text-accent-foreground">
+                  <input type="radio" value="LIGHT" className="peer sr-only" {...register("themeMode")} />
+                  <div className="pointer-events-none absolute inset-0 rounded-md border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5" />
+                  <Sun className="z-10 mb-2 h-5 w-5 text-muted-foreground peer-checked:text-primary" />
+                  <span className="z-10 text-sm font-medium text-foreground">Light</span>
+                </label>
+                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-accent hover:text-accent-foreground">
+                  <input type="radio" value="DARK" className="peer sr-only" {...register("themeMode")} />
+                  <div className="pointer-events-none absolute inset-0 rounded-md border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5" />
+                  <Moon className="z-10 mb-2 h-5 w-5 text-muted-foreground peer-checked:text-primary" />
+                  <span className="z-10 text-sm font-medium text-foreground">Dark</span>
+                </label>
+              </div>
+            </div>
           )}
 
           <div className="space-y-2">
