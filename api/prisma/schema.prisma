@@ -164,6 +164,12 @@ enum GrowthPeriodType {
   DAY
 }
 
+enum ThemeMode {
+  SYSTEM
+  LIGHT
+  DARK
+}
+
 // ─────────────────────────────────────────────
 
 // User — Authentication identity
@@ -406,6 +412,9 @@ model Waitlist {
   showRemainingSpots Boolean   @default(true)
   showBatchProgress  Boolean   @default(true)
   showCountdown      Boolean   @default(true)
+
+  // ── Appearance ───────────────────────────────
+  themeMode          ThemeMode @default(SYSTEM)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
