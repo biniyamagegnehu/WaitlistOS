@@ -8,6 +8,7 @@
   "scripts": {
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "build": "prisma generate && node ./node_modules/@nestjs/cli/bin/nest.js build",
+    "build:render": "prisma generate && node ./node_modules/@nestjs/cli/bin/nest.js build && npm run seed",
     "start": "node dist/main",
     "start:dev": "node ./node_modules/@nestjs/cli/bin/nest.js start --watch",
     "start:debug": "node ./node_modules/@nestjs/cli/bin/nest.js start --debug --watch",
