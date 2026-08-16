@@ -2,7 +2,9 @@ import { PrismaClient, SubscriptionPlanCode, BillingCycle } from '@prisma/client
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
 import * as dotenv from 'dotenv';
-dotenv.config();
+
+// Load dotenv but allow environment variables to override .env file
+dotenv.config({ override: true });
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 const adapter = new PrismaPg(pool);

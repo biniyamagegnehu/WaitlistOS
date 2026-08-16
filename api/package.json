@@ -10,6 +10,7 @@
     "build": "prisma generate && node ./node_modules/@nestjs/cli/bin/nest.js build",
     "build:render": "prisma generate && node ./node_modules/@nestjs/cli/bin/nest.js build && npm run seed",
     "start": "node dist/main",
+    "render-build": "cd .. && npm install && cd api && npm run build:render",
     "start:dev": "node ./node_modules/@nestjs/cli/bin/nest.js start --watch",
     "start:debug": "node ./node_modules/@nestjs/cli/bin/nest.js start --debug --watch",
     "start:prod": "npx prisma db push && node dist/main",
