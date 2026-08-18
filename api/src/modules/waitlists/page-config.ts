@@ -5,6 +5,16 @@ export type PageSectionType = (typeof PAGE_SECTION_TYPES)[number];
 export interface PageSection { id: string; type: PageSectionType; order: number; visible: boolean; content: Record<string, unknown>; layout?: Record<string, unknown>; style?: Record<string, unknown>; responsive?: Record<string, unknown>; }
 export interface PageConfig { version: 1; theme?: Record<string, unknown>; sections: PageSection[]; }
 
+// ─── Limits (mirrored in web/lib/page-builder-validation.ts) ─────────────────
+const LIMITS = {
+  HERO: { headline: 100, subheadline: 160, description: 300 },
+  FEATURES: { title: 100, items: { min: 1, max: 6 }, itemTitle: 60, itemDescription: 250 },
+  FAQ: { title: 100, items: { min: 1, max: 20 }, question: 150, answer: 1000 },
+  SIGNUP: { title: 100, subtitle: 200 },
+  SOCIAL_PROOF: { title: 100, description: 300 },
+  FOOTER: { title: 100, text: 500 },
+} as const;
+
 export function defaultPageConfig(): PageConfig {
   return { version: 1, theme: { primaryColor: '', background: '', text: '', mutedText: '', containerWidth: 'large', sectionSpacing: 'medium', buttonStyle: 'solid', buttonSize: 'medium', buttonRadius: 'rounded', headingFont: 'inherit', bodyFont: 'inherit' }, sections: [
     { id: 'hero', type: 'HERO', order: 0, visible: true, content: {} },
@@ -41,13 +51,15 @@ export function validatePageConfig(input: unknown): PageConfig {
     const type = value.type as PageSectionType;
     if (['HERO', 'SIGNUP', 'FOOTER'].includes(type) && singleton.has(type)) throw new BadRequestException(`${type} can only be used once`);
     singleton.add(type);
-    validateContent(type, value.content as Record<string, unknown>);
+    validateSectionContent(type, value.content as Record<string, unknown>);
     validateOptions(value.layout, `${type}.layout`); validateOptions(value.style, `${type}.style`); validateOptions(value.responsive, `${type}.responsive`);
     return { id: value.id, type, order: index, visible: value.visible, content: value.content as Record<string, unknown>, ...(value.layout ? { layout: value.layout as Record<string, unknown> } : {}), ...(value.style ? { style: value.style as Record<string, unknown> } : {}), ...(value.responsive ? { responsive: value.responsive as Record<string, unknown> } : {}) };
   });
   if (!sections.some((section) => section.type === 'SIGNUP')) throw new BadRequestException('A Signup section is required');
   return { version: 1, ...(config.theme ? { theme: config.theme as Record<string, unknown> } : {}), sections };
 }
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function validateOptions(value: unknown, label: string) {
   if (value === undefined) return;
@@ -56,10 +68,171 @@ function validateOptions(value: unknown, label: string) {
   if (/<\s*script|javascript:|expression\s*\(/i.test(serialized)) throw new BadRequestException(`${label} contains unsupported values`);
 }
 
-function validateContent(type: PageSectionType, content: Record<string, unknown>) {
-  const serialized = JSON.stringify(content);
-  if (serialized.length > 20_000 || /<\s*script|javascript:/i.test(serialized)) throw new BadRequestException(`${type} contains unsupported content`);
-  for (const [key, value] of Object.entries(content)) if (typeof value === 'string' && value.length > 2_000) throw new BadRequestException(`${type}.${key} is too long`);
-  if (type === 'FEATURES' && Array.isArray(content.items) && content.items.length > 6) throw new BadRequestException('Features supports up to 6 items');
-  if (type === 'FAQ' && Array.isArray(content.items) && content.items.length > 10) throw new BadRequestException('FAQ supports up to 10 items');
+function assertNoXss(value: string, label: string): void {
+  if (/<\s*script|javascript:/i.test(value)) throw new BadRequestException(`${label} contains unsupported content`);
 }
+
+function requireString(value: unknown, fieldLabel: string): string {
+  if (typeof value !== 'string') throw new BadRequestException(`${fieldLabel} must be a string`);
+  return value;
+}
+
+function trimStr(value: unknown): string {
+  return typeof value === 'string' ? value.trim() : '';
+}
+
+function parseItems(raw: unknown, label: string): Array<Record<string, unknown>> {
+  if (Array.isArray(raw)) return raw as Array<Record<string, unknown>>;
+  if (typeof raw === 'string') {
+    try {
+      const parsed: unknown = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed as Array<Record<string, unknown>>;
+    } catch {
+      throw new BadRequestException(`${label} items is not valid JSON`);
+    }
+  }
+  throw new BadRequestException(`${label} items must be an array`);
+}
+
+function normalizeQuestion(q: string): string {
+  return q.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+// ─── Per-section content validators ──────────────────────────────────────────
+
+function validateHeroContent(content: Record<string, unknown>): void {
+  const headline = trimStr(content.headline);
+  if (!headline) throw new BadRequestException('Headline is required.');
+  if (headline.length > LIMITS.HERO.headline) throw new BadRequestException(`Headline must be ${LIMITS.HERO.headline} characters or less.`);
+  assertNoXss(headline, 'Headline');
+
+  const subheadline = trimStr(content.subheadline);
+  if (subheadline) {
+    if (subheadline.length > LIMITS.HERO.subheadline) throw new BadRequestException(`Subheadline must be ${LIMITS.HERO.subheadline} characters or less.`);
+    assertNoXss(subheadline, 'Subheadline');
+  }
+
+  const description = trimStr(content.description);
+  if (description) {
+    if (description.length > LIMITS.HERO.description) throw new BadRequestException(`Description must be ${LIMITS.HERO.description} characters or less.`);
+    assertNoXss(description, 'Description');
+  }
+}
+
+function validateFeaturesContent(content: Record<string, unknown>): void {
+  const title = trimStr(content.title);
+  if (!title) throw new BadRequestException('Features title is required.');
+  if (title.length > LIMITS.FEATURES.title) throw new BadRequestException(`Features title must be ${LIMITS.FEATURES.title} characters or less.`);
+  assertNoXss(title, 'Features title');
+
+  const items = parseItems(content.items, 'Features');
+  if (items.length < LIMITS.FEATURES.items.min) throw new BadRequestException(`You must have at least ${LIMITS.FEATURES.items.min} feature.`);
+  if (items.length > LIMITS.FEATURES.items.max) throw new BadRequestException(`You can have a maximum of ${LIMITS.FEATURES.items.max} features.`);
+
+  items.forEach((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new BadRequestException(`Feature ${index + 1} is invalid`);
+    const itemTitle = trimStr(item.title);
+    if (!itemTitle) throw new BadRequestException(`Feature ${index + 1} title is required.`);
+    if (itemTitle.length > LIMITS.FEATURES.itemTitle) throw new BadRequestException(`Feature ${index + 1} title must be ${LIMITS.FEATURES.itemTitle} characters or less.`);
+    assertNoXss(itemTitle, `Feature ${index + 1} title`);
+
+    const itemDesc = trimStr(item.description);
+    if (!itemDesc) throw new BadRequestException(`Feature ${index + 1} description is required.`);
+    if (itemDesc.length > LIMITS.FEATURES.itemDescription) throw new BadRequestException(`Feature ${index + 1} description must be ${LIMITS.FEATURES.itemDescription} characters or less.`);
+    assertNoXss(itemDesc, `Feature ${index + 1} description`);
+  });
+}
+
+function validateFaqContent(content: Record<string, unknown>): void {
+  const title = trimStr(content.title);
+  if (!title) throw new BadRequestException('FAQ title is required.');
+  if (title.length > LIMITS.FAQ.title) throw new BadRequestException(`FAQ title must be ${LIMITS.FAQ.title} characters or less.`);
+  assertNoXss(title, 'FAQ title');
+
+  const items = parseItems(content.items, 'FAQ');
+  if (items.length < LIMITS.FAQ.items.min) throw new BadRequestException(`You must have at least ${LIMITS.FAQ.items.min} FAQ.`);
+  if (items.length > LIMITS.FAQ.items.max) throw new BadRequestException(`You can have a maximum of ${LIMITS.FAQ.items.max} FAQs.`);
+
+  const seenQuestions = new Set<string>();
+  items.forEach((item, index) => {
+    if (!item || typeof item !== 'object' || Array.isArray(item)) throw new BadRequestException(`FAQ ${index + 1} is invalid`);
+    const question = trimStr(item.question);
+    if (!question) throw new BadRequestException(`FAQ ${index + 1} question is required.`);
+    if (question.length > LIMITS.FAQ.question) throw new BadRequestException(`FAQ ${index + 1} question must be ${LIMITS.FAQ.question} characters or less.`);
+    assertNoXss(question, `FAQ ${index + 1} question`);
+
+    const normalized = normalizeQuestion(question);
+    if (seenQuestions.has(normalized)) throw new BadRequestException(`FAQ ${index + 1}: This question already exists.`);
+    seenQuestions.add(normalized);
+
+    const answer = trimStr(item.answer);
+    if (!answer) throw new BadRequestException(`FAQ ${index + 1} answer is required.`);
+    if (answer.length > LIMITS.FAQ.answer) throw new BadRequestException(`FAQ ${index + 1} answer must be ${LIMITS.FAQ.answer} characters or less.`);
+    assertNoXss(answer, `FAQ ${index + 1} answer`);
+  });
+}
+
+function validateSignupContent(content: Record<string, unknown>): void {
+  const title = trimStr(content.title);
+  if (!title) throw new BadRequestException('Form title is required.');
+  if (title.length > LIMITS.SIGNUP.title) throw new BadRequestException(`Form title must be ${LIMITS.SIGNUP.title} characters or less.`);
+  assertNoXss(title, 'Form title');
+
+  const subtitle = trimStr(content.subtitle);
+  if (subtitle) {
+    if (subtitle.length > LIMITS.SIGNUP.subtitle) throw new BadRequestException(`Form subtitle must be ${LIMITS.SIGNUP.subtitle} characters or less.`);
+    assertNoXss(subtitle, 'Form subtitle');
+  }
+}
+
+function validateSocialProofContent(content: Record<string, unknown>): void {
+  const title = trimStr(content.title);
+  if (!title) throw new BadRequestException('Social proof title is required.');
+  if (title.length > LIMITS.SOCIAL_PROOF.title) throw new BadRequestException(`Social proof title must be ${LIMITS.SOCIAL_PROOF.title} characters or less.`);
+  assertNoXss(title, 'Social proof title');
+
+  const description = trimStr(content.description);
+  if (description) {
+    if (description.length > LIMITS.SOCIAL_PROOF.description) throw new BadRequestException(`Social proof description must be ${LIMITS.SOCIAL_PROOF.description} characters or less.`);
+    assertNoXss(description, 'Social proof description');
+  }
+
+  const screenshotUrl = trimStr(content.screenshotUrl);
+  if (!screenshotUrl) throw new BadRequestException('Social proof screenshot is required.');
+  // Validate URL format: must start with http or https
+  if (!/^https?:\/\/.+/i.test(screenshotUrl)) throw new BadRequestException('Social proof screenshot URL is invalid.');
+  assertNoXss(screenshotUrl, 'Social proof screenshot URL');
+}
+
+function validateFooterContent(content: Record<string, unknown>): void {
+  const title = trimStr(content.title);
+  if (!title) throw new BadRequestException('Footer title is required.');
+  if (title.length > LIMITS.FOOTER.title) throw new BadRequestException(`Footer title must be ${LIMITS.FOOTER.title} characters or less.`);
+  assertNoXss(title, 'Footer title');
+
+  const text = trimStr(content.text);
+  if (!text) throw new BadRequestException('Footer text is required.');
+  if (text.length > LIMITS.FOOTER.text) throw new BadRequestException(`Footer text must be ${LIMITS.FOOTER.text} characters or less.`);
+  assertNoXss(text, 'Footer text');
+}
+
+// ─── Dispatcher ───────────────────────────────────────────────────────────────
+
+function validateSectionContent(type: PageSectionType, content: Record<string, unknown>): void {
+  // Global XSS guard: check serialised content size and injection patterns
+  const serialized = JSON.stringify(content);
+  if (serialized.length > 20_000) throw new BadRequestException(`${type} content exceeds maximum size`);
+  if (/<\s*script|javascript:/i.test(serialized)) throw new BadRequestException(`${type} contains unsupported content`);
+
+  switch (type) {
+    case 'HERO':         return validateHeroContent(content);
+    case 'FEATURES':     return validateFeaturesContent(content);
+    case 'FAQ':          return validateFaqContent(content);
+    case 'SIGNUP':       return validateSignupContent(content);
+    case 'SOCIAL_PROOF': return validateSocialProofContent(content);
+    case 'FOOTER':       return validateFooterContent(content);
+  }
+}
+
+// Suppress unused-import lint warning — requireString is a utility kept for future use
+void requireString;
