@@ -180,6 +180,17 @@ export class SignupConfigValidator {
     return validatedFields;
   }
 
+  private static validatePlaceholder(id: string, raw: unknown): string | undefined {
+    if (typeof raw !== 'string') return undefined;
+    const trimmed = raw.trim();
+    if (!trimmed) return undefined;
+    if (trimmed.length > 150) {
+      throw new BadRequestException(`Field ${id} placeholder must be 150 characters or less`);
+    }
+    this.assertNoXss(trimmed, `Field ${id} placeholder`);
+    return trimmed;
+  }
+
   private static validateTypeSpecificConfig(
     base: { id: string; type: FieldType; label: string; description?: string; required: boolean },
     raw: Record<string, unknown>,
@@ -192,13 +203,7 @@ export class SignupConfigValidator {
       case 'EMAIL':
       case 'PHONE':
       case 'URL': {
-        const placeholder = typeof raw.placeholder === 'string' ? raw.placeholder.trim() : undefined;
-        if (placeholder && placeholder.length > 100) {
-          throw new BadRequestException(`Field ${id} placeholder must be 100 characters or less`);
-        }
-        if (placeholder) {
-          this.assertNoXss(placeholder, `Field ${id} placeholder`);
-        }
+        const placeholder = this.validatePlaceholder(id, raw.placeholder);
 
         let minLength: number | undefined = undefined;
         let maxLength: number | undefined = undefined;
@@ -235,6 +240,8 @@ export class SignupConfigValidator {
       case 'SINGLE_SELECT':
       case 'MULTI_SELECT':
       case 'DROPDOWN': {
+        const placeholder = type === 'DROPDOWN' ? this.validatePlaceholder(id, raw.placeholder) : undefined;
+
         if (!Array.isArray(raw.options)) {
           throw new BadRequestException(`Field ${id} options must be an array`);
         }
@@ -322,6 +329,7 @@ export class SignupConfigValidator {
         return {
           ...base,
           type,
+          placeholder: placeholder || undefined,
           options: validatedOptions,
           ...(minSelections !== undefined ? { minSelections } : {}),
           ...(maxSelections !== undefined ? { maxSelections } : {}),
@@ -329,10 +337,7 @@ export class SignupConfigValidator {
       }
 
       case 'NUMBER': {
-        const placeholder = typeof raw.placeholder === 'string' ? raw.placeholder.trim() : undefined;
-        if (placeholder && placeholder.length > 100) {
-          throw new BadRequestException(`Field ${id} placeholder must be 100 characters or less`);
-        }
+        const placeholder = this.validatePlaceholder(id, raw.placeholder);
 
         let min: number | undefined = undefined;
         let max: number | undefined = undefined;
@@ -495,6 +500,7 @@ export class SignupConfigValidator {
 
       case 'COUNTRY':
       case 'LANGUAGE': {
+        const placeholder = this.validatePlaceholder(id, raw.placeholder);
         const optionMode = raw.optionMode === 'SELECTED' ? 'SELECTED' : 'ALL';
         const codeSet = type === 'COUNTRY' ? COUNTRY_CODE_SET : LANGUAGE_CODE_SET;
         const labelType = type === 'COUNTRY' ? 'country' : 'language';
@@ -530,6 +536,7 @@ export class SignupConfigValidator {
         return {
           ...base,
           type,
+          placeholder: placeholder || undefined,
           optionMode,
           selectedOptions: selectedOptions || [],
           defaultValue: defaultValue || '',

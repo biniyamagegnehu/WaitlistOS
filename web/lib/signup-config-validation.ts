@@ -1,6 +1,5 @@
 import type {
   CustomFieldConfig,
-  FieldType,
   ChoiceFieldConfig,
   TextFieldConfig,
   NumberFieldConfig,
@@ -80,12 +79,27 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
           addError(fieldId, "label", "Field label contains unsupported content.");
         }
 
-        // Description validation
+        // Description validation (backward compatibility)
         const description = typeof field.description === "string" ? field.description.trim() : "";
         if (description.length > 300) {
           addError(fieldId, "description", "Description must be 300 characters or less.");
         } else if (description && /<\s*script|javascript:/i.test(description)) {
           addError(fieldId, "description", "Description contains unsupported content.");
+        }
+
+        // Placeholder validation (for applicable field types)
+        const placeholderTypes = ["SHORT_TEXT", "LONG_TEXT", "EMAIL", "PHONE", "URL", "DROPDOWN", "NUMBER", "COUNTRY", "LANGUAGE"];
+        if (placeholderTypes.includes(field.type)) {
+          const placeholder = (field as any).placeholder;
+          if (placeholder !== undefined && placeholder !== null && typeof placeholder === "string") {
+            if (placeholder.length > 0 && placeholder.trim().length === 0) {
+              addError(fieldId, "placeholder", "Placeholder cannot be whitespace only.");
+            } else if (placeholder.trim().length > 150) {
+              addError(fieldId, "placeholder", "Placeholder must be 150 characters or less.");
+            } else if (/<\s*script|javascript:/i.test(placeholder)) {
+              addError(fieldId, "placeholder", "Placeholder contains unsupported content.");
+            }
+          }
         }
 
         // Type-specific validation

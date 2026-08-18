@@ -29,6 +29,7 @@ export interface BaseFieldConfig {
   type: FieldType;
   label: string;
   description?: string;
+  placeholder?: string;
   required: boolean;
 }
 
@@ -41,6 +42,7 @@ export interface TextFieldConfig extends BaseFieldConfig {
 
 export interface ChoiceFieldConfig extends BaseFieldConfig {
   type: "SINGLE_SELECT" | "MULTI_SELECT" | "DROPDOWN";
+  placeholder?: string;
   options: FieldOption[];
   minSelections?: number; // For MULTI_SELECT
   maxSelections?: number; // For MULTI_SELECT
@@ -82,6 +84,7 @@ export type LocationOptionMode = "ALL" | "SELECTED";
 
 export interface LocationFieldConfig extends BaseFieldConfig {
   type: "COUNTRY" | "LANGUAGE";
+  placeholder?: string;
   optionMode?: LocationOptionMode; // Default: "ALL"
   selectedOptions?: string[];       // ISO codes, order-preserved
   defaultValue?: string;            // ISO code for pre-selected default
@@ -118,7 +121,7 @@ export const FIELD_REGISTRY: FieldRegistryEntry[] = [
     name: "Short Text",
     description: "One-line text answer",
     iconName: "Type",
-    defaultConfig: { placeholder: "" },
+    defaultConfig: { placeholder: "Enter your answer" },
   },
   {
     type: "LONG_TEXT",
@@ -126,7 +129,7 @@ export const FIELD_REGISTRY: FieldRegistryEntry[] = [
     name: "Long Text",
     description: "Long-form response",
     iconName: "AlignLeft",
-    defaultConfig: { placeholder: "" },
+    defaultConfig: { placeholder: "Enter your answer" },
   },
   {
     type: "EMAIL",
@@ -134,7 +137,7 @@ export const FIELD_REGISTRY: FieldRegistryEntry[] = [
     name: "Email",
     description: "Collect an additional email address",
     iconName: "Mail",
-    defaultConfig: { placeholder: "name@company.com" },
+    defaultConfig: { placeholder: "you@example.com" },
   },
   {
     type: "PHONE",
@@ -150,7 +153,7 @@ export const FIELD_REGISTRY: FieldRegistryEntry[] = [
     name: "URL",
     description: "Website or profile link",
     iconName: "Link",
-    defaultConfig: { placeholder: "https://..." },
+    defaultConfig: { placeholder: "https://example.com" },
   },
   {
     type: "SINGLE_SELECT",
@@ -174,7 +177,7 @@ export const FIELD_REGISTRY: FieldRegistryEntry[] = [
     name: "Dropdown",
     description: "Single selection from a large list",
     iconName: "ChevronDownSquare",
-    defaultConfig: { options: [{ label: "Option 1", value: "OPTION_1" }] },
+    defaultConfig: { placeholder: "Select an option", options: [{ label: "Option 1", value: "OPTION_1" }] },
   },
   {
     type: "BOOLEAN",
@@ -206,7 +209,7 @@ export const FIELD_REGISTRY: FieldRegistryEntry[] = [
     name: "Number",
     description: "Numeric answers",
     iconName: "Hash",
-    defaultConfig: {},
+    defaultConfig: { placeholder: "Enter a number" },
   },
   {
     type: "DATE",
@@ -230,7 +233,7 @@ export const FIELD_REGISTRY: FieldRegistryEntry[] = [
     name: "Country",
     description: "Participant's country",
     iconName: "Globe",
-    defaultConfig: { optionMode: "ALL", selectedOptions: [], defaultValue: "" },
+    defaultConfig: { placeholder: "Select your country", optionMode: "ALL", selectedOptions: [], defaultValue: "" },
   },
   {
     type: "LANGUAGE",
@@ -238,7 +241,7 @@ export const FIELD_REGISTRY: FieldRegistryEntry[] = [
     name: "Language",
     description: "Participant's preferred language",
     iconName: "Languages",
-    defaultConfig: { optionMode: "ALL", selectedOptions: [], defaultValue: "" },
+    defaultConfig: { placeholder: "Select your language", optionMode: "ALL", selectedOptions: [], defaultValue: "" },
   },
   {
     type: "CONSENT",

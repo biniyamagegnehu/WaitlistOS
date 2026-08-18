@@ -196,6 +196,37 @@ describe('SignupConfigValidator', () => {
 
   describe('Type-specific field config validation', () => {
     describe('Text fields (SHORT_TEXT, LONG_TEXT, EMAIL, PHONE, URL)', () => {
+      it('accepts valid placeholder up to 150 chars with emojis and punctuation', () => {
+        const validated = SignupConfigValidator.validateFields([
+          { id: 'f1', type: 'SHORT_TEXT', label: 'Role', placeholder: 'e.g. Product Designer 🌍 & Founder!' },
+        ]);
+        expect((validated[0] as any).placeholder).toBe('e.g. Product Designer 🌍 & Founder!');
+      });
+
+      it('rejects placeholder over 150 chars', () => {
+        expect(() =>
+          SignupConfigValidator.validateFields([
+            { id: 'f1', type: 'SHORT_TEXT', label: 'Name', placeholder: 'A'.repeat(151) },
+          ]),
+        ).toThrow('150 characters or less');
+      });
+
+      it('rejects script tags in placeholder', () => {
+        expect(() =>
+          SignupConfigValidator.validateFields([
+            { id: 'f1', type: 'SHORT_TEXT', label: 'Name', placeholder: '<script>alert(1)</script>' },
+          ]),
+        ).toThrow('contains unsupported content');
+      });
+
+      it('preserves legacy description for backward compatibility', () => {
+        const validated = SignupConfigValidator.validateFields([
+          { id: 'f1', type: 'SHORT_TEXT', label: 'Role', description: 'Legacy help text', placeholder: 'e.g. Dev' },
+        ]);
+        expect(validated[0].description).toBe('Legacy help text');
+        expect((validated[0] as any).placeholder).toBe('e.g. Dev');
+      });
+
       it('rejects minLength > maxLength', () => {
         expect(() =>
           SignupConfigValidator.validateFields([
@@ -214,6 +245,18 @@ describe('SignupConfigValidator', () => {
     });
 
     describe('Choice fields (SINGLE_SELECT, MULTI_SELECT, DROPDOWN)', () => {
+      it('accepts placeholder on DROPDOWN field', () => {
+        const validated = SignupConfigValidator.validateFields([
+          {
+            id: 'f1',
+            type: 'DROPDOWN',
+            label: 'Role',
+            placeholder: 'Select your role',
+            options: [{ label: 'Dev', value: 'DEV' }],
+          },
+        ]);
+        expect((validated[0] as any).placeholder).toBe('Select your role');
+      });
       it('rejects choice field with empty options array', () => {
         expect(() =>
           SignupConfigValidator.validateFields([
