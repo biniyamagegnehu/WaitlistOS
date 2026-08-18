@@ -16,6 +16,7 @@ import { Alert } from "@/components/ui/alert";
 import { CheckCircle2, ArrowRight, Share2, Copy, Check, Sparkles } from "lucide-react";
 import { SignupFieldRenderer } from "./fields/SignupFieldRenderer";
 import { CustomFieldConfig } from "@/types/custom-fields";
+import { validateParticipantAnswers, validateSingleParticipantField } from "@/lib/signup-config-validation";
 import { cn } from "@/lib/cn";
 
 // ── Cookie helpers ────────────────────────────────────────────
@@ -171,17 +172,33 @@ export default function MultiStepSignupForm({
   };
 
   // ── Questions submit ──────────────────────────────────────
+  const handleFieldValueChange = (field: CustomFieldConfig, val: unknown) => {
+    setCustomFieldValues((prev) => ({ ...prev, [field.id]: val }));
+    if (customFieldErrors[field.id]) {
+      const err = validateSingleParticipantField(field, val);
+      setCustomFieldErrors((prev) => {
+        const next = { ...prev };
+        if (!err) {
+          delete next[field.id];
+        } else {
+          next[field.id] = err;
+        }
+        return next;
+      });
+    }
+  };
+
   const validateQuestions = () => {
     if (!questionsStep?.fields) return true;
-    const errs: Record<string, string> = {};
-    for (const field of questionsStep.fields as CustomFieldConfig[]) {
-      const val = customFieldValues[field.id];
-      if (field.required && (val === undefined || val === null || val === "" || (Array.isArray(val) && val.length === 0))) {
-        errs[field.id] = `${field.label} is required`;
-      }
+    const result = validateParticipantAnswers(
+      questionsStep.fields as CustomFieldConfig[],
+      customFieldValues
+    );
+    setCustomFieldErrors(result.errors);
+    if (!result.valid) {
+      toast.error("Please correct the errors in the form.");
     }
-    setCustomFieldErrors(errs);
-    return Object.keys(errs).length === 0;
+    return result.valid;
   };
 
   const onQuestionsSubmit = async () => {
@@ -316,7 +333,7 @@ export default function MultiStepSignupForm({
                   <SignupFieldRenderer
                     field={field}
                     value={customFieldValues[field.id]}
-                    onChange={(val) => setCustomFieldValues(prev => ({ ...prev, [field.id]: val }))}
+                    onChange={(val) => handleFieldValueChange(field, val)}
                     error={customFieldErrors[field.id]}
                     disabled={submittingQuestions}
                   />

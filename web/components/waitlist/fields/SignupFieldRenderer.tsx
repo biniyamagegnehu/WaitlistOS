@@ -23,6 +23,10 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
     error ? "border-destructive focus-visible:ring-destructive/50" : "border-input hover:border-input-hover"
   );
 
+  const inputId = `field_${field.id}`;
+  const errorId = `error_${field.id}`;
+  const descId = field.description ? `desc_${field.id}` : undefined;
+
   const renderField = () => {
     switch (field.type) {
       case "SHORT_TEXT":
@@ -31,51 +35,70 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
       case "URL":
         return (
           <input
+            id={inputId}
             type={field.type === "SHORT_TEXT" ? "text" : field.type.toLowerCase()}
             className={commonClasses}
             placeholder={(field as any).placeholder || (field.type === "EMAIL" ? "name@example.com" : field.type === "PHONE" ? "+1 234 567 8900" : undefined)}
             value={value || ""}
+            maxLength={(field as any).maxLength}
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : descId}
           />
         );
 
       case "DATE":
         return (
           <input
+            id={inputId}
             type="date"
             className={cn(commonClasses, "cursor-pointer")}
             value={value || ""}
+            min={(field as any).minDate}
+            max={(field as any).maxDate}
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : descId}
           />
         );
 
       case "DATE_TIME":
         return (
           <input
+            id={inputId}
             type="datetime-local"
             className={cn(commonClasses, "cursor-pointer")}
             value={value || ""}
+            min={(field as any).minDate}
+            max={(field as any).maxDate}
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : descId}
           />
         );
       
       case "LONG_TEXT":
         return (
           <textarea
+            id={inputId}
             className={cn(commonClasses, "min-h-[120px] resize-y leading-relaxed")}
             placeholder={(field as any).placeholder}
             value={value || ""}
+            maxLength={(field as any).maxLength}
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : descId}
           />
         );
 
       case "NUMBER":
         return (
           <input
+            id={inputId}
             type="number"
             className={commonClasses}
             placeholder={(field as any).placeholder}
@@ -88,6 +111,8 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
               onChange(isNaN(num) ? "" : num);
             }}
             disabled={disabled}
+            aria-invalid={Boolean(error)}
+            aria-describedby={error ? errorId : descId}
           />
         );
 
@@ -291,18 +316,20 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
   return (
     <div className="flex flex-col gap-2.5 w-full">
       <div className="flex flex-col gap-1">
-        <label className="text-base md:text-sm font-semibold text-foreground">
+        <label htmlFor={inputId} className="text-base md:text-sm font-semibold text-foreground">
           {field.label} {field.required && <span className="text-destructive">*</span>}
         </label>
         {field.description && (
-          <p className="text-sm text-muted-foreground/80">{field.description}</p>
+          <p id={descId} className="text-sm text-muted-foreground/80">{field.description}</p>
         )}
       </div>
       
       {renderField()}
       
       {error && (
-        <p className="text-sm text-destructive font-medium animate-in fade-in slide-in-from-top-1">{error}</p>
+        <p id={errorId} role="alert" className="text-sm text-destructive font-medium animate-in fade-in slide-in-from-top-1">
+          {error}
+        </p>
       )}
     </div>
   );
