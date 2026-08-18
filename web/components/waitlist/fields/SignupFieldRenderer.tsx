@@ -25,7 +25,6 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
 
   const inputId = `field_${field.id}`;
   const errorId = `error_${field.id}`;
-  const descId = field.description ? `desc_${field.id}` : undefined;
 
   const renderField = () => {
     switch (field.type) {
@@ -38,13 +37,13 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
             id={inputId}
             type={field.type === "SHORT_TEXT" ? "text" : field.type.toLowerCase()}
             className={commonClasses}
-            placeholder={(field as any).placeholder || (field.type === "EMAIL" ? "name@example.com" : field.type === "PHONE" ? "+1 234 567 8900" : undefined)}
+            placeholder={(field as any).placeholder || (field.type === "EMAIL" ? "you@example.com" : field.type === "PHONE" ? "+1 234 567 8900" : field.type === "URL" ? "https://example.com" : "Enter your answer")}
             value={value || ""}
             maxLength={(field as any).maxLength}
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
             aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : descId}
+            aria-describedby={error ? errorId : undefined}
           />
         );
 
@@ -60,7 +59,7 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
             aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : descId}
+            aria-describedby={error ? errorId : undefined}
           />
         );
 
@@ -76,7 +75,7 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
             aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : descId}
+            aria-describedby={error ? errorId : undefined}
           />
         );
       
@@ -85,13 +84,13 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
           <textarea
             id={inputId}
             className={cn(commonClasses, "min-h-[120px] resize-y leading-relaxed")}
-            placeholder={(field as any).placeholder}
+            placeholder={(field as any).placeholder || "Enter your answer"}
             value={value || ""}
             maxLength={(field as any).maxLength}
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
             aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : descId}
+            aria-describedby={error ? errorId : undefined}
           />
         );
 
@@ -101,7 +100,7 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
             id={inputId}
             type="number"
             className={commonClasses}
-            placeholder={(field as any).placeholder}
+            placeholder={(field as any).placeholder || "Enter a number"}
             min={(field as any).min}
             max={(field as any).max}
             step={(field as any).step || "any"}
@@ -112,7 +111,7 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
             }}
             disabled={disabled}
             aria-invalid={Boolean(error)}
-            aria-describedby={error ? errorId : descId}
+            aria-describedby={error ? errorId : undefined}
           />
         );
 
@@ -196,7 +195,7 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
             onChange={e => onChange(e.target.value)}
             disabled={disabled}
           >
-            <option value="" disabled>Select an option</option>
+            <option value="" disabled>{(field as any).placeholder || "Select an option"}</option>
             {((field as any).options || []).map((opt: any, i: number) => (
               <option key={i} value={opt.value}>{opt.label}</option>
             ))}
@@ -319,9 +318,6 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
         <label htmlFor={inputId} className="text-base md:text-sm font-semibold text-foreground">
           {field.label} {field.required && <span className="text-destructive">*</span>}
         </label>
-        {field.description && (
-          <p id={descId} className="text-sm text-muted-foreground/80">{field.description}</p>
-        )}
       </div>
       
       {renderField()}
@@ -357,9 +353,11 @@ function LocationPublicSelector({
   const [dropdownStyle, setDropdownStyle] = useState<React.CSSProperties>({});
   const triggerRef = useRef<HTMLButtonElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [mounted, setMounted] = useState(false);
-
-  useEffect(() => { setMounted(true); }, []);
+  const mounted = React.useSyncExternalStore(
+    () => () => {},
+    () => true,
+    () => false
+  );
 
   const options = useMemo(() => {
     let source = field.type === "COUNTRY" ? ALL_COUNTRIES : ALL_LANGUAGES;
@@ -513,7 +511,7 @@ function LocationPublicSelector({
         )}
       >
         <span className={cn("truncate", !value && "text-muted-foreground")}>
-          {value ? selectedName || value : "Select an option..."}
+          {value ? selectedName || value : (field.placeholder || (field.type === "COUNTRY" ? "Select your country" : "Select your language"))}
         </span>
         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={cn("h-4 w-4 opacity-50 shrink-0 transition-transform duration-200", isOpen && "rotate-180")}>
           <polyline points="6 9 12 15 18 9"></polyline>
