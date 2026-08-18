@@ -1,14 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { getSignupConfig, updateSignupConfig } from "@/services/dashboard";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, GripVertical, Trash2 } from "lucide-react";
+import { Loader2, Plus, GripVertical, Trash2, AlertTriangle, AlertCircle } from "lucide-react";
 import { CustomFieldConfig, FieldRegistryEntry } from "@/types/custom-fields";
 import { FieldPickerModal } from "@/components/dashboard/waitlists/signup-config/FieldPickerModal";
 import { FieldConfigEditor } from "@/components/dashboard/waitlists/signup-config/FieldConfigEditor";
+import { validateSignupSteps } from "@/lib/signup-config-validation";
 
 type Step = {
   id: string;
@@ -37,19 +38,29 @@ export default function SignupConfigPage() {
       const data = await getSignupConfig(waitlistId);
       setEnabled(data.enabled);
       setSteps(data.steps || []);
-    } catch (error) {
+    } catch {
       toast.error("Failed to load signup config");
     } finally {
       setLoading(false);
     }
   };
 
+  // Real-time validation computation
+  const validationResult = useMemo(() => {
+    return validateSignupSteps(steps);
+  }, [steps]);
+
   const handleSave = async () => {
+    if (enabled && !validationResult.valid) {
+      toast.error(`Please resolve the ${validationResult.errors.length} configuration issue(s) before saving.`);
+      return;
+    }
+
     setSaving(true);
     try {
       await updateSignupConfig(waitlistId, enabled, steps);
       toast.success("Signup config saved successfully");
-    } catch (error) {
+    } catch {
       toast.error("Failed to save config");
     } finally {
       setSaving(false);
@@ -113,6 +124,8 @@ export default function SignupConfigPage() {
     );
   }
 
+  const errorCount = validationResult.errors.length;
+
   return (
     <div className="mx-auto max-w-4xl p-6">
       <div className="mb-8 flex items-center justify-between">
@@ -122,11 +135,41 @@ export default function SignupConfigPage() {
             Configure additional qualification steps and referrals.
           </p>
         </div>
-        <Button onClick={handleSave} disabled={saving}>
-          {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          Save Changes
-        </Button>
+        <div className="flex items-center gap-3">
+          {enabled && !validationResult.valid && (
+            <span className="flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
+              <AlertCircle className="h-4 w-4" />
+              {errorCount} {errorCount === 1 ? "issue" : "issues"} to fix
+            </span>
+          )}
+          <Button onClick={handleSave} disabled={saving || (enabled && !validationResult.valid)}>
+            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            Save Changes
+          </Button>
+        </div>
       </div>
+
+      {/* Validation Summary Alert Banner */}
+      {enabled && !validationResult.valid && errorCount > 0 && (
+        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
+          <div className="flex items-start gap-3">
+            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
+            <div className="space-y-1">
+              <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
+                Please fix {errorCount} configuration error{errorCount > 1 ? "s" : ""} before saving
+              </h4>
+              <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
+                {validationResult.errors.slice(0, 5).map((err, i) => (
+                  <li key={i}>{err.message}</li>
+                ))}
+                {validationResult.errors.length > 5 && (
+                  <li>...and {validationResult.errors.length - 5} more issues</li>
+                )}
+              </ul>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="mb-8 rounded-lg border bg-card p-6 shadow-sm">
         <div className="flex items-center justify-between">
@@ -221,6 +264,7 @@ export default function SignupConfigPage() {
                         <FieldConfigEditor 
                           key={field.id}
                           field={field}
+                          errors={validationResult.fieldErrorsMap[field.id]}
                           onChange={(updated) => {
                             const newSteps = [...steps];
                             newSteps[stepIndex].fields![fIndex] = updated;
