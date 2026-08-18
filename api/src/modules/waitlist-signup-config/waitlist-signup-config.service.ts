@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { WaitlistsService } from '../waitlists/waitlists.service';
 import { UpdateWaitlistSignupConfigDto } from './dto/update-waitlist-signup-config.dto';
-import { BadRequestException } from '@nestjs/common';
+import { SignupConfigValidator } from './signup-config.validator';
 
 @Injectable()
 export class WaitlistSignupConfigService {
@@ -34,8 +34,9 @@ export class WaitlistSignupConfigService {
   async updateConfig(waitlistId: string, userId: string, dto: UpdateWaitlistSignupConfigDto) {
     await this.waitlistsService.assertOwnership(waitlistId, userId);
 
-    if (dto.steps) {
-      this.validateStepsConfig(dto.steps);
+    let validatedSteps: any[] | undefined = undefined;
+    if (dto.steps !== undefined) {
+      validatedSteps = SignupConfigValidator.validateSteps(dto.steps);
     }
 
     const config = await this.prisma.waitlistSignupConfig.upsert({
@@ -43,46 +44,14 @@ export class WaitlistSignupConfigService {
       create: {
         waitlistId,
         enabled: dto.enabled ?? false,
-        steps: dto.steps ?? [],
+        steps: validatedSteps ?? [],
       },
       update: {
         ...(dto.enabled !== undefined && { enabled: dto.enabled }),
-        ...(dto.steps !== undefined && { steps: dto.steps }),
+        ...(validatedSteps !== undefined && { steps: validatedSteps }),
       },
     });
 
     return { success: true, data: config };
-  }
-
-  private validateStepsConfig(steps: any[]) {
-    if (!Array.isArray(steps)) {
-      throw new BadRequestException('Steps must be an array');
-    }
-    const stepIds = new Set<string>();
-    
-    for (const step of steps) {
-      if (!step.id) throw new BadRequestException('Each step must have an id');
-      if (stepIds.has(step.id)) throw new BadRequestException('Duplicate step id');
-      stepIds.add(step.id);
-
-      if (step.type === 'QUESTIONS' && step.fields) {
-        if (!Array.isArray(step.fields)) throw new BadRequestException('Questions step fields must be an array');
-        
-        const fieldIds = new Set<string>();
-        for (const field of step.fields) {
-          if (!field.id) throw new BadRequestException('Each field must have an id');
-          if (fieldIds.has(field.id)) throw new BadRequestException(`Duplicate field id: ${field.id}`);
-          fieldIds.add(field.id);
-          
-          if (!field.type) throw new BadRequestException(`Field ${field.id} is missing a type`);
-          
-          if (['SINGLE_SELECT', 'MULTI_SELECT', 'DROPDOWN'].includes(field.type)) {
-            if (!Array.isArray(field.options)) {
-              throw new BadRequestException(`Field ${field.id} of type ${field.type} requires an options array`);
-            }
-          }
-        }
-      }
-    }
   }
 }
