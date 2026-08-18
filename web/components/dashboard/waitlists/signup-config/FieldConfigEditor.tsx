@@ -37,7 +37,7 @@ function Switch({ checked, onChange, id }: { checked: boolean; onChange: (c: boo
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cn(
-        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+        "relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center rounded-full border-2 border-transparent transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         checked ? "bg-primary" : "bg-muted-foreground/30"
       )}
     >
