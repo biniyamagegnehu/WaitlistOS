@@ -271,6 +271,49 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
         );
       }
 
+      case "BOOLEAN": {
+        return (
+          <div className="flex gap-3">
+            <div
+              className={cn(
+                "relative flex-1 flex cursor-pointer items-center justify-center rounded-lg border p-3 transition-all duration-200 hover:bg-muted/50",
+                value === true ? "border-primary bg-primary/5 ring-1 ring-primary text-foreground" : "border-border text-muted-foreground",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => !disabled && onChange(true)}
+            >
+              <div className={cn(
+                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                value === true ? "border-primary bg-primary" : "border-input"
+              )}>
+                {value === true && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+              </div>
+              <span className="ml-2 font-medium">
+                Yes
+              </span>
+            </div>
+            <div
+              className={cn(
+                "relative flex-1 flex cursor-pointer items-center justify-center rounded-lg border p-3 transition-all duration-200 hover:bg-muted/50",
+                value === false ? "border-primary bg-primary/5 ring-1 ring-primary text-foreground" : "border-border text-muted-foreground",
+                disabled && "opacity-50 cursor-not-allowed"
+              )}
+              onClick={() => !disabled && onChange(false)}
+            >
+              <div className={cn(
+                "flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                value === false ? "border-primary bg-primary" : "border-input"
+              )}>
+                {value === false && <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground" />}
+              </div>
+              <span className="ml-2 font-medium">
+                No
+              </span>
+            </div>
+          </div>
+        );
+      }
+
       case "CONSENT": {
         const isSelected = value === true;
         return (
@@ -423,7 +466,13 @@ function LocationPublicSelector({
   // Close on scroll / resize to avoid stale position
   useEffect(() => {
     if (!isOpen) return;
-    const close = () => { setIsOpen(false); setSearch(""); };
+    const close = (e: Event) => {
+      if (dropdownRef.current && e.target instanceof Node && dropdownRef.current.contains(e.target)) {
+        return; // Don't close if scrolling inside the dropdown itself
+      }
+      setIsOpen(false); 
+      setSearch(""); 
+    };
     window.addEventListener("scroll", close, true);
     window.addEventListener("resize", close);
     return () => {
