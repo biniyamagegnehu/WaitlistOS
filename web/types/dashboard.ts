@@ -79,4 +79,4 @@ export interface DashboardOverview {
   };
 }
 
-export type SettingsTab = "profile" | "security" | "sessions";
+export type SettingsTab = "profile" | "security" | "sessions" | "payments";

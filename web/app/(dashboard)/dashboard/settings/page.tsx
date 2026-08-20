@@ -13,14 +13,18 @@ import { SessionsSettingsSection } from "@/components/dashboard/settings/session
 import { routes } from "@/lib/routes";
 import type { SettingsTab } from "@/types/dashboard";
 
+import { CreditCard } from "lucide-react";
+import { PaymentsSettingsSection } from "@/components/dashboard/settings/payments-section";
+
 const tabs: Array<{ value: SettingsTab; label: string; icon: React.ReactNode }> = [
   { value: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
   { value: "security", label: "Security", icon: <Shield className="h-4 w-4" /> },
   { value: "sessions", label: "Sessions", icon: <Monitor className="h-4 w-4" /> },
+  { value: "payments", label: "Payments", icon: <CreditCard className="h-4 w-4" /> },
 ];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
-  return value === "profile" || value === "security" || value === "sessions";
+  return value === "profile" || value === "security" || value === "sessions" || value === "payments";
 }
 
 function SettingsPageContent() {
@@ -37,11 +41,11 @@ function SettingsPageContent() {
     <div className="space-y-6">
       <SectionHeader
         title="Settings"
-        description="Manage your profile, security, and active sessions"
+        description="Manage your profile, security, active sessions, and payments"
       />
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="w-full max-w-xl">
+        <TabsList className="w-full max-w-2xl">
           {tabs.map((tab) => (
             <TabsTrigger key={tab.value} value={tab.value} className="gap-2">
               {tab.icon}
@@ -58,6 +62,9 @@ function SettingsPageContent() {
         </TabsContent>
         <TabsContent value="sessions">
           <SessionsSettingsSection />
+        </TabsContent>
+        <TabsContent value="payments">
+          <PaymentsSettingsSection />
         </TabsContent>
       </Tabs>
     </div>
