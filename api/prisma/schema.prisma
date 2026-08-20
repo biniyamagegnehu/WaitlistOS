@@ -170,6 +170,29 @@ enum ThemeMode {
   DARK
 }
 
+enum PaymentAccountStatus {
+  NOT_CONNECTED
+  PENDING
+  ACTION_REQUIRED
+  ACTIVE
+  RESTRICTED
+  DISCONNECTED
+  ERROR
+}
+
+enum MonetizationPaymentType {
+  SKIP_LINE
+  PRE_ORDER_DEPOSIT
+}
+
+enum MonetizationPaymentStatus {
+  PENDING
+  SUCCEEDED
+  FAILED
+  EXPIRED
+  REFUNDED
+}
+
 // ─────────────────────────────────────────────
 
 // User — Authentication identity
@@ -313,7 +336,9 @@ model Founder {
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  waitlists Waitlist[]
+  waitlists            Waitlist[]
+  paymentAccounts      PaymentAccount[]
+  monetizationPayments MonetizationPayment[]
 
   @@map("founders")
 }
@@ -414,7 +439,7 @@ model Waitlist {
   showCountdown      Boolean   @default(true)
 
   // ── Appearance ───────────────────────────────
-  themeMode          ThemeMode @default(SYSTEM)
+  themeMode ThemeMode @default(SYSTEM)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -450,7 +475,8 @@ model Waitlist {
 
   growthTimeseries GrowthTimeseries[]
 
-  referralSpikes ReferralSpike[]
+  referralSpikes       ReferralSpike[]
+  monetizationPayments MonetizationPayment[]
 
   @@index([founderId])
   @@map("waitlists")
@@ -624,7 +650,8 @@ model Participant {
   teamInvitations        TeamInvitation[]
   teamParticipantRewards TeamParticipantReward[]
 
-  referralSpikes ReferralSpike[] @relation("ReferrerSpikes")
+  referralSpikes       ReferralSpike[]       @relation("ReferrerSpikes")
+  monetizationPayments MonetizationPayment[]
 
   @@unique([waitlistId, email])
   @@index([waitlistId, status])
@@ -1247,4 +1274,79 @@ model ReferralSpike {
   @@index([waitlistId, referrerParticipantId])
   @@index([waitlistId, endAt])
   @@map("referral_spikes")
+}
+
+// ─────────────────────────────────────────────
+// PaymentAccount — Founder's connected payment provider accounts
+// ─────────────────────────────────────────────
+model PaymentAccount {
+  id                String               @id @default(uuid())
+  founderId         String
+  provider          PaymentProvider
+  providerAccountId String?
+  status            PaymentAccountStatus @default(NOT_CONNECTED)
+  connectedAt       DateTime?
+  lastError         String?
+  metadata          Json?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+
+  founder Founder @relation(fields: [founderId], references: [id], onDelete: Cascade)
+
+  @@unique([founderId, provider])
+  @@map("payment_accounts")
+}
+
+// ─────────────────────────────────────────────
+// MonetizationPayment — Generic transaction model for waitlist features
+// ─────────────────────────────────────────────
+model MonetizationPayment {
+  id                String                    @id @default(uuid())
+  founderId         String
+  waitlistId        String
+  participantId     String?
+  provider          PaymentProvider
+  providerPaymentId String                    @unique
+  paymentType       MonetizationPaymentType
+  amount            Decimal                   @db.Decimal(12, 2)
+  currency          String
+  platformFee       Decimal                   @db.Decimal(12, 2)
+  providerFee       Decimal                   @db.Decimal(12, 2)
+  founderAmount     Decimal                   @db.Decimal(12, 2)
+  status            MonetizationPaymentStatus @default(PENDING)
+  metadata          Json?
+  createdAt         DateTime                  @default(now())
+  updatedAt         DateTime                  @updatedAt
+
+  founder     Founder      @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  waitlist    Waitlist     @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
+  participant Participant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+
+  events MonetizationPaymentEvent[]
+
+  @@index([founderId])
+  @@index([waitlistId])
+  @@index([participantId])
+  @@index([status])
+  @@map("monetization_payments")
+}
+
+// ─────────────────────────────────────────────
+// MonetizationPaymentEvent — Webhook idempotency and audit log
+// ─────────────────────────────────────────────
+model MonetizationPaymentEvent {
+  id              String          @id @default(uuid())
+  provider        PaymentProvider
+  providerEventId String
+  paymentId       String?
+  eventType       String
+  payload         Json
+  processedAt     DateTime?
+  createdAt       DateTime        @default(now())
+
+  payment MonetizationPayment? @relation(fields: [paymentId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerEventId])
+  @@index([paymentId])
+  @@map("monetization_payment_events")
 }

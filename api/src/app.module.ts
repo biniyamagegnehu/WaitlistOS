@@ -10,6 +10,7 @@ import { chapaConfig } from './config/chapa.config';
 import { plansConfig } from './config/plans.config';
 import { aiConfig } from './config/ai.config';
 import { stripeConfig } from './config/stripe.config';
+import { monetizationConfig } from './config/monetization.config';
 import { CommonModule } from './common/common.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SessionsModule } from './modules/sessions/sessions.module';
@@ -29,6 +30,7 @@ import { ReferralsModule } from './modules/referrals/referrals.module';
 import { RewardsModule } from './modules/rewards/rewards.module';
 import { CohortsModule } from './modules/cohorts/cohorts.module';
 import { PaymentModule } from './modules/payments/payment.module';
+import { MonetizationModule } from './modules/monetization/monetization.module';
 import { AiModule } from './modules/ai/ai.module';
 import { EngagementModule } from './modules/engagement/engagement.module';
 import { StreakMilestonesModule } from './modules/streak-milestones/streak-milestones.module';
@@ -43,7 +45,7 @@ import { WaitlistSignupConfigModule } from './modules/waitlist-signup-config/wai
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
-      load: [appConfig, chapaConfig, plansConfig, aiConfig, stripeConfig],
+      load: [appConfig, chapaConfig, plansConfig, aiConfig, stripeConfig, monetizationConfig],
     }),
     ThrottlerModule.forRoot([
       {
@@ -71,9 +73,10 @@ import { WaitlistSignupConfigModule } from './modules/waitlist-signup-config/wai
     WidgetsModule,
     PublicWaitlistsModule,
     ReferralsModule,
-    PaymentModule,
-    RewardsModule,
     CohortsModule,
+    PaymentModule,
+    MonetizationModule,
+    RewardsModule,
     AiModule,
     EngagementModule,
     StreakMilestonesModule,
