@@ -13,6 +13,8 @@ export const routes = {
   analyticsConversionFunnel: "/dashboard/analytics?tab=funnel",
   analyticsGrowthVelocity: "/dashboard/analytics?tab=growth",
   monetization: "/dashboard/monetization",
+  monetizationTab: (tab: "skip-line" | "pre-order" | "affiliate") =>
+    `/dashboard/monetization?tab=${tab}`,
   affiliates: "/dashboard/affiliates",
   waitlist: (id: string) => `/dashboard/waitlists/${id}`,
   waitlistEdit: (id: string) => `/dashboard/waitlists/${id}/edit`,

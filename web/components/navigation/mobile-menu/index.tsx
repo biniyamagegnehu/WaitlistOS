@@ -72,7 +72,6 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
         <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
           {dashboardNavLinks.map((link) => {
             const isActive = isDashboardNavActive(pathname, link.href);
-
             return (
               <Link
                 key={`${link.label}-${link.href}`}

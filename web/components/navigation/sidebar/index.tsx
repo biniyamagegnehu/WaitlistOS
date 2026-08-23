@@ -36,14 +36,13 @@ export function DashboardSidebar({
         <BrandLogo
           href="/"
           showText={!collapsed}
-          className={cn(collapsed && "justify-center w-full")}
+          className={cn(collapsed && "w-full justify-center")}
         />
       </div>
 
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-4">
         {dashboardNavLinks.map((link) => {
           const isActive = isDashboardNavActive(pathname, link.href);
-
           return (
             <Link
               key={`${link.label}-${link.href}`}

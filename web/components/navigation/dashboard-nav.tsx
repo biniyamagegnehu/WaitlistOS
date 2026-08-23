@@ -1,4 +1,4 @@
-import { BarChart3, CreditCard, LayoutDashboard, List, Settings, DollarSign, Network } from "lucide-react";
+import { BarChart3, CreditCard, LayoutDashboard, List, Settings, DollarSign } from "lucide-react";
 import { routes } from "@/lib/routes";
 
 export interface DashboardNavLink {
@@ -26,19 +26,18 @@ export const dashboardNavLinks: DashboardNavLink[] = [
     label: "Analytics",
     href: routes.analytics,
     icon: <BarChart3 className="h-4 w-4" />,
-    match: (pathname) => pathname === "/dashboard/analytics" || pathname.startsWith("/dashboard/analytics/"),
+    match: (pathname) =>
+      pathname === "/dashboard/analytics" || pathname.startsWith("/dashboard/analytics/"),
   },
   {
     label: "Monetization",
-    href: "/dashboard/monetization",
+    href: routes.monetization,
     icon: <DollarSign className="h-4 w-4" />,
-    match: (pathname) => pathname === "/dashboard/monetization" || pathname.startsWith("/dashboard/monetization/"),
-  },
-  {
-    label: "Affiliates",
-    href: routes.affiliates,
-    icon: <Network className="h-4 w-4" />,
-    match: (pathname) => pathname === routes.affiliates || pathname.startsWith(`${routes.affiliates}/`),
+    match: (pathname) =>
+      pathname === routes.monetization ||
+      pathname.startsWith(`${routes.monetization}/`) ||
+      pathname === routes.affiliates ||
+      pathname.startsWith(`${routes.affiliates}/`),
   },
   {
     label: "Billing",
@@ -64,4 +63,3 @@ export function isDashboardNavActive(pathname: string, href: string): boolean {
   const link = dashboardNavLinks.find((item) => item.href === href);
   return link ? link.match(pathname) : pathname.startsWith(href);
 }
-

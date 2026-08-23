@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from "react";
 import { affiliateService, AffiliateDashboardResponse } from "@/services/affiliates";
-import { LoadingScreen } from "@/components/layouts/loading-screen";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,7 +23,7 @@ import { AffiliatePerformanceTab } from "@/components/dashboard/affiliates/affil
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://waitlistos.com";
 
-export default function AffiliatesPage() {
+export function AffiliateSection() {
   const [data, setData] = useState<AffiliateDashboardResponse | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -55,15 +54,23 @@ export default function AffiliatesPage() {
     });
   };
 
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading) {
+    return (
+      <div className="space-y-4 pt-4">
+        {[...Array(3)].map((_, i) => (
+          <div key={i} className="h-24 animate-pulse rounded-lg bg-surface-muted" />
+        ))}
+      </div>
+    );
+  }
 
   if (!data) {
     return (
-      <div className="flex h-[50vh] flex-col items-center justify-center space-y-4 text-center">
+      <div className="flex flex-col items-center gap-4 py-12 text-center">
         <Network className="h-12 w-12 text-muted-foreground opacity-50" />
-        <div className="space-y-1">
-          <h2 className="text-xl font-semibold">Affiliate Program Unavailable</h2>
-          <p className="text-sm text-muted-foreground">
+        <div>
+          <p className="font-medium">Affiliate Program Unavailable</p>
+          <p className="mt-1 text-sm text-muted-foreground">
             We couldn&apos;t load your affiliate account. Please try again later.
           </p>
         </div>
@@ -73,18 +80,18 @@ export default function AffiliatesPage() {
   }
 
   const affiliateLink = `${APP_URL}/?ref=${data.affiliate.code}`;
-
   const formatCurrency = (amount: number, currency: string = "USD") =>
     new Intl.NumberFormat("en-US", { style: "currency", currency }).format(amount);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <div className="space-y-6 pt-4">
+      {/* Header row */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Affiliate Program</h1>
           <p className="text-sm text-muted-foreground">
-            Share your link, earn {(Number(data.affiliate.commissionRate) * 100).toFixed(0)}% commission on every paid referral.
+            Share your link and earn{" "}
+            {(Number(data.affiliate.commissionRate) * 100).toFixed(0)}% commission on
+            every paid referral.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -97,12 +104,12 @@ export default function AffiliatesPage() {
         </div>
       </div>
 
-      {/* Affiliate Link — always visible */}
-      <Card className="border-primary/20 bg-primary/5 dark:bg-primary/5">
+      {/* Affiliate Link */}
+      <Card className="border-primary/20 bg-primary/5">
         <CardContent className="pt-6">
-          <p className="mb-3 text-sm font-medium text-foreground">Your Affiliate Link</p>
+          <p className="mb-3 text-sm font-medium">Your Affiliate Link</p>
           <div className="flex items-center gap-2">
-            <div className="flex-1 rounded-md border bg-background px-3 py-2 font-mono text-sm text-foreground/80 truncate select-all">
+            <div className="flex-1 truncate rounded-md border bg-background px-3 py-2 font-mono text-sm text-foreground/80 select-all">
               {affiliateLink}
             </div>
             <Button
@@ -117,12 +124,12 @@ export default function AffiliatesPage() {
             </Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Share this permanent link. Clicks, sign-ups, and conversions are all tracked automatically.
+            Share this permanent link. Clicks, sign-ups, and conversions are tracked automatically.
           </p>
         </CardContent>
       </Card>
 
-      {/* Stats Overview */}
+      {/* Stats */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -175,7 +182,7 @@ export default function AffiliatesPage() {
         </Card>
       </div>
 
-      {/* Tabs */}
+      {/* Sub-tabs */}
       <Tabs defaultValue="performance" className="space-y-6">
         <TabsList>
           <TabsTrigger value="performance">
@@ -184,7 +191,7 @@ export default function AffiliatesPage() {
           </TabsTrigger>
           <TabsTrigger value="payouts">
             <CreditCard className="mr-2 h-3.5 w-3.5" />
-            Payouts & Settings
+            Payouts &amp; Settings
           </TabsTrigger>
         </TabsList>
 
