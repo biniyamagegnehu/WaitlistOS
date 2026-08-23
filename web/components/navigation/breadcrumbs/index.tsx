@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { routes } from "@/lib/routes";
+import * as React from "react";
 
 interface BreadcrumbSegment {
   label: string;
@@ -14,6 +15,31 @@ interface BreadcrumbSegment {
 interface BreadcrumbsProps {
   segments?: BreadcrumbSegment[];
   className?: string;
+}
+
+// Context for pages to override breadcrumbs
+const BreadcrumbContext = React.createContext<{
+  segments: BreadcrumbSegment[] | null;
+  setSegments: (segments: BreadcrumbSegment[] | null) => void;
+}>({
+  segments: null,
+  setSegments: () => {},
+});
+
+export function useSetBreadcrumbs() {
+  const context = React.useContext(BreadcrumbContext);
+  if (!context) return null;
+  return context.setSegments;
+}
+
+export function BreadcrumbProvider({ children }: { children: React.ReactNode }) {
+  const [segments, setSegments] = React.useState<BreadcrumbSegment[] | null>(null);
+
+  return (
+    <BreadcrumbContext.Provider value={{ segments, setSegments }}>
+      {children}
+    </BreadcrumbContext.Provider>
+  );
 }
 
 function buildSegments(pathname: string): BreadcrumbSegment[] {
@@ -85,7 +111,9 @@ function buildSegments(pathname: string): BreadcrumbSegment[] {
 
 export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
   const pathname = usePathname();
-  const crumbs = segments ?? buildSegments(pathname);
+  const context = React.useContext(BreadcrumbContext);
+  const contextSegments = context?.segments;
+  const crumbs = segments ?? contextSegments ?? buildSegments(pathname);
 
   if (crumbs.length === 0) return null;
 
