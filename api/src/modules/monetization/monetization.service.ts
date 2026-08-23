@@ -971,7 +971,7 @@ export class MonetizationService {
   async getPayments(userId: string, query: any) {
     const founder = await this.getFounderByUserId(userId);
 
-    const { waitlistId, paymentType, status } = query;
+    const { waitlistId, paymentType, status, provider, startDate, endDate, page = 1, limit = 20 } = query;
 
     const where: any = {
       founderId: founder.id,
@@ -989,33 +989,252 @@ export class MonetizationService {
       where.status = status;
     }
 
+    if (provider) {
+      where.provider = provider;
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+
+    const [payments, total] = await Promise.all([
+      this.prisma.monetizationPayment.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * limit,
+        take: parseInt(limit),
+        select: {
+          id: true,
+          paymentType: true,
+          amount: true,
+          currency: true,
+          platformFee: true,
+          providerFee: true,
+          founderAmount: true,
+          status: true,
+          provider: true,
+          providerPaymentId: true,
+          createdAt: true,
+          updatedAt: true,
+          participant: {
+            select: {
+              id: true,
+              email: true,
+              position: true,
+              hasSkipLinePriority: true,
+            },
+          },
+          waitlist: {
+            select: {
+              id: true,
+              name: true,
+              slug: true,
+            },
+          },
+        },
+      }),
+      this.prisma.monetizationPayment.count({ where }),
+    ]);
+
+    return {
+      payments,
+      pagination: {
+        page: parseInt(page),
+        limit: parseInt(limit),
+        total,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  async getSkipLineAnalytics(userId: string, waitlistId: string, filters: any = {}) {
+    const founder = await this.getFounderByUserId(userId);
+
+    // Verify waitlist ownership
+    const waitlist = await this.prisma.waitlist.findFirst({
+      where: { id: waitlistId, founderId: founder.id },
+    });
+
+    if (!waitlist) {
+      throw new NotFoundException('Waitlist not found');
+    }
+
+    const { startDate, endDate, provider } = filters;
+
+    const where: any = {
+      founderId: founder.id,
+      waitlistId,
+      paymentType: 'SKIP_LINE',
+      status: 'SUCCEEDED',
+    };
+
+    if (provider) {
+      where.provider = provider;
+    }
+
+    if (startDate || endDate) {
+      where.createdAt = {};
+      if (startDate) {
+        where.createdAt.gte = new Date(startDate);
+      }
+      if (endDate) {
+        where.createdAt.lte = new Date(endDate);
+      }
+    }
+
     const payments = await this.prisma.monetizationPayment.findMany({
       where,
-      orderBy: { createdAt: 'desc' },
+      select: {
+        amount: true,
+        currency: true,
+        platformFee: true,
+        providerFee: true,
+        founderAmount: true,
+        provider: true,
+        createdAt: true,
+      },
+    });
+
+    const summary = payments.reduce(
+      (acc, payment) => {
+        const providerKey = payment.provider.toLowerCase();
+        acc.totalRevenue += Number(payment.amount);
+        acc.platformFees += Number(payment.platformFee);
+        acc.providerFees += Number(payment.providerFee);
+        acc.founderRevenue += Number(payment.founderAmount);
+        acc.paidParticipants += 1;
+        
+        if (!acc.byProvider[providerKey]) {
+          acc.byProvider[providerKey] = {
+            totalRevenue: 0,
+            paidParticipants: 0,
+            platformFees: 0,
+            providerFees: 0,
+            founderRevenue: 0,
+          };
+        }
+        
+        acc.byProvider[providerKey].totalRevenue += Number(payment.amount);
+        acc.byProvider[providerKey].paidParticipants += 1;
+        acc.byProvider[providerKey].platformFees += Number(payment.platformFee);
+        acc.byProvider[providerKey].providerFees += Number(payment.providerFee);
+        acc.byProvider[providerKey].founderRevenue += Number(payment.founderAmount);
+        
+        return acc;
+      },
+      {
+        totalRevenue: 0,
+        platformFees: 0,
+        providerFees: 0,
+        founderRevenue: 0,
+        paidParticipants: 0,
+        byProvider: {} as Record<string, any>,
+      },
+    );
+
+    const averagePayment = payments.length > 0 ? summary.totalRevenue / payments.length : 0;
+
+    return {
+      ...summary,
+      averagePayment,
+      currency: payments[0]?.currency || 'USD',
+      skipLineEnabled: waitlist.skipLineEnabled,
+      skipLinePrice: waitlist.skipLinePrice,
+      skipLineCurrency: waitlist.skipLineCurrency,
+    };
+  }
+
+  async getPaymentDetails(userId: string, paymentId: string) {
+    const founder = await this.getFounderByUserId(userId);
+
+    const payment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        id: paymentId,
+        founderId: founder.id,
+      },
       select: {
         id: true,
         paymentType: true,
         amount: true,
         currency: true,
         platformFee: true,
+        providerFee: true,
         founderAmount: true,
         status: true,
+        provider: true,
+        providerPaymentId: true,
         createdAt: true,
+        updatedAt: true,
         participant: {
           select: {
             id: true,
             email: true,
+            position: true,
+            hasSkipLinePriority: true,
+            createdAt: true,
           },
         },
         waitlist: {
           select: {
             id: true,
             name: true,
+            slug: true,
           },
         },
       },
     });
 
-    return payments;
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    return payment;
+  }
+
+  async updateSkipLineConfig(userId: string, waitlistId: string, config: any) {
+    const founder = await this.getFounderByUserId(userId);
+
+    // Verify waitlist ownership
+    const waitlist = await this.prisma.waitlist.findFirst({
+      where: { id: waitlistId, founderId: founder.id },
+    });
+
+    if (!waitlist) {
+      throw new NotFoundException('Waitlist not found');
+    }
+
+    // Validate configuration
+    if (config.skipLinePrice !== undefined && config.skipLinePrice !== null) {
+      const price = Number(config.skipLinePrice);
+      if (isNaN(price) || price <= 0) {
+        throw new BadRequestException('Price must be a positive number');
+      }
+    }
+
+    if (config.skipLineCurrency) {
+      const validCurrencies = ['USD', 'EUR', 'GBP', 'ETB', 'NGN', 'KES', 'ZAR'];
+      if (!validCurrencies.includes(config.skipLineCurrency.toUpperCase())) {
+        throw new BadRequestException(`Currency must be one of: ${validCurrencies.join(', ')}`);
+      }
+      config.skipLineCurrency = config.skipLineCurrency.toUpperCase();
+    }
+
+    // Update waitlist configuration
+    const updatedWaitlist = await this.prisma.waitlist.update({
+      where: { id: waitlistId },
+      data: {
+        skipLineEnabled: config.skipLineEnabled,
+        skipLinePrice: config.skipLinePrice ? Number(config.skipLinePrice) : null,
+        skipLineCurrency: config.skipLineCurrency || null,
+      },
+    });
+
+    return updatedWaitlist;
   }
 }

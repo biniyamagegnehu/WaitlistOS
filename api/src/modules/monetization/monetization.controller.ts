@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Headers, Param, Post, Query, Req, Res, UseGuards, BadRequestException } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query, Req, Res, UseGuards, BadRequestException } from '@nestjs/common';
 import { MonetizationService } from './monetization.service';
 import { ConnectChapaDto, CreateCheckoutDto } from './dto/monetization.dtos';
 import { PaymentProvider } from '@prisma/client';
@@ -234,5 +234,38 @@ export class MonetizationController {
   @Get('payments')
   async getPayments(@Req() req: any, @Query() query: any) {
     return this.monetizationService.getPayments(req.user.userId, query);
+  }
+
+  /**
+   * GET /api/monetization/skip-line/analytics/:waitlistId
+   *
+   * Retrieves Skip the Line analytics for a specific waitlist.
+   */
+  @UseGuards(AccessTokenGuard)
+  @Get('skip-line/analytics/:waitlistId')
+  async getSkipLineAnalytics(@Req() req: any, @Param('waitlistId') waitlistId: string, @Query() filters: any) {
+    return this.monetizationService.getSkipLineAnalytics(req.user.userId, waitlistId, filters);
+  }
+
+  /**
+   * GET /api/monetization/payments/:paymentId
+   *
+   * Retrieves detailed information about a specific payment.
+   */
+  @UseGuards(AccessTokenGuard)
+  @Get('payments/:paymentId')
+  async getPaymentDetails(@Req() req: any, @Param('paymentId') paymentId: string) {
+    return this.monetizationService.getPaymentDetails(req.user.userId, paymentId);
+  }
+
+  /**
+   * PATCH /api/monetization/skip-line/config/:waitlistId
+   *
+   * Updates Skip the Line configuration for a waitlist.
+   */
+  @UseGuards(AccessTokenGuard)
+  @Patch('skip-line/config/:waitlistId')
+  async updateSkipLineConfig(@Req() req: any, @Param('waitlistId') waitlistId: string, @Body() config: any) {
+    return this.monetizationService.updateSkipLineConfig(req.user.userId, waitlistId, config);
   }
 }
