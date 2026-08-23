@@ -44,6 +44,11 @@ export interface DashboardWaitlist {
   skipLineEnabled?: boolean;
   skipLinePrice?: number | null;
   skipLineCurrency?: string | null;
+  preOrderDepositEnabled?: boolean;
+  preOrderDepositAmount?: number | null;
+  preOrderDepositCurrency?: string | null;
+  preOrderDepositPolicy?: string | null;
+  preOrderDepositDescription?: string | null;
 }
 
 export interface PaginationMetadata {

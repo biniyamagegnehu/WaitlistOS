@@ -20,6 +20,7 @@ import { UrgencyWidget } from "@/components/public/UrgencyWidget";
 import { trackFunnelEvent } from "./AnalyticsTracker";
 import { SocialShareButtons } from "@/components/waitlist/SocialShareButtons";
 import { SkipLineCard } from "@/components/waitlist/SkipLineCard";
+import { PreOrderDepositCard } from "@/components/waitlist/PreOrderDepositCard";
 
 export default function PublicWaitlistPageClient() {
   const params = useParams();
@@ -179,6 +180,12 @@ export default function PublicWaitlistPageClient() {
           waitlistId={waitlist.id}
           current_position={joined.position}
           hasPriority={false}
+        />
+        
+        {/* Pre-Order Deposit Card */}
+        <PreOrderDepositCard
+          participantId={joined.id}
+          waitlistId={waitlist.id}
         />
 
         <Card>

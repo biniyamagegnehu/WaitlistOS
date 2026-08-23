@@ -75,4 +75,49 @@ export const monetizationService = {
     const { data } = await api.get(`/monetization/skip-line/status/public/latest?participantId=${participantId}&waitlistId=${waitlistId}`);
     return data;
   },
+
+  // Pre-Order Deposits
+  createPreOrderCheckout: async (waitlistId: string, participantId: string, amount?: number, currency?: string): Promise<{ checkoutUrl: string }> => {
+    const { data } = await api.post("/monetization/pre-order/checkout", {
+      waitlistId,
+      participantId,
+      amount,
+      currency,
+      paymentType: "PRE_ORDER_DEPOSIT",
+    });
+    return data;
+  },
+
+  getPreOrderStatus: async (depositId: string): Promise<any> => {
+    const { data } = await api.get(`/monetization/pre-order/status/${depositId}`);
+    return data;
+  },
+
+  // Dashboard founder endpoints
+  getPreOrderConfig: async (waitlistId: string): Promise<any> => {
+    const { data } = await api.get(`/monetization/pre-order/config/${waitlistId}`);
+    return data;
+  },
+
+  updatePreOrderConfig: async (waitlistId: string, config: any): Promise<any> => {
+    const { data } = await api.patch(`/monetization/pre-order/config/${waitlistId}`, config);
+    return data;
+  },
+
+  getPreOrderDeposits: async (waitlistId: string, query?: any): Promise<any> => {
+    const params = new URLSearchParams(query || {});
+    const { data } = await api.get(`/monetization/pre-order/deposits/${waitlistId}?${params.toString()}`);
+    return data;
+  },
+
+  getPreOrderAnalytics: async (waitlistId: string, query?: any): Promise<any> => {
+    const params = new URLSearchParams(query || {});
+    const { data } = await api.get(`/monetization/pre-order/analytics/${waitlistId}?${params.toString()}`);
+    return data;
+  },
+
+  refundPreOrderDeposit: async (depositId: string): Promise<any> => {
+    const { data } = await api.post(`/monetization/pre-order/refund`, { depositId });
+    return data;
+  },
 };

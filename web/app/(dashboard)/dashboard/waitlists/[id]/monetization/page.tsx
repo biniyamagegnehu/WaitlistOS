@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { ArrowLeft, DollarSign, Zap, Package, Users, ChevronRight } from "lucide-react";
+import { ArrowLeft, DollarSign, Zap, Package, Users, ChevronRight, ShoppingCart } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -194,42 +194,21 @@ export default function WaitlistMonetizationPage() {
               </CardContent>
             </Card>
 
-            {/* Pre-Order Deposit Card */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5 text-warning" />
-                    Pre-Order Deposit
-                  </CardTitle>
-                  <Badge variant="outline">Coming soon</Badge>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">
-                      Collect deposits from participants to validate purchase intent.
-                    </p>
-                    <div className="flex gap-4 text-sm">
-                      <div>
-                        <span className="text-muted-foreground">Revenue: </span>
-                        <span className="font-medium">${overview.preOrderRevenue.toFixed(2)}</span>
-                      </div>
-                      <div>
-                        <span className="text-muted-foreground">Deposits: </span>
-                        <span className="font-medium">{overview.preOrderDeposits}</span>
-                      </div>
-                    </div>
+            <Card 
+              className="cursor-pointer hover:border-primary/50 transition-colors"
+              onClick={() => router.push(routes.waitlistMonetization(waitlistId) + "/pre-order")}
+            >
+              <CardContent className="p-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 rounded-lg bg-surface-muted">
+                    <ShoppingCart className="h-6 w-6 text-primary" />
                   </div>
-                  <Button
-                    variant="outline"
-                    disabled
-                    onClick={() => router.push(routes.waitlistMonetizationPreOrder(waitlistId))}
-                  >
-                    Coming soon
-                    <ChevronRight className="h-4 w-4 ml-2" />
-                  </Button>
+                  <div>
+                    <h3 className="font-semibold text-lg text-foreground mb-1">Pre-Order Deposit</h3>
+                    <p className="text-muted-foreground text-sm">
+                      Allow participants to secure their spot by placing a monetary deposit. Great for physical products or high-ticket services.
+                    </p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
