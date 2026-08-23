@@ -1,4 +1,4 @@
-import { BarChart3, CreditCard, LayoutDashboard, List, Settings, DollarSign } from "lucide-react";
+import { BarChart3, CreditCard, LayoutDashboard, List, Settings, DollarSign, Network } from "lucide-react";
 import { routes } from "@/lib/routes";
 
 export interface DashboardNavLink {
@@ -33,6 +33,12 @@ export const dashboardNavLinks: DashboardNavLink[] = [
     href: "/dashboard/monetization",
     icon: <DollarSign className="h-4 w-4" />,
     match: (pathname) => pathname === "/dashboard/monetization" || pathname.startsWith("/dashboard/monetization/"),
+  },
+  {
+    label: "Affiliates",
+    href: routes.affiliates,
+    icon: <Network className="h-4 w-4" />,
+    match: (pathname) => pathname === routes.affiliates || pathname.startsWith(`${routes.affiliates}/`),
   },
   {
     label: "Billing",
