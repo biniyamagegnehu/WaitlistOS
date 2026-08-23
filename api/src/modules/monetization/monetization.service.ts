@@ -1,13 +1,14 @@
 import { BadRequestException, Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
-import { MonetizationPaymentStatus, MonetizationPaymentType, PaymentAccountStatus, PaymentProvider, Prisma } from '@prisma/client';
+import { MonetizationPaymentStatus, MonetizationPaymentType, PaymentAccountStatus, PaymentProvider, Prisma, PreOrderDepositStatus, PreOrderDepositPolicy } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FeeService } from './fee.service';
 import { StripeMonetizationProvider } from './providers/stripe-monetization.provider';
 import { ChapaMonetizationProvider } from './providers/chapa-monetization.provider';
 import { IMonetizationProvider, VerifyPaymentResult } from './providers/monetization-provider.interface';
-import { CreateCheckoutDto } from './dto/monetization.dtos';
+import { CreateCheckoutDto, UpdatePreOrderDepositConfigDto, RefundPreOrderDepositDto } from './dto/monetization.dtos';
 import { ParticipantsService } from '../participants/participants.service';
+import { EmailsService } from '../emails/emails.service';
 import { randomUUID } from 'crypto';
 
 @Injectable()
@@ -21,6 +22,7 @@ export class MonetizationService {
     private readonly chapaProvider: ChapaMonetizationProvider,
     private readonly configService: ConfigService,
     private readonly participantsService: ParticipantsService,
+    private readonly emailsService: EmailsService,
   ) {}
 
   getProvider(provider: PaymentProvider): IMonetizationProvider {
@@ -467,6 +469,33 @@ export class MonetizationService {
             `Skip the Line priority granted to participant ${payment.participantId} for payment ${payment.id}`,
           );
         }
+
+        // ── Pre-Order Deposit ─────────────────────────────────────
+        if (payment.paymentType === MonetizationPaymentType.PRE_ORDER_DEPOSIT) {
+          const deposit = await tx.preOrderDeposit.findFirst({
+            where: { monetizationPaymentId: payment.id },
+            include: { participant: true, waitlist: true }
+          });
+          if (deposit) {
+            await tx.preOrderDeposit.update({
+              where: { id: deposit.id },
+              data: {
+                status: PreOrderDepositStatus.PAID,
+                paidAt: new Date(),
+              }
+            });
+            this.logger.log(`Pre-Order Deposit marked as PAID for deposit ${deposit.id}`);
+            
+            // Queue confirmation email
+            this.emailsService.queuePreOrderDepositSuccessfulEmail(
+              deposit.participant.email,
+              deposit.waitlist.name,
+              Number(deposit.amount),
+              deposit.currency,
+              deposit.policy,
+            );
+          }
+        }
       });
 
       // ── Rerank participants outside transaction to see committed changes ─────────────
@@ -493,6 +522,19 @@ export class MonetizationService {
           where: { id: payment.id },
           data: { status: MonetizationPaymentStatus.FAILED },
         });
+        
+        if (payment.paymentType === MonetizationPaymentType.PRE_ORDER_DEPOSIT) {
+          const deposit = await tx.preOrderDeposit.findFirst({
+            where: { monetizationPaymentId: payment.id }
+          });
+          if (deposit) {
+            await tx.preOrderDeposit.update({
+              where: { id: deposit.id },
+              data: { status: PreOrderDepositStatus.FAILED }
+            });
+          }
+        }
+
         await tx.monetizationPaymentEvent.update({
           where: {
             provider_providerEventId: {
@@ -517,6 +559,217 @@ export class MonetizationService {
     }
 
     return { received: true };
+  }
+
+  // ── Pre-Order Deposit ───────────────────────────────────────────────────────
+
+  async getPreOrderConfig(userId: string, waitlistId: string) {
+    const founder = await this.getFounderByUserId(userId);
+    const waitlist = await this.prisma.waitlist.findFirst({
+      where: { id: waitlistId, founderId: founder.id },
+    });
+
+    if (!waitlist) throw new NotFoundException('Waitlist not found');
+
+    return {
+      preOrderDepositEnabled: waitlist.preOrderDepositEnabled,
+      preOrderDepositAmount: waitlist.preOrderDepositAmount,
+      preOrderDepositCurrency: waitlist.preOrderDepositCurrency,
+      preOrderDepositPolicy: waitlist.preOrderDepositPolicy,
+      preOrderDepositDescription: waitlist.preOrderDepositDescription,
+    };
+  }
+
+  async updatePreOrderConfig(userId: string, waitlistId: string, config: UpdatePreOrderDepositConfigDto) {
+    const founder = await this.getFounderByUserId(userId);
+    const waitlist = await this.prisma.waitlist.findFirst({
+      where: { id: waitlistId, founderId: founder.id },
+    });
+
+    if (!waitlist) throw new NotFoundException('Waitlist not found');
+
+    const updated = await this.prisma.waitlist.update({
+      where: { id: waitlistId },
+      data: {
+        preOrderDepositEnabled: config.preOrderDepositEnabled,
+        preOrderDepositAmount: config.preOrderDepositAmount,
+        preOrderDepositCurrency: config.preOrderDepositCurrency,
+        preOrderDepositPolicy: config.preOrderDepositPolicy,
+        preOrderDepositDescription: config.preOrderDepositDescription,
+      },
+    });
+
+    return {
+      preOrderDepositEnabled: updated.preOrderDepositEnabled,
+      preOrderDepositAmount: updated.preOrderDepositAmount,
+      preOrderDepositCurrency: updated.preOrderDepositCurrency,
+      preOrderDepositPolicy: updated.preOrderDepositPolicy,
+      preOrderDepositDescription: updated.preOrderDepositDescription,
+    };
+  }
+
+  async createPreOrderCheckoutPublic(dto: CreateCheckoutDto) {
+    const waitlist = await this.prisma.waitlist.findUnique({ where: { id: dto.waitlistId } });
+    if (!waitlist || !waitlist.preOrderDepositEnabled) {
+      throw new BadRequestException('Pre-Order Deposit is not enabled for this waitlist');
+    }
+    if (!waitlist.preOrderDepositPolicy || !waitlist.preOrderDepositAmount) {
+      throw new BadRequestException('Pre-Order Deposit is misconfigured');
+    }
+
+    if (!dto.participantId) throw new BadRequestException('Participant ID is required');
+
+    const participant = await this.prisma.participant.findUnique({ where: { id: dto.participantId } });
+    if (!participant || participant.waitlistId !== waitlist.id) {
+      throw new BadRequestException('Participant not found or invalid');
+    }
+
+    const existingDeposit = await this.prisma.preOrderDeposit.findFirst({
+      where: {
+        participantId: dto.participantId,
+        waitlistId: dto.waitlistId,
+        status: { in: [PreOrderDepositStatus.PAID, PreOrderDepositStatus.COLLECTION_PENDING, PreOrderDepositStatus.COLLECTED] },
+      },
+    });
+    if (existingDeposit) throw new ConflictException('You have already paid a deposit');
+
+    const amount = dto.amount || Number(waitlist.preOrderDepositAmount) || 5.00;
+    const currency = dto.currency || waitlist.preOrderDepositCurrency || 'USD';
+    const frontendUrl = this.configService.get<string>('app.frontendUrl') ?? 'http://localhost:3001';
+    const returnUrl = `${frontendUrl}/payment/pre-order/success?waitlistId=${waitlist.id}`;
+    const cancelUrl = `${frontendUrl}/payment/pre-order/cancel?waitlistId=${waitlist.id}`;
+
+    const { checkoutUrl } = await this.createCheckout(
+      waitlist.founderId,
+      participant.email,
+      {
+        ...dto,
+        paymentType: MonetizationPaymentType.PRE_ORDER_DEPOSIT,
+        amount,
+        currency,
+      },
+      returnUrl,
+      cancelUrl,
+    );
+
+    // Retrieve the created payment to link it to the deposit
+    // createCheckout returns checkoutUrl, so we need to find the latest payment
+    const payment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        participantId: dto.participantId,
+        waitlistId: dto.waitlistId,
+        paymentType: MonetizationPaymentType.PRE_ORDER_DEPOSIT,
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (payment) {
+      await this.prisma.preOrderDeposit.create({
+        data: {
+          waitlistId: waitlist.id,
+          participantId: participant.id,
+          monetizationPaymentId: payment.id,
+          amount: payment.amount,
+          currency: payment.currency,
+          provider: payment.provider,
+          status: PreOrderDepositStatus.PENDING,
+          policy: waitlist.preOrderDepositPolicy,
+        }
+      });
+    }
+
+    return { checkoutUrl };
+  }
+
+  async getPreOrderStatusPublic(depositId: string) {
+    const deposit = await this.prisma.preOrderDeposit.findUnique({
+      where: { id: depositId },
+      include: {
+        participant: { select: { id: true, email: true, position: true } },
+        waitlist: { select: { id: true, name: true, slug: true } },
+      },
+    });
+    if (!deposit) throw new NotFoundException('Deposit not found');
+    const { participant, waitlist, ...depositData } = deposit;
+    return { deposit: depositData, participant, waitlist };
+  }
+
+  async getPreOrderLatestPublic(participantId: string, waitlistId: string) {
+    const deposit = await this.prisma.preOrderDeposit.findFirst({
+      where: { participantId, waitlistId },
+      include: {
+        participant: { select: { id: true, email: true, position: true } },
+        waitlist: { select: { id: true, name: true, slug: true } },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+    if (!deposit) throw new NotFoundException('No deposit found');
+    const { participant, waitlist, ...depositData } = deposit;
+    return { deposit: depositData, participant, waitlist };
+  }
+
+  async getPreOrderDeposits(userId: string, waitlistId: string, query: any) {
+    const founder = await this.getFounderByUserId(userId);
+    const waitlist = await this.prisma.waitlist.findFirst({ where: { id: waitlistId, founderId: founder.id } });
+    if (!waitlist) throw new NotFoundException('Waitlist not found');
+
+    const deposits = await this.prisma.preOrderDeposit.findMany({
+      where: { waitlistId },
+      include: { participant: { select: { email: true, createdAt: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+    return deposits;
+  }
+
+  async getPreOrderAnalytics(userId: string, waitlistId: string, filters: any) {
+    const founder = await this.getFounderByUserId(userId);
+    const waitlist = await this.prisma.waitlist.findFirst({ where: { id: waitlistId, founderId: founder.id } });
+    if (!waitlist) throw new NotFoundException('Waitlist not found');
+
+    const deposits = await this.prisma.preOrderDeposit.findMany({
+      where: { waitlistId, status: PreOrderDepositStatus.PAID },
+    });
+    const totalDeposits = deposits.length;
+    const grossRevenue = deposits.reduce((sum, d) => sum + Number(d.amount), 0);
+
+    return { totalDeposits, grossRevenue };
+  }
+
+  async refundPreOrderDeposit(userId: string, dto: RefundPreOrderDepositDto) {
+    const founder = await this.getFounderByUserId(userId);
+    
+    const deposit = await this.prisma.preOrderDeposit.findFirst({
+      where: { id: dto.depositId, waitlist: { founderId: founder.id } },
+      include: { monetizationPayment: true },
+    });
+    
+    if (!deposit) throw new NotFoundException('Deposit not found or unauthorized');
+    if (deposit.status !== PreOrderDepositStatus.PAID) throw new BadRequestException('Deposit is not in PAID state');
+    if (deposit.policy !== PreOrderDepositPolicy.REFUNDABLE) throw new BadRequestException('This deposit is not refundable');
+
+    const payment = deposit.monetizationPayment;
+    if (!payment) throw new BadRequestException('No underlying payment found');
+
+    const account = await this.prisma.paymentAccount.findUnique({
+      where: { founderId_provider: { founderId: founder.id, provider: payment.provider } }
+    });
+    if (!account) throw new BadRequestException('Payment account not found');
+
+    const providerService = this.getProvider(payment.provider);
+    const refundResult = await providerService.refundPayment(payment.providerPaymentId, Number(deposit.amount), account, 'requested_by_customer');
+
+    if (refundResult.status === 'SUCCESS' || refundResult.status === 'PENDING') {
+      await this.prisma.preOrderDeposit.update({
+        where: { id: deposit.id },
+        data: {
+          status: refundResult.status === 'SUCCESS' ? PreOrderDepositStatus.REFUNDED : PreOrderDepositStatus.REFUND_PENDING,
+          refundedAt: refundResult.status === 'SUCCESS' ? new Date() : null,
+        }
+      });
+      return { success: true, status: refundResult.status };
+    } else {
+      throw new BadRequestException(`Refund failed: ${refundResult.error}`);
+    }
   }
 
   // ── Skip the Line ───────────────────────────────────────────────────────────
@@ -881,6 +1134,97 @@ export class MonetizationService {
       participant: payment.participant,
       waitlist: payment.waitlist,
     };
+  }
+
+  /**
+   * Manually verify a Pre-Order Chapa payment by checking its status directly from Chapa API.
+   * This is used as a fallback when webhooks fail or for testing purposes.
+   */
+  async verifyPreOrderPayment(paymentId: string): Promise<{ message: string; payment: any }> {
+    const payment = await this.prisma.monetizationPayment.findUnique({
+      where: { id: paymentId },
+      include: {
+        participant: true,
+        waitlist: true,
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    if (payment.status === MonetizationPaymentStatus.SUCCEEDED) {
+      return { message: 'Payment already verified', payment };
+    }
+
+    if (payment.provider !== PaymentProvider.CHAPA) {
+      throw new BadRequestException('Payment is not a Chapa payment');
+    }
+
+    const account = await this.prisma.paymentAccount.findFirst({
+      where: {
+        founderId: payment.founderId,
+        provider: PaymentProvider.CHAPA,
+        status: PaymentAccountStatus.ACTIVE,
+      },
+    });
+
+    if (!account) {
+      throw new BadRequestException('No active Chapa account found for this payment');
+    }
+
+    const provider = this.getProvider(PaymentProvider.CHAPA);
+    const verificationResult: VerifyPaymentResult = await provider.verifyPayment(paymentId, account);
+
+    if (verificationResult.status === 'SUCCEEDED') {
+      this.logger.log(`Chapa pre-order payment verification returned SUCCEEDED for payment ${paymentId}`);
+      
+      await this.prisma.$transaction(async (tx) => {
+        await tx.monetizationPayment.update({
+          where: { id: paymentId },
+          data: {
+            status: MonetizationPaymentStatus.SUCCEEDED,
+            providerPaymentId: verificationResult.providerPaymentId,
+          },
+        });
+
+        const deposit = await tx.preOrderDeposit.findFirst({
+          where: { monetizationPaymentId: paymentId },
+        });
+
+        if (deposit) {
+          await tx.preOrderDeposit.update({
+            where: { id: deposit.id },
+            data: {
+              status: PreOrderDepositStatus.PAID,
+              paidAt: new Date(),
+            }
+          });
+          
+          this.logger.log(`Successfully updated Pre-Order Deposit ${deposit.id} to PAID`);
+        }
+      });
+
+      const deposit = await this.prisma.preOrderDeposit.findFirst({
+        where: { monetizationPaymentId: paymentId },
+        include: { participant: true, waitlist: true }
+      });
+      if (deposit && deposit.participant) {
+        this.emailsService.queuePreOrderDepositSuccessfulEmail(
+          deposit.participant.email,
+          deposit.waitlist.name,
+          Number(deposit.amount),
+          deposit.currency,
+          deposit.policy as any
+        );
+      }
+
+      this.logger.log(`Chapa pre-order payment ${paymentId} verified successfully via manual check`);
+    } else {
+      this.logger.warn(`Chapa pre-order payment verification returned ${verificationResult.status} for payment ${paymentId}`);
+    }
+
+    return { message: `Verification check completed. Status: ${verificationResult.status}`, payment };
   }
 
   /**

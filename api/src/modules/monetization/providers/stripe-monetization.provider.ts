@@ -249,4 +249,46 @@ export class StripeMonetizationProvider implements IMonetizationProvider {
       };
     }
   }
+
+  async refundPayment(
+    paymentId: string,
+    amount: number,
+    account: PaymentAccount,
+    reason?: string,
+  ): Promise<{ status: 'SUCCESS' | 'FAILED' | 'PENDING'; providerRefundId?: string; error?: string }> {
+    const stripe = this.assertStripeInitialized();
+
+    try {
+      // paymentId here is the Stripe Checkout Session ID
+      const session = await stripe.checkout.sessions.retrieve(paymentId, {
+        expand: ['payment_intent'],
+      });
+
+      const paymentIntent = session.payment_intent;
+      if (!paymentIntent) {
+        return { status: 'FAILED', error: 'PaymentIntent not found for this session.' };
+      }
+
+      const paymentIntentId = typeof paymentIntent === 'string' ? paymentIntent : paymentIntent.id;
+
+      const refund = await stripe.refunds.create({
+        payment_intent: paymentIntentId,
+        amount: Math.round(amount * 100),
+        reason: reason as any,
+        metadata: {
+          checkoutSessionId: paymentId,
+        }
+      }, {
+        stripeAccount: account.providerAccountId!,
+      });
+
+      return {
+        status: refund.status === 'succeeded' ? 'SUCCESS' : (refund.status === 'pending' ? 'PENDING' : 'FAILED'),
+        providerRefundId: refund.id,
+      };
+    } catch (error) {
+      this.logger.error(`Stripe refund failed: ${error instanceof Error ? error.message : String(error)}`);
+      return { status: 'FAILED', error: error instanceof Error ? error.message : String(error) };
+    }
+  }
 }

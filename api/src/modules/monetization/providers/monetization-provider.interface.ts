@@ -36,4 +36,11 @@ export interface IMonetizationProvider {
     paymentId: string,
     account: PaymentAccount,
   ): Promise<VerifyPaymentResult>;
+
+  refundPayment(
+    paymentId: string,
+    amount: number,
+    account: PaymentAccount,
+    reason?: string,
+  ): Promise<{ status: 'SUCCESS' | 'FAILED' | 'PENDING'; providerRefundId?: string; error?: string }>;
 }

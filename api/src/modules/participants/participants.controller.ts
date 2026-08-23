@@ -67,6 +67,12 @@ export class ParticipantsController {
   }
 
   @Public()
+  @Get(':id/pre-order-status')
+  getPreOrderStatus(@Param('id') id: string, @Query('waitlistId') waitlistId: string) {
+    return this.participantsService.getPreOrderStatus(id, waitlistId);
+  }
+
+  @Public()
   @Get(':id/debug-rank')
   async debugRank(@Param('id') id: string, @Query('waitlistId') waitlistId: string) {
     return this.participantsService.debugRank(waitlistId);

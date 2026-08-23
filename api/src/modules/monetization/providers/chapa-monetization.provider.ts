@@ -206,4 +206,19 @@ export class ChapaMonetizationProvider implements IMonetizationProvider {
 
     return data.data.subaccount_id;
   }
+
+  async refundPayment(
+    paymentId: string,
+    amount: number,
+    account: PaymentAccount,
+    reason?: string,
+  ): Promise<{ status: 'SUCCESS' | 'FAILED' | 'PENDING'; providerRefundId?: string; error?: string }> {
+    this.logger.warn(`Refund requested for Chapa payment ${paymentId}, but refunds via API are not supported in this integration.`);
+    
+    // Limitation: Chapa refunds often require manual intervention or a different endpoint not exposed here.
+    return {
+      status: 'FAILED',
+      error: 'Chapa does not support automated refunds via this API. Please initiate the refund manually from your Chapa dashboard.'
+    };
+  }
 }

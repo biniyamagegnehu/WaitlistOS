@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query, Req, Res, UseGuards, BadRequestException } from '@nestjs/common';
 import { MonetizationService } from './monetization.service';
-import { ConnectChapaDto, CreateCheckoutDto } from './dto/monetization.dtos';
+import { ConnectChapaDto, CreateCheckoutDto, UpdatePreOrderDepositConfigDto, RefundPreOrderDepositDto } from './dto/monetization.dtos';
 import { PaymentProvider } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
@@ -267,5 +267,61 @@ export class MonetizationController {
   @Patch('skip-line/config/:waitlistId')
   async updateSkipLineConfig(@Req() req: any, @Param('waitlistId') waitlistId: string, @Body() config: any) {
     return this.monetizationService.updateSkipLineConfig(req.user.userId, waitlistId, config);
+  }
+
+  // ── Pre-Order Deposit ───────────────────────────────────────────────────────
+
+  @UseGuards(AccessTokenGuard)
+  @Get('pre-order/config/:waitlistId')
+  async getPreOrderConfig(@Req() req: any, @Param('waitlistId') waitlistId: string) {
+    return this.monetizationService.getPreOrderConfig(req.user.userId, waitlistId);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Patch('pre-order/config/:waitlistId')
+  async updatePreOrderConfig(@Req() req: any, @Param('waitlistId') waitlistId: string, @Body() config: UpdatePreOrderDepositConfigDto) {
+    return this.monetizationService.updatePreOrderConfig(req.user.userId, waitlistId, config);
+  }
+
+  @Public()
+  @Post('pre-order/checkout')
+  async createPreOrderCheckout(@Body() dto: CreateCheckoutDto) {
+    return this.monetizationService.createPreOrderCheckoutPublic(dto);
+  }
+
+  @Public()
+  @Get('pre-order/status/:depositId')
+  async getPreOrderStatusPublic(@Param('depositId') depositId: string) {
+    return this.monetizationService.getPreOrderStatusPublic(depositId);
+  }
+
+  @Public()
+  @Get('pre-order/status/public/latest')
+  async getPreOrderLatestPublic(@Query('participantId') participantId: string, @Query('waitlistId') waitlistId: string) {
+    return this.monetizationService.getPreOrderLatestPublic(participantId, waitlistId);
+  }
+
+  @Public()
+  @Post('pre-order/verify/:paymentId')
+  async verifyPreOrderPayment(@Param('paymentId') paymentId: string) {
+    return this.monetizationService.verifyPreOrderPayment(paymentId);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Get('pre-order/deposits/:waitlistId')
+  async getPreOrderDeposits(@Req() req: any, @Param('waitlistId') waitlistId: string, @Query() query: any) {
+    return this.monetizationService.getPreOrderDeposits(req.user.userId, waitlistId, query);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Get('pre-order/analytics/:waitlistId')
+  async getPreOrderAnalytics(@Req() req: any, @Param('waitlistId') waitlistId: string, @Query() filters: any) {
+    return this.monetizationService.getPreOrderAnalytics(req.user.userId, waitlistId, filters);
+  }
+
+  @UseGuards(AccessTokenGuard)
+  @Post('pre-order/refund')
+  async refundPreOrderDeposit(@Req() req: any, @Body() dto: RefundPreOrderDepositDto) {
+    return this.monetizationService.refundPreOrderDeposit(req.user.userId, dto);
   }
 }

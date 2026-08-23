@@ -1,5 +1,5 @@
-import { MonetizationPaymentType, PaymentProvider } from '@prisma/client';
-import { IsEnum, IsNumber, IsOptional, IsString, Min } from 'class-validator';
+import { MonetizationPaymentType, PaymentProvider, PreOrderDepositPolicy } from '@prisma/client';
+import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateCheckoutDto {
   @IsString()
@@ -38,4 +38,33 @@ export class ConnectChapaDto {
 
   @IsString()
   businessName: string;
+}
+
+export class UpdatePreOrderDepositConfigDto {
+  @IsBoolean()
+  @IsOptional()
+  preOrderDepositEnabled?: boolean;
+
+  @IsNumber()
+  @Min(0.01)
+  @IsOptional()
+  preOrderDepositAmount?: number;
+
+  @IsString()
+  @IsOptional()
+  preOrderDepositCurrency?: string;
+
+  @IsEnum(PreOrderDepositPolicy)
+  @IsOptional()
+  preOrderDepositPolicy?: PreOrderDepositPolicy;
+
+  @IsString()
+  @MaxLength(500)
+  @IsOptional()
+  preOrderDepositDescription?: string;
+}
+
+export class RefundPreOrderDepositDto {
+  @IsString()
+  depositId: string;
 }

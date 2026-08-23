@@ -673,4 +673,54 @@ export class ParticipantsService {
       },
     };
   }
+
+  async getPreOrderStatus(participantId: string, waitlistId: string) {
+    const participant = await this.prisma.participant.findUnique({
+      where: { id: participantId },
+      include: {
+        waitlist: {
+          select: {
+            id: true,
+            preOrderDepositEnabled: true,
+            preOrderDepositAmount: true,
+            preOrderDepositCurrency: true,
+            preOrderDepositPolicy: true,
+            preOrderDepositDescription: true,
+          },
+        },
+      },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Participant not found');
+    }
+
+    if (participant.waitlistId !== waitlistId) {
+      throw new BadRequestException('Participant does not belong to this waitlist');
+    }
+
+    // Check for existing paid deposit
+    const existingDeposit = await this.prisma.preOrderDeposit.findFirst({
+      where: {
+        participantId,
+        waitlistId,
+        status: 'PAID',
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        eligible: !existingDeposit,
+        hasPaid: !!existingDeposit,
+        waitlist: {
+          preOrderDepositEnabled: participant.waitlist.preOrderDepositEnabled,
+          preOrderDepositAmount: participant.waitlist.preOrderDepositAmount,
+          preOrderDepositCurrency: participant.waitlist.preOrderDepositCurrency,
+          preOrderDepositPolicy: participant.waitlist.preOrderDepositPolicy,
+          preOrderDepositDescription: participant.waitlist.preOrderDepositDescription,
+        },
+      },
+    };
+  }
 }
