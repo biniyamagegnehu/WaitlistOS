@@ -68,6 +68,11 @@ export class EmailsProcessor {
     await this.emailsService.sendPaymentSuccessfulEmail(job.data);
   }
 
+  @Process('send-pre-order-deposit-successful')
+  async handleSendPreOrderDepositSuccessful(job: Job<any>) {
+    await this.emailsService.sendPreOrderDepositSuccessfulEmail(job.data);
+  }
+
   @Process('send-subscription-activated')
   async handleSendSubscriptionActivated(job: Job<any>) {
     await this.emailsService.sendSubscriptionActivatedEmail(job.data);
