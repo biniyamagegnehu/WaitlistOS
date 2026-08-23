@@ -23,6 +23,10 @@ export const createWaitlistSchema = z.object({
     .max(2000, "Description must be at most 2000 characters")
     .optional(),
   themeMode: z.enum(["SYSTEM", "LIGHT", "DARK"]).optional(),
+  skipLineEnabled: z.boolean().optional(),
+  skipLinePrice: z.number().min(0.01, "Price must be greater than 0").optional(),
+  skipLineCurrency: z.string().optional(),
+  slug: z.string().optional(),
 });
 
 export type CreateWaitlistFormData = z.infer<typeof createWaitlistSchema>;

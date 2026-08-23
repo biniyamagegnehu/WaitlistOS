@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Upload, Sun, Moon, Monitor } from "lucide-react";
+import { Upload, Sun, Moon, Monitor, Zap, Info } from "lucide-react";
 import { uploadFile } from "@/services/files";
 import { getApiErrorMessage } from "@/lib/errors";
 import toast from "react-hot-toast";
@@ -28,8 +28,11 @@ export interface WaitlistFormProps {
     logoUrl?: string | null;
     slug?: string;
     themeMode?: "SYSTEM" | "LIGHT" | "DARK";
+    skipLineEnabled?: boolean;
+    skipLinePrice?: number;
+    skipLineCurrency?: string;
   };
-  onSubmit: (data: CreateWaitlistFormData & { logoId?: string; slug?: string; themeMode?: "SYSTEM" | "LIGHT" | "DARK" }) => Promise<void>;
+  onSubmit: (data: CreateWaitlistFormData & { logoId?: string; slug?: string; themeMode?: "SYSTEM" | "LIGHT" | "DARK"; skipLineEnabled?: boolean; skipLinePrice?: number; skipLineCurrency?: string }) => Promise<void>;
   submitButtonText: string;
   serverError?: string;
 }
@@ -52,7 +55,9 @@ export function WaitlistForm({
     handleSubmit,
     trigger,
     formState: { errors, isSubmitting },
-  } = useForm<CreateWaitlistFormData & { slug?: string }>({
+    watch,
+    setValue,
+  } = useForm<CreateWaitlistFormData & { slug?: string; skipLineEnabled?: boolean; skipLinePrice?: number; skipLineCurrency?: string }>({
     resolver: zodResolver(createWaitlistSchema),
     defaultValues: {
       name: initialValues?.name || "",
@@ -60,9 +65,14 @@ export function WaitlistForm({
       description: initialValues?.description || "",
       slug: initialValues?.slug || "",
       themeMode: initialValues?.themeMode || "SYSTEM",
+      skipLineEnabled: initialValues?.skipLineEnabled || false,
+      skipLinePrice: initialValues?.skipLinePrice || 10,
+      skipLineCurrency: initialValues?.skipLineCurrency || "USD",
     },
     mode: "onSubmit",
   });
+
+  const skipLineEnabled = watch("skipLineEnabled");
 
   React.useEffect(() => {
     return () => {
@@ -87,6 +97,14 @@ export function WaitlistForm({
   const onFormSubmit = async (data: CreateWaitlistFormData) => {
     setLogoError(null);
 
+    // Ensure Skip the Line fields are always included in the submission
+    const submissionData = {
+      ...data,
+      skipLineEnabled: data.skipLineEnabled || false,
+      skipLinePrice: data.skipLinePrice || 10,
+      skipLineCurrency: data.skipLineCurrency || "USD",
+    };
+
     // For create mode, logo is required - validate first before any other processing
     if (mode === "create") {
       const validationError = validateLogoFile(logoFile);
@@ -98,7 +116,7 @@ export function WaitlistForm({
 
       try {
         const uploaded = await uploadFile(logoFile as File);
-        await onSubmit({ ...data, logoId: uploaded.id });
+        await onSubmit({ ...submissionData, logoId: uploaded.id });
         toast.success(mode === "create" ? "Waitlist created successfully" : "Waitlist updated successfully");
       } catch (error: unknown) {
         toast.error(getApiErrorMessage(error, "Failed to upload logo"));
@@ -117,7 +135,7 @@ export function WaitlistForm({
         }
       }
       try {
-        await onSubmit({ ...data, logoId });
+        await onSubmit({ ...submissionData, logoId });
         toast.success("Waitlist updated successfully");
       } catch (error: unknown) {
         toast.error(getApiErrorMessage(error, "Failed to update waitlist"));
@@ -218,6 +236,69 @@ export function WaitlistForm({
                   <span className="z-10 text-sm font-medium text-foreground">Dark</span>
                 </label>
               </div>
+            </div>
+          )}
+
+          {mode === "edit" && (
+            <div className="space-y-4 pt-4 border-t border-border">
+              <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm font-medium text-foreground">Skip the Line</label>
+                    <Zap className="h-4 w-4 text-primary" />
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    Let participants pay to move into the top 10% of the waitlist
+                  </p>
+                </div>
+                <label className="relative inline-flex cursor-pointer items-center">
+                  <input
+                    type="checkbox"
+                    className="peer sr-only"
+                    {...register("skipLineEnabled")}
+                  />
+                  <div className="peer h-6 w-11 rounded-full bg-border after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all after:content-[''] peer-checked:bg-primary peer-checked:after:translate-x-full peer-checked:after:border-white" />
+                </label>
+              </div>
+
+              {skipLineEnabled && (
+                <div className="space-y-4 pl-4 border-l-2 border-primary/20">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Price</label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0.01"
+                          className="pl-7"
+                          {...register("skipLinePrice", { valueAsNumber: true })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-sm font-medium text-foreground">Currency</label>
+                      <select
+                        className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                        {...register("skipLineCurrency")}
+                      >
+                        <option value="USD">USD</option>
+                        <option value="ETB">ETB</option>
+                        <option value="EUR">EUR</option>
+                        <option value="GBP">GBP</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-2 rounded-md bg-primary/5 p-3">
+                    <Info className="h-4 w-4 text-primary mt-0.5 flex-shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                      Participants who purchase Skip the Line will be placed in the top 10% of the waitlist. Priority slots are limited and allocated on a first-come, first-served basis.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

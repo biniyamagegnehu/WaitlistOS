@@ -5,6 +5,7 @@ export interface DashboardParticipant {
   referralCount: number;
   createdAt: string;
   status: string;
+  hasSkipLinePriority?: boolean;
   engagement?: {
     riskScore: number;
     riskLevel: 'HEALTHY' | 'MEDIUM_RISK' | 'HIGH_RISK';
@@ -40,6 +41,9 @@ export interface DashboardWaitlist {
   showBatchProgress: boolean;
   showCountdown: boolean;
   themeMode?: "SYSTEM" | "LIGHT" | "DARK";
+  skipLineEnabled?: boolean;
+  skipLinePrice?: number | null;
+  skipLineCurrency?: string | null;
 }
 
 export interface PaginationMetadata {

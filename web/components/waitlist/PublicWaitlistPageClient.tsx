@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { CheckCircle, Users, Trophy, TrendingUp } from "lucide-react";
+import { CheckCircle, Users, Trophy, TrendingUp, Zap } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import MultiStepSignupForm from "@/components/waitlist/MultiStepSignupForm";
 import { getPublicWaitlistBySlug } from "@/services/api";
@@ -19,6 +19,7 @@ import { TeamSection } from "@/components/waitlist/TeamSection";
 import { UrgencyWidget } from "@/components/public/UrgencyWidget";
 import { trackFunnelEvent } from "./AnalyticsTracker";
 import { SocialShareButtons } from "@/components/waitlist/SocialShareButtons";
+import { SkipLineCard } from "@/components/waitlist/SkipLineCard";
 
 export default function PublicWaitlistPageClient() {
   const params = useParams();
@@ -171,6 +172,14 @@ export default function PublicWaitlistPageClient() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Skip the Line Card */}
+        <SkipLineCard
+          participantId={joined.id}
+          waitlistId={waitlist.id}
+          current_position={joined.position}
+          hasPriority={false}
+        />
 
         <Card>
           <CardContent className="space-y-3 p-5 text-left">

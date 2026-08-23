@@ -351,7 +351,7 @@ export function SignupFieldRenderer({ field, value, onChange, error, disabled }:
         );
 
       default:
-        return <div className="text-sm text-destructive p-3 rounded-md bg-destructive/10">Unsupported field type: {field.type}</div>;
+        return <div className="text-sm text-destructive p-3 rounded-md bg-destructive/10">Unsupported field type: {(field as any).type}</div>;
     }
   };
 

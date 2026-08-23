@@ -160,6 +160,9 @@ export async function updateWaitlist(
     newParticipantRankingBonus?: number;
     streakBonusesEnabled?: boolean;
     themeMode?: 'SYSTEM' | 'LIGHT' | 'DARK';
+    skipLineEnabled?: boolean;
+    skipLinePrice?: number;
+    skipLineCurrency?: string;
   }
 ): Promise<DashboardWaitlist> {
   const response = await api.patch<DashboardWaitlist>(
