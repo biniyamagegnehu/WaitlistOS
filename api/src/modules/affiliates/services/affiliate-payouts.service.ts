@@ -1,0 +1,380 @@
+import { Injectable, Logger } from '@nestjs/common';
+import { PrismaService } from '../../../prisma/prisma.service';
+import {
+  AffiliateCommissionStatus,
+  AffiliatePayoutStatus,
+  PaymentAccountStatus,
+  PaymentProvider,
+  Prisma,
+} from '@prisma/client';
+
+import { StripeAffiliatePayoutProvider } from '../providers/stripe-affiliate-payout.provider';
+import { ChapaAffiliatePayoutProvider } from '../providers/chapa-affiliate-payout.provider';
+import { IAffiliatePayoutProvider } from '../providers/affiliate-payout-provider.interface';
+import { AFFILIATE_MINIMUM_PAYOUT_AMOUNT, AFFILIATE_PAYOUT_BATCH_SIZE } from '../affiliate.constants';
+
+export interface CommissionInput {
+  affiliateId: string;
+  referredFounderId: string;
+  conversionId: string;
+  sourcePaymentId: string;
+  amount: Prisma.Decimal;
+  currency: string;
+  commissionRate: Prisma.Decimal;
+}
+
+@Injectable()
+export class AffiliatePayoutsService {
+  private readonly logger = new Logger(AffiliatePayoutsService.name);
+
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly stripePayoutProvider: StripeAffiliatePayoutProvider,
+    private readonly chapaPayoutProvider: ChapaAffiliatePayoutProvider,
+  ) {}
+
+  private getProvider(provider: PaymentProvider): IAffiliatePayoutProvider {
+    if (provider === PaymentProvider.STRIPE) return this.stripePayoutProvider;
+    if (provider === PaymentProvider.CHAPA) return this.chapaPayoutProvider;
+    throw new Error(`Unsupported payout provider: ${provider}`);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Commission Creation (called by PaymentService after successful subscription)
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Create a commission record.
+   * Uses ELIGIBLE status for subscription payments.
+   */
+  async createCommission(input: CommissionInput): Promise<void> {
+    // Idempotency: if a commission already exists for this payment, skip
+    const existing = await this.prisma.affiliateCommission.findFirst({
+      where: {
+        sourcePaymentId: input.sourcePaymentId,
+        isReversal: false,
+      },
+    });
+
+    if (existing) {
+      this.logger.log(`Commission already exists for payment ${input.sourcePaymentId}, skipping`);
+      return;
+    }
+
+    const eligibleAt = new Date();
+    // Settlement window: 14 days (gives time to catch refunds before paying out)
+    eligibleAt.setDate(eligibleAt.getDate() + 14);
+
+    await this.prisma.affiliateCommission.create({
+      data: {
+        affiliateId: input.affiliateId,
+        referredFounderId: input.referredFounderId,
+        conversionId: input.conversionId,
+        sourcePaymentId: input.sourcePaymentId,
+        amount: input.amount,
+        currency: input.currency,
+        commissionRate: input.commissionRate,
+        status: AffiliateCommissionStatus.PENDING,
+        eligibleAt,
+      },
+    });
+
+    this.logger.log(
+      `Commission created: ${input.amount} ${input.currency} for affiliate ${input.affiliateId} from payment ${input.sourcePaymentId}`,
+    );
+  }
+
+  /**
+   * Reverse a commission when a subscription payment is refunded.
+   * Creates an adjustment record; never destroys the original.
+   */
+  async reverseCommissionForPayment(sourcePaymentId: string): Promise<void> {
+    const original = await this.prisma.affiliateCommission.findFirst({
+      where: { sourcePaymentId, isReversal: false },
+    });
+
+    if (!original) {
+      this.logger.log(`No commission found for payment ${sourcePaymentId}, no reversal needed`);
+      return;
+    }
+
+    if (original.status === AffiliateCommissionStatus.REVERSED) {
+      this.logger.log(`Commission for payment ${sourcePaymentId} already reversed`);
+      return;
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.affiliateCommission.update({
+        where: { id: original.id },
+        data: {
+          status: AffiliateCommissionStatus.REVERSED,
+          reversedAt: new Date(),
+        },
+      });
+
+      await tx.affiliateCommission.create({
+        data: {
+          affiliateId: original.affiliateId,
+          referredFounderId: original.referredFounderId,
+          conversionId: original.conversionId,
+          sourcePaymentId: original.sourcePaymentId,
+          amount: original.amount,
+          currency: original.currency,
+          commissionRate: original.commissionRate,
+          status: AffiliateCommissionStatus.REVERSED,
+          isReversal: true,
+          reversedCommissionId: original.id,
+          reversedAt: new Date(),
+        },
+      });
+    });
+
+    this.logger.log(`Commission for payment ${sourcePaymentId} reversed`);
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Payout Processing
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  /**
+   * Daily job to clear PENDING commissions that have passed their eligibleAt date.
+   */
+  async processSettlements(): Promise<{ cleared: number }> {
+    const result = await this.prisma.affiliateCommission.updateMany({
+      where: {
+        status: AffiliateCommissionStatus.PENDING,
+        eligibleAt: { lte: new Date() },
+        isReversal: false,
+      },
+      data: {
+        status: AffiliateCommissionStatus.ELIGIBLE,
+      },
+    });
+
+    if (result.count > 0) {
+      this.logger.log(`Settled ${result.count} pending commissions to ELIGIBLE`);
+    }
+
+    return { cleared: result.count };
+  }
+
+  async getEligibleBalance(affiliateId: string): Promise<{ amount: Prisma.Decimal; currency: string }> {
+    const result = await this.prisma.affiliateCommission.aggregate({
+      where: {
+        affiliateId,
+        status: AffiliateCommissionStatus.ELIGIBLE,
+        isReversal: false,
+        payoutId: null,
+      },
+      _sum: { amount: true },
+    });
+
+    const amount = result._sum.amount ?? new Prisma.Decimal(0);
+
+    const first = await this.prisma.affiliateCommission.findFirst({
+      where: { affiliateId, status: AffiliateCommissionStatus.ELIGIBLE },
+    });
+
+    return { amount, currency: first?.currency ?? 'USD' };
+  }
+
+  /**
+   * Monthly payout processing.
+   * Now uses the founder's central PaymentAccount (not a separate AffiliatePayoutAccount).
+   * Respects the affiliate's preferredPayoutProvider; falls back to any ACTIVE account.
+   */
+  async processMonthlyPayouts(): Promise<{
+    attempted: number;
+    succeeded: number;
+    failed: number;
+    skipped: number;
+  }> {
+    const periodStart = this.getMonthStart(new Date());
+    const periodEnd = this.getMonthEnd(new Date());
+
+    let attempted = 0;
+    let succeeded = 0;
+    let failed = 0;
+    let skipped = 0;
+    let cursor: string | undefined;
+
+    while (true) {
+      const affiliates = await this.prisma.affiliate.findMany({
+        take: AFFILIATE_PAYOUT_BATCH_SIZE,
+        ...(cursor ? { skip: 1, cursor: { id: cursor } } : {}),
+        where: {
+          status: 'ACTIVE',
+          commissions: {
+            some: {
+              status: AffiliateCommissionStatus.ELIGIBLE,
+              isReversal: false,
+              payoutId: null,
+            },
+          },
+        },
+        include: { founder: true },
+        orderBy: { id: 'asc' },
+      });
+
+      if (affiliates.length === 0) break;
+      cursor = affiliates[affiliates.length - 1].id;
+
+      for (const affiliate of affiliates) {
+        attempted++;
+
+        const idempotencyKey = `payout:${affiliate.id}:${periodStart.toISOString().slice(0, 7)}`;
+
+        const existingPayout = await this.prisma.affiliatePayout.findUnique({
+          where: { idempotencyKey },
+        });
+        if (existingPayout) {
+          skipped++;
+          continue;
+        }
+
+        // ── Resolve payout account from central PaymentAccount ──
+        const founder = affiliate.founder;
+        const paymentAccounts = await this.prisma.paymentAccount.findMany({
+          where: {
+            founderId: founder.id,
+            status: { in: [PaymentAccountStatus.ACTIVE, PaymentAccountStatus.RESTRICTED] },
+          },
+        });
+
+        if (paymentAccounts.length === 0) {
+          skipped++;
+          this.logger.log(`Affiliate ${affiliate.id}: No eligible payment account connected, skipping`);
+          continue;
+        }
+
+        // Prefer their chosen provider; fall back to first eligible
+        const paymentAccount =
+          paymentAccounts.find((pa) => pa.provider === affiliate.preferredPayoutProvider) ??
+          paymentAccounts[0];
+
+        const { amount, currency } = await this.getEligibleBalance(affiliate.id);
+
+        if (amount.lessThan(AFFILIATE_MINIMUM_PAYOUT_AMOUNT)) {
+          skipped++;
+          this.logger.log(
+            `Affiliate ${affiliate.id}: balance ${amount} ${currency} below threshold ${AFFILIATE_MINIMUM_PAYOUT_AMOUNT}`,
+          );
+          continue;
+        }
+
+        const provider = this.getProvider(paymentAccount.provider);
+
+        const payout = await this.prisma.$transaction(async (tx) => {
+          const p = await tx.affiliatePayout.create({
+            data: {
+              affiliateId: affiliate.id,
+              payoutAccountId: paymentAccount.id,
+              provider: paymentAccount.provider,
+              amount,
+              currency,
+              status: AffiliatePayoutStatus.PROCESSING,
+              periodStart,
+              periodEnd,
+              idempotencyKey,
+            },
+          });
+
+          await tx.affiliateCommission.updateMany({
+            where: {
+              affiliateId: affiliate.id,
+              status: AffiliateCommissionStatus.ELIGIBLE,
+              isReversal: false,
+              payoutId: null,
+            },
+            data: { payoutId: p.id },
+          });
+
+          return p;
+        });
+
+        try {
+          const result = await provider.initiatePayout(amount.toFixed(2), currency, idempotencyKey, {
+            providerAccountId: paymentAccount.providerAccountId!,
+            currency,
+            metadata: paymentAccount.metadata as Record<string, unknown> | undefined,
+          });
+
+          if (result.status === 'PAID' || result.status === 'PROCESSING') {
+            await this.prisma.$transaction(async (tx) => {
+              await tx.affiliatePayout.update({
+                where: { id: payout.id },
+                data: {
+                  status: result.status === 'PAID' ? AffiliatePayoutStatus.PAID : AffiliatePayoutStatus.PROCESSING,
+                  providerTransactionId: result.providerTransactionId,
+                  processedAt: result.status === 'PAID' ? new Date() : null,
+                },
+              });
+
+              if (result.status === 'PAID') {
+                await tx.affiliateCommission.updateMany({
+                  where: { payoutId: payout.id },
+                  data: {
+                    status: AffiliateCommissionStatus.PAID,
+                    paidAt: new Date(),
+                  },
+                });
+              }
+            });
+
+            succeeded++;
+          } else {
+            await this.prisma.$transaction(async (tx) => {
+              await tx.affiliatePayout.update({
+                where: { id: payout.id },
+                data: {
+                  status: AffiliatePayoutStatus.FAILED,
+                  failureReason: result.failureReason,
+                },
+              });
+              await tx.affiliateCommission.updateMany({
+                where: { payoutId: payout.id },
+                data: { payoutId: null },
+              });
+            });
+
+            failed++;
+            this.logger.error(`Payout failed for affiliate ${affiliate.id}: ${result.failureReason}`);
+          }
+        } catch (err: any) {
+          await this.prisma.$transaction(async (tx) => {
+            await tx.affiliatePayout.update({
+              where: { id: payout.id },
+              data: {
+                status: AffiliatePayoutStatus.FAILED,
+                failureReason: err.message,
+              },
+            });
+            await tx.affiliateCommission.updateMany({
+              where: { payoutId: payout.id },
+              data: { payoutId: null },
+            });
+          });
+
+          failed++;
+          this.logger.error(`Payout exception for affiliate ${affiliate.id}: ${err.message}`);
+        }
+      }
+
+      if (affiliates.length < AFFILIATE_PAYOUT_BATCH_SIZE) break;
+    }
+
+    return { attempted, succeeded, failed, skipped };
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ─────────────────────────────────────────────────────────────────────────────
+
+  private getMonthStart(date: Date): Date {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1));
+  }
+
+  private getMonthEnd(date: Date): Date {
+    return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0, 23, 59, 59));
+  }
+}

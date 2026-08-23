@@ -325,4 +325,13 @@ export class PaymentRepository {
       include: { plan: true },
     });
   }
+
+  /**
+   * Look up the Founder record by userId.
+   * Used by the affiliate commission engine to resolve founderId from userId.
+   */
+  findFounderByUserId(userId: string) {
+    return this.prisma.founder.findUnique({ where: { userId } });
+  }
 }
+

@@ -12,7 +12,10 @@ import { PrismaService } from '../../../prisma/prisma.service';
 import { UsersService } from '../../users/services/users.service';
 import { SessionsService } from '../../sessions/sessions.service';
 import { EmailsService } from '../../emails/emails.service';
+import { AffiliatesService } from '../../affiliates/affiliates.service';
+
 import { TwoFactorService, TwoFactorSetupResult } from './two-factor.service';
+
 import { RegisterDto } from '../dto/register.dto';
 import { LoginDto } from '../dto/login.dto';
 import { SetPasswordDto } from '../dto/set-password.dto';
@@ -53,8 +56,11 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly sessionsService: SessionsService,
     private readonly emailsService: EmailsService,
+
     private readonly twoFactorService: TwoFactorService,
+    private readonly affiliatesService: AffiliatesService,
   ) {}
+
 
   // ──────────────────────────────────────────────────────────────
   // Register
@@ -64,8 +70,10 @@ export class AuthService {
     dto: RegisterDto,
     ipAddress?: string,
     userAgent?: string,
+    affiliateCookie?: string,
   ): Promise<AuthResponse> {
     const existingUser = await this.usersService.findByEmail(dto.email);
+
     if (existingUser) {
       throw new ConflictException('Email already in use');
     }
@@ -108,8 +116,24 @@ export class AuthService {
     // Queue verification email
     await this.emailsService.queueVerificationEmail(user.email, rawToken, user.firstName);
 
+    // Process affiliate attribution
+    if (affiliateCookie) {
+      try {
+        const payload = JSON.parse(Buffer.from(affiliateCookie, 'base64').toString('utf8'));
+        if (payload && payload.ref) {
+          // Fire and forget (it is safe against duplicate exceptions internally)
+          this.affiliatesService.attributeFounderToAffiliate(founder.id, payload.ref, payload.clickId).catch((err) => {
+            this.logger.error(`Affiliate attribution failed for founder ${founder.id}`, err);
+          });
+        }
+      } catch (err) {
+        this.logger.warn(`Failed to parse affiliate cookie: ${err}`);
+      }
+    }
+
     // Do NOT generate tokens, user must verify email first
     this.logger.log(`New user registered (pending verification): ${user.email}`);
+
 
     return {
       success: true,

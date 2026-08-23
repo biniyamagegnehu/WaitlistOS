@@ -40,6 +40,7 @@ import { ScheduleModule } from '@nestjs/schedule';
 import { TeamsModule } from './modules/teams/teams.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { WaitlistSignupConfigModule } from './modules/waitlist-signup-config/waitlist-signup-config.module';
+import { AffiliatesModule } from './modules/affiliates/affiliates.module';
 
 @Module({
   imports: [
@@ -83,6 +84,7 @@ import { WaitlistSignupConfigModule } from './modules/waitlist-signup-config/wai
     TeamsModule,
     AnalyticsModule,
     WaitlistSignupConfigModule,
+    AffiliatesModule,
   ],
   controllers: [AppController],
   providers: [

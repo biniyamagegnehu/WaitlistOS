@@ -8,9 +8,10 @@ import { ChapaWebhookController } from './providers/chapa/chapa.webhook';
 import { StripeWebhookController } from './providers/stripe/stripe.webhook';
 import { SubscriptionGuard } from './guards/subscription.guard';
 import { EmailsModule } from '../emails/emails.module';
+import { AffiliatesModule } from '../affiliates/affiliates.module';
 
 @Module({
-  imports: [forwardRef(() => EmailsModule)],
+  imports: [forwardRef(() => EmailsModule), forwardRef(() => AffiliatesModule)],
   controllers: [PaymentController, ChapaWebhookController, StripeWebhookController],
   providers: [
     PaymentService,

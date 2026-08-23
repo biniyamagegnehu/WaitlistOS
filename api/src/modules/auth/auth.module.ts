@@ -16,6 +16,7 @@ import { SessionsModule } from '../sessions/sessions.module';
 import { UsersModule } from '../users/users.module';
 import { PrismaModule } from '../../prisma/prisma.module';
 import { EmailsModule } from '../emails/emails.module';
+import { AffiliatesModule } from '../affiliates/affiliates.module';
 
 @Module({
   imports: [
@@ -33,6 +34,7 @@ import { EmailsModule } from '../emails/emails.module';
     UsersModule,
     PrismaModule,
     EmailsModule,
+    AffiliatesModule,
   ],
   controllers: [AuthController],
   providers: [

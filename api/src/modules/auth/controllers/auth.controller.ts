@@ -33,6 +33,7 @@ import type { AuthenticatedUser } from '../interfaces/jwt-payload.interface';
 import type { RefreshTokenRequest } from '../strategies/refresh-token.strategy';
 import { GoogleUser } from '../interfaces/jwt-payload.interface';
 import { Throttle } from '@nestjs/throttler';
+import { AFFILIATE_ATTRIBUTION_COOKIE_NAME } from '../../affiliates/affiliate.constants';
 import { ConfigService } from '@nestjs/config';
 import type { Request, Response } from 'express';
 import type { AuthResponse } from '../services/auth.service';
@@ -70,7 +71,8 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @Throttle({ default: { limit: 5, ttl: 60000 } })
   async register(@Body() dto: RegisterDto, @Req() req: Request) {
-    return this.authService.register(dto, req.ip, req.headers['user-agent']);
+    const affiliateCookie = req.cookies?.[AFFILIATE_ATTRIBUTION_COOKIE_NAME];
+    return this.authService.register(dto, req.ip, req.headers['user-agent'], affiliateCookie as string | undefined);
   }
 
   // ──────────────────────────────────────────────────────────────

@@ -10,11 +10,11 @@ datasource db {
   provider = "postgresql"
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 // Enums
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 enum Role {
   USER
@@ -209,11 +209,11 @@ enum PreOrderDepositStatus {
   CANCELLED
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// User — Authentication identity
+// User â€” Authentication identity
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model User {
   id String @id @default(uuid())
@@ -240,7 +240,7 @@ model User {
 
   updatedAt DateTime @updatedAt
 
-  // ── Email Verification ──────────────────────────
+  // â”€â”€ Email Verification â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   emailVerifiedAt DateTime?
 
@@ -248,7 +248,7 @@ model User {
 
   emailVerificationExpiresAt DateTime?
 
-  // ── Password Reset ──────────────────────────────
+  // â”€â”€ Password Reset â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   passwordResetToken String?
 
@@ -256,7 +256,7 @@ model User {
 
   passwordChangedAt DateTime?
 
-  // ── Email Change ────────────────────────────────
+  // â”€â”€ Email Change â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   pendingEmail String?
 
@@ -264,13 +264,13 @@ model User {
 
   pendingEmailVerificationExpiresAt DateTime?
 
-  // ── Two-Factor Authentication (TOTP) ────────────
+  // â”€â”€ Two-Factor Authentication (TOTP) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   twoFactorEnabled Boolean @default(false)
 
   twoFactorSecret String?
 
-  // ── Account Lockout ─────────────────────────────
+  // â”€â”€ Account Lockout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
   failedLoginAttempts Int @default(0)
 
@@ -291,11 +291,11 @@ model User {
   @@map("users")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Session — Refresh token tracking per device
+// Session â€” Refresh token tracking per device
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Session {
   id String @id @default(uuid())
@@ -321,11 +321,11 @@ model Session {
   @@map("sessions")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Founder — Business entity, owns Waitlists
+// Founder â€” Business entity, owns Waitlists
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Founder {
   id String @id @default(uuid())
@@ -356,14 +356,20 @@ model Founder {
   paymentAccounts      PaymentAccount[]
   monetizationPayments MonetizationPayment[]
 
+  // â”€â”€ Affiliate Program â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  affiliate                     Affiliate?
+  affiliateAttributionAsReferee AffiliateAttribution[] @relation("AffiliateAttributionFounder")
+  affiliateConversionsAsReferee AffiliateConversion[]  @relation("AffiliateConversionFounder")
+  affiliateCommissionsAsReferee AffiliateCommission[]  @relation("AffiliateCommissionFounder")
+
   @@map("founders")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// File — Uploaded file metadata (not binary)
+// File â€” Uploaded file metadata (not binary)
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model File {
   id String @id @default(uuid())
@@ -406,11 +412,11 @@ model File {
   @@map("files")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Waitlist — A single waitlist owned by a Founder
+// Waitlist â€” A single waitlist owned by a Founder
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Waitlist {
   id String @id @default(uuid())
@@ -427,7 +433,7 @@ model Waitlist {
 
   logoId String?
 
-  // ── Double-Sided Rewards ────────────────────
+  // â”€â”€ Double-Sided Rewards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   doubleSidedRewardsEnabled              Boolean @default(false)
   referrerRankingBonus                   Int     @default(5)
   newParticipantRankingBonus             Int     @default(2)
@@ -435,14 +441,14 @@ model Waitlist {
   totalReferrerRankingBonusAwarded       Int     @default(0)
   totalNewParticipantRankingBonusAwarded Int     @default(0)
 
-  // ── Streak Bonuses ──────────────────────────
+  // â”€â”€ Streak Bonuses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   streakBonusesEnabled Boolean @default(false)
 
-  // ── Team Referrals ──────────────────────────
+  // â”€â”€ Team Referrals â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   teamReferralsEnabled Boolean @default(false)
   maxTeamSize          Int     @default(10)
 
-  // ── Urgency Engine ──────────────────────────
+  // â”€â”€ Urgency Engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   urgencyEnabled     Boolean   @default(false)
   batchEnabled       Boolean   @default(false)
   batchName          String?
@@ -454,19 +460,19 @@ model Waitlist {
   showBatchProgress  Boolean   @default(true)
   showCountdown      Boolean   @default(true)
 
-  // ── Skip the Line (Paid Priority) ─────────────
+  // â”€â”€ Skip the Line (Paid Priority) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   skipLineEnabled  Boolean  @default(false)
   skipLinePrice    Decimal? @db.Decimal(12, 2)
   skipLineCurrency String?
 
-  // ── Pre-Order Deposit ─────────────────────────
+  // â”€â”€ Pre-Order Deposit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   preOrderDepositEnabled     Boolean                @default(false)
   preOrderDepositAmount      Decimal?               @db.Decimal(12, 2)
   preOrderDepositCurrency    String?
   preOrderDepositPolicy      PreOrderDepositPolicy?
   preOrderDepositDescription String?
 
-  // ── Appearance ───────────────────────────────
+  // â”€â”€ Appearance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   themeMode ThemeMode @default(SYSTEM)
 
   createdAt DateTime @default(now())
@@ -538,11 +544,11 @@ model WaitlistSignupConfig {
   @@map("waitlist_signup_configs")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Branding — Visual identity for a waitlist
+// Branding â€” Visual identity for a waitlist
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Branding {
   id String @id @default(uuid())
@@ -572,11 +578,11 @@ model Branding {
   @@map("brandings")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Widget — Embed metadata for a waitlist
+// Widget â€” Embed metadata for a waitlist
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Widget {
   id String @id @default(uuid())
@@ -596,11 +602,11 @@ model Widget {
   @@map("widgets")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Participant — A user who joined a waitlist
+// Participant â€” A user who joined a waitlist
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Participant {
   id String @id @default(uuid())
@@ -640,14 +646,14 @@ model Participant {
 
   customFields Json?
 
-  // ── Source Attribution ───────────────────────
+  // â”€â”€ Source Attribution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   source      TrafficSource?
   medium      String?
   campaign    String?
   referrer    String?
   landingPath String?
 
-  // ── Geo & Device Analytics ─────────────────────
+  // â”€â”€ Geo & Device Analytics â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
   ipAddress   String?
   countryCode String?
   deviceType  String?
@@ -695,11 +701,11 @@ model Participant {
   @@map("participants")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// SubscriptionPlan — Configurable plan catalog
+// SubscriptionPlan â€” Configurable plan catalog
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model SubscriptionPlan {
   id String @id @default(uuid())
@@ -733,11 +739,11 @@ model SubscriptionPlan {
   @@map("subscription_plans")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Subscription — Founder's active plan
+// Subscription â€” Founder's active plan
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Subscription {
   id String @id @default(uuid())
@@ -786,11 +792,11 @@ model Subscription {
   @@map("subscriptions")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// Payment — Individual Chapa transactions
+// Payment â€” Individual Chapa transactions
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Payment {
   id String @id @default(uuid())
@@ -833,11 +839,11 @@ model Payment {
   @@map("payments")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// PaymentEvent — Webhook / verification audit log
+// PaymentEvent â€” Webhook / verification audit log
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model PaymentEvent {
   id String @id @default(uuid())
@@ -860,11 +866,11 @@ model PaymentEvent {
   @@map("payment_events")
 }
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
-// SubscriptionHistory — Plan/status change audit
+// SubscriptionHistory â€” Plan/status change audit
 
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model SubscriptionHistory {
   id String @id @default(uuid())
@@ -894,9 +900,9 @@ model SubscriptionHistory {
   @@map("subscription_history")
 }
 
-// ─────────────────────────────────────────────
-// Reward — A milestone reward defined by a founder
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Reward â€” A milestone reward defined by a founder
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model Reward {
   id          String     @id @default(uuid())
@@ -917,9 +923,9 @@ model Reward {
   @@map("rewards")
 }
 
-// ─────────────────────────────────────────────
-// ParticipantReward — A reward unlocked by a participant
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ParticipantReward â€” A reward unlocked by a participant
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model ParticipantReward {
   id            String   @id @default(uuid())
@@ -934,9 +940,9 @@ model ParticipantReward {
   @@map("participant_rewards")
 }
 
-// ─────────────────────────────────────────────
-// StreakMilestone — A consecutive day referral reward milestone
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// StreakMilestone â€” A consecutive day referral reward milestone
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model StreakMilestone {
   id          String     @id @default(uuid())
@@ -957,9 +963,9 @@ model StreakMilestone {
   @@map("streak_milestones")
 }
 
-// ─────────────────────────────────────────────
-// ParticipantStreakReward — A streak reward unlocked by a participant
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ParticipantStreakReward â€” A streak reward unlocked by a participant
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model ParticipantStreakReward {
   id                String   @id @default(uuid())
@@ -974,9 +980,9 @@ model ParticipantStreakReward {
   @@map("participant_streak_rewards")
 }
 
-// ─────────────────────────────────────────────
-// Cohort — A batch of invited participants
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Cohort â€” A batch of invited participants
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model Cohort {
   id          String   @id @default(uuid())
   waitlistId  String
@@ -992,9 +998,9 @@ model Cohort {
   @@map("cohorts")
 }
 
-// ─────────────────────────────────────────────
-// CohortInvitation — Participant invited in a cohort
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// CohortInvitation â€” Participant invited in a cohort
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model CohortInvitation {
   id            String   @id @default(uuid())
   cohortId      String
@@ -1009,9 +1015,9 @@ model CohortInvitation {
   @@map("cohort_invitations")
 }
 
-// ─────────────────────────────────────────────
-// AiLog — Track all AI usage
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// AiLog â€” Track all AI usage
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model AiLog {
   id        String   @id @default(uuid())
@@ -1029,9 +1035,9 @@ model AiLog {
   @@map("ai_logs")
 }
 
-// ─────────────────────────────────────────────
-// WaitlistCopy — Current live copy for a waitlist (AI Copywriter)
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// WaitlistCopy â€” Current live copy for a waitlist (AI Copywriter)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model WaitlistCopy {
   id          String   @id @default(uuid())
@@ -1050,9 +1056,9 @@ model WaitlistCopy {
   @@map("waitlist_copies")
 }
 
-// ─────────────────────────────────────────────
-// WaitlistCopyVersion — Append-only version history for AI copy
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// WaitlistCopyVersion â€” Append-only version history for AI copy
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 model WaitlistCopyVersion {
   id          String   @id @default(uuid())
@@ -1070,9 +1076,9 @@ model WaitlistCopyVersion {
   @@map("waitlist_copy_versions")
 }
 
-// ─────────────────────────────────────────────
-// ParticipantReferralMessage — AI Generated sharing texts
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ParticipantReferralMessage â€” AI Generated sharing texts
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model ParticipantReferralMessage {
   id            String   @id @default(uuid())
   participantId String   @unique
@@ -1087,9 +1093,9 @@ model ParticipantReferralMessage {
   @@map("participant_referral_messages")
 }
 
-// ─────────────────────────────────────────────
-// ParticipantEngagement — Dropout Prediction
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ParticipantEngagement â€” Dropout Prediction
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model ParticipantEngagement {
   id              String    @id @default(uuid())
   participantId   String    @unique
@@ -1118,9 +1124,9 @@ model ParticipantEngagementLog {
   @@map("participant_engagement_logs")
 }
 
-// ─────────────────────────────────────────────
-// Team — Collaborative referrals
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Team â€” Collaborative referrals
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model Team {
   id          String   @id @default(uuid())
   waitlistId  String
@@ -1141,9 +1147,9 @@ model Team {
   @@map("teams")
 }
 
-// ─────────────────────────────────────────────
-// TeamInvitation — Direct invites
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// TeamInvitation â€” Direct invites
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model TeamInvitation {
   id            String   @id @default(uuid())
   teamId        String
@@ -1158,9 +1164,9 @@ model TeamInvitation {
   @@map("team_invitations")
 }
 
-// ─────────────────────────────────────────────
-// TeamRewardMilestone — Configured by Founder
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// TeamRewardMilestone â€” Configured by Founder
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model TeamRewardMilestone {
   id         String     @id @default(uuid())
   waitlistId String
@@ -1179,9 +1185,9 @@ model TeamRewardMilestone {
   @@map("team_reward_milestones")
 }
 
-// ─────────────────────────────────────────────
-// TeamMilestoneReward — Unlocked by a team
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// TeamMilestoneReward â€” Unlocked by a team
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model TeamMilestoneReward {
   id                    String   @id @default(uuid())
   teamId                String
@@ -1196,9 +1202,9 @@ model TeamMilestoneReward {
   @@map("team_milestone_rewards")
 }
 
-// ─────────────────────────────────────────────
-// TeamParticipantReward — Granted to a member
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// TeamParticipantReward â€” Granted to a member
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model TeamParticipantReward {
   id                    String   @id @default(uuid())
   teamMilestoneRewardId String
@@ -1212,9 +1218,9 @@ model TeamParticipantReward {
   @@map("team_participant_rewards")
 }
 
-// ─────────────────────────────────────────────
-// AttributionVisit — Anonymous analytics tracking
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// AttributionVisit â€” Anonymous analytics tracking
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model AttributionVisit {
   id         String        @id @default(uuid())
   waitlistId String
@@ -1232,9 +1238,9 @@ model AttributionVisit {
   @@map("attribution_visits")
 }
 
-// ─────────────────────────────────────────────
-// FunnelEvent — Anonymous conversion funnel tracking
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// FunnelEvent â€” Anonymous conversion funnel tracking
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model FunnelEvent {
   id         String          @id @default(uuid())
   waitlistId String
@@ -1251,9 +1257,9 @@ model FunnelEvent {
   @@map("funnel_events")
 }
 
-// ─────────────────────────────────────────────
-// DailyFunnelStats — Aggregated daily funnel statistics
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// DailyFunnelStats â€” Aggregated daily funnel statistics
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model DailyFunnelStats {
   id         String          @id @default(uuid())
   waitlistId String
@@ -1267,9 +1273,9 @@ model DailyFunnelStats {
   @@map("daily_funnel_stats")
 }
 
-// ─────────────────────────────────────────────
-// GrowthTimeseries — Signup growth time series data
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// GrowthTimeseries â€” Signup growth time series data
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model GrowthTimeseries {
   id          String           @id @default(uuid())
   waitlistId  String
@@ -1287,9 +1293,9 @@ model GrowthTimeseries {
   @@map("growth_timeseries")
 }
 
-// ─────────────────────────────────────────────
-// ReferralSpike — Detected viral referral moments
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ReferralSpike â€” Detected viral referral moments
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model ReferralSpike {
   id                    String   @id @default(uuid())
   waitlistId            String
@@ -1309,9 +1315,9 @@ model ReferralSpike {
   @@map("referral_spikes")
 }
 
-// ─────────────────────────────────────────────
-// PaymentAccount — Founder's connected payment provider accounts
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PaymentAccount â€” Founder's connected payment provider accounts
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model PaymentAccount {
   id                String               @id @default(uuid())
   founderId         String
@@ -1324,15 +1330,16 @@ model PaymentAccount {
   createdAt         DateTime             @default(now())
   updatedAt         DateTime             @updatedAt
 
-  founder Founder @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  founder          Founder           @relation(fields: [founderId], references: [id], onDelete: Cascade)
+  affiliatePayouts AffiliatePayout[]
 
   @@unique([founderId, provider])
   @@map("payment_accounts")
 }
 
-// ─────────────────────────────────────────────
-// MonetizationPayment — Generic transaction model for waitlist features
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// MonetizationPayment â€” Generic transaction model for waitlist features
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model MonetizationPayment {
   id                String                    @id @default(uuid())
   founderId         String
@@ -1365,9 +1372,9 @@ model MonetizationPayment {
   @@map("monetization_payments")
 }
 
-// ─────────────────────────────────────────────
-// MonetizationPaymentEvent — Webhook idempotency and audit log
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// MonetizationPaymentEvent â€” Webhook idempotency and audit log
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model MonetizationPaymentEvent {
   id              String          @id @default(uuid())
   provider        PaymentProvider
@@ -1385,9 +1392,9 @@ model MonetizationPaymentEvent {
   @@map("monetization_payment_events")
 }
 
-// ─────────────────────────────────────────────
-// PreOrderDeposit — Tracks the deposit lifecycle
-// ─────────────────────────────────────────────
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// PreOrderDeposit â€” Tracks the deposit lifecycle
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 model PreOrderDeposit {
   id                    String                @id @default(uuid())
   waitlistId            String
@@ -1413,4 +1420,279 @@ model PreOrderDeposit {
   @@index([participantId])
   @@index([status])
   @@map("pre_order_deposits")
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Affiliate Program Enums
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+enum AffiliateStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+enum AffiliateAttributionStatus {
+  ACTIVE
+  CONVERTED
+  EXPIRED
+}
+
+enum AffiliateConversionStatus {
+  PENDING
+  CONFIRMED
+  REVERSED
+}
+
+enum AffiliateCommissionStatus {
+  PENDING
+  ELIGIBLE
+  PAID
+  REVERSED
+}
+
+enum AffiliatePayoutStatus {
+  PENDING
+  PROCESSING
+  PAID
+  FAILED
+  CANCELLED
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// Affiliate â€” A founder participating in the affiliate program
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+model Affiliate {
+  id String @id @default(uuid())
+
+  founderId String @unique
+
+  /// Unique, URL-safe affiliate code (e.g. ABC123)
+  code String @unique
+
+  status AffiliateStatus @default(ACTIVE)
+
+  clickCount              Int              @default(0)
+  preferredPayoutProvider PaymentProvider?
+
+  /// Commission rate as a decimal (e.g. 0.20 = 20%)
+  commissionRate Decimal @default(0.20) @db.Decimal(5, 4)
+
+  /// How many months commissions are earned per referred founder
+  commissionDurationMonths Int @default(12)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  founder Founder @relation(fields: [founderId], references: [id], onDelete: Cascade)
+
+  clicks       AffiliateClick[]
+  attributions AffiliateAttribution[]
+  conversions  AffiliateConversion[]
+  commissions  AffiliateCommission[]
+  payouts      AffiliatePayout[]
+
+  @@index([code])
+  @@map("affiliates")
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// AffiliateClick â€” A single tracked referral click
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+model AffiliateClick {
+  id String @id @default(uuid())
+
+  affiliateId String
+
+  /// Privacy-safe opaque session identifier (not raw IP)
+  sessionToken String?
+
+  /// Hashed IP for fraud detection only (SHA-256 of IP, never raw)
+  ipHash String?
+
+  /// Device type string e.g. desktop/mobile (from UA parser)
+  deviceType String?
+
+  /// Country code from geo-lookup (e.g. ET, US)
+  countryCode String?
+
+  createdAt DateTime @default(now())
+
+  affiliate   Affiliate             @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  attribution AffiliateAttribution?
+
+  @@index([affiliateId])
+  @@index([createdAt])
+  @@map("affiliate_clicks")
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// AffiliateAttribution â€” Associates a new founder with an affiliate
+//
+// Attribution policy: 30-day last-valid-affiliate.
+// The attribution is created at founder registration and never silently
+// overwritten. If a founder registers after the 30-day cookie window,
+// no attribution is created.
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+model AffiliateAttribution {
+  id String @id @default(uuid())
+
+  affiliateId       String
+  referredFounderId String @unique // one active attribution per founder
+
+  affiliateClickId String? @unique
+
+  status AffiliateAttributionStatus @default(ACTIVE)
+
+  attributedAt DateTime @default(now())
+
+  /// 30 days after the click that created this attribution
+  expiresAt DateTime
+
+  affiliate       Affiliate       @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referredFounder Founder         @relation("AffiliateAttributionFounder", fields: [referredFounderId], references: [id], onDelete: Cascade)
+  click           AffiliateClick? @relation(fields: [affiliateClickId], references: [id], onDelete: SetNull)
+
+  conversions AffiliateConversion[]
+
+  @@index([affiliateId])
+  @@index([status])
+  @@map("affiliate_attributions")
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// AffiliateConversion â€” A payment that triggered a commission
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+model AffiliateConversion {
+  id String @id @default(uuid())
+
+  affiliateId       String
+  referredFounderId String
+  attributionId     String
+
+  /// Internal Payment record that triggered this conversion
+  sourcePaymentId String @unique
+
+  status AffiliateConversionStatus @default(PENDING)
+
+  convertedAt DateTime @default(now())
+
+  affiliate       Affiliate            @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referredFounder Founder              @relation("AffiliateConversionFounder", fields: [referredFounderId], references: [id], onDelete: Cascade)
+  attribution     AffiliateAttribution @relation(fields: [attributionId], references: [id], onDelete: Cascade)
+
+  commissions AffiliateCommission[]
+
+  @@index([affiliateId])
+  @@index([referredFounderId])
+  @@index([status])
+  @@map("affiliate_conversions")
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// AffiliateCommission â€” A single commission record (or reversal)
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+model AffiliateCommission {
+  id String @id @default(uuid())
+
+  affiliateId       String
+  referredFounderId String
+  conversionId      String
+
+  /// The subscription Payment this commission is derived from
+  sourcePaymentId String
+
+  /// Commission amount (always positive; reversals are separate records with isReversal=true)
+  amount Decimal @db.Decimal(12, 2)
+
+  currency String
+
+  /// Rate applied at the time of earning, e.g. 0.20
+  commissionRate Decimal @db.Decimal(5, 4)
+
+  status AffiliateCommissionStatus @default(PENDING)
+
+  /// True if this record is a reversal/adjustment of a prior commission
+  isReversal Boolean @default(false)
+
+  /// If reversal, references the original commission this adjusts
+  reversedCommissionId String?
+
+  /// Commission becomes ELIGIBLE after this date (settlement window)
+  eligibleAt DateTime?
+
+  /// When the commission was reversed (if applicable)
+  reversedAt DateTime?
+
+  /// When this commission was included in a payout
+  paidAt DateTime?
+
+  /// Which payout record paid this commission
+  payoutId String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  affiliate       Affiliate           @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  referredFounder Founder             @relation("AffiliateCommissionFounder", fields: [referredFounderId], references: [id], onDelete: Cascade)
+  conversion      AffiliateConversion @relation(fields: [conversionId], references: [id], onDelete: Cascade)
+  payout          AffiliatePayout?    @relation(fields: [payoutId], references: [id], onDelete: SetNull)
+
+  reversedCommission AffiliateCommission?  @relation("CommissionReversal", fields: [reversedCommissionId], references: [id])
+  reversalRecords    AffiliateCommission[] @relation("CommissionReversal")
+
+  @@index([affiliateId, status])
+  @@index([referredFounderId])
+  @@index([sourcePaymentId])
+  @@index([status, eligibleAt])
+  @@map("affiliate_commissions")
+}
+
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// AffiliatePayout â€” A single payout transfer attempt
+// â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
+model AffiliatePayout {
+  id String @id @default(uuid())
+
+  affiliateId     String
+  payoutAccountId String
+
+  provider PaymentProvider
+
+  amount   Decimal @db.Decimal(12, 2)
+  currency String
+
+  status AffiliatePayoutStatus @default(PENDING)
+
+  /// Payout covers commissions earned in this period
+  periodStart DateTime
+  periodEnd   DateTime
+
+  /// Provider-side transfer/payout ID
+  providerTransactionId String?
+
+  /// Deterministic idempotency key: affiliateId + periodStart formatted
+  idempotencyKey String @unique
+
+  failureReason String?
+
+  processedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  affiliate     Affiliate      @relation(fields: [affiliateId], references: [id], onDelete: Cascade)
+  payoutAccount PaymentAccount @relation(fields: [payoutAccountId], references: [id], onDelete: Cascade)
+
+  commissions AffiliateCommission[]
+
+  @@index([affiliateId, status])
+  @@index([idempotencyKey])
+  @@map("affiliate_payouts")
 }

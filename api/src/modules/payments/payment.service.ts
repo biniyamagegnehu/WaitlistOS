@@ -35,6 +35,7 @@ import type {
 } from './types/payment.types';
 import type { PremiumFeature } from './decorators/subscription.decorator';
 import { EmailsService } from '../emails/emails.service';
+import { AffiliateCommissionEngine } from '../affiliates/services/affiliate-commission.engine';
 
 @Injectable()
 export class PaymentService {
@@ -46,6 +47,7 @@ export class PaymentService {
     private readonly stripeService: StripeService,
     private readonly configService: ConfigService,
     private readonly emailsService: EmailsService,
+    private readonly affiliateCommissionEngine: AffiliateCommissionEngine,
   ) {}
 
   private getProvider(providerType: PaymentProvider) {
@@ -518,6 +520,26 @@ export class PaymentService {
     this.logger.log(
       `Subscription activated for user ${userId} on plan ${subscription.planCode}`,
     );
+
+    // ── Affiliate Commission ──────────────────────────────────────────────────
+    // Find the founder associated with this userId and attempt commission creation.
+    // This is fire-and-forget: commission failures must never break the payment flow.
+    try {
+      const founder = await this.repository.findFounderByUserId(userId);
+      if (founder) {
+        await this.affiliateCommissionEngine.handleSubscriptionPayment({
+          payingFounderId: founder.id,
+          paymentId,
+          amount: new Prisma.Decimal(amount),
+          currency,
+          planCode,
+        });
+      }
+    } catch (commissionErr) {
+      this.logger.error(
+        `Affiliate commission generation failed for payment ${paymentId}: ${commissionErr instanceof Error ? commissionErr.message : String(commissionErr)}`,
+      );
+    }
   }
 
   private buildTxRef(userId: string) {
