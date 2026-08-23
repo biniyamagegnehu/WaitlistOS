@@ -13,6 +13,11 @@ export interface WebhookEventResult {
   payload: any;
 }
 
+export interface VerifyPaymentResult {
+  status: 'SUCCEEDED' | 'FAILED' | 'PENDING';
+  providerPaymentId: string;
+}
+
 export interface IMonetizationProvider {
   initializePayment(
     payment: MonetizationPayment,
@@ -26,4 +31,9 @@ export interface IMonetizationProvider {
   verifyWebhookSignature(rawBody: string, signature: string | undefined): boolean;
   
   parseWebhookEvent(rawBody: string, signature: string | undefined): Promise<WebhookEventResult>;
+
+  verifyPayment(
+    paymentId: string,
+    account: PaymentAccount,
+  ): Promise<VerifyPaymentResult>;
 }

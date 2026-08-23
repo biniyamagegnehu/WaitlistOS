@@ -9,6 +9,7 @@ import {
   Param,
   Headers,
   Req,
+  Query,
 } from '@nestjs/common';
 import type { Request } from 'express';
 import { Public } from '../../common/decorators/public.decorator';
@@ -57,5 +58,17 @@ export class ParticipantsController {
     @Body() updateSignupProgressDto: import('./dto/update-signup-progress.dto').UpdateSignupProgressDto,
   ) {
     return this.participantsService.updateSignupProgress(id, updateSignupProgressDto);
+  }
+
+  @Public()
+  @Get(':id/skip-line-status')
+  getSkipLineStatus(@Param('id') id: string, @Query('waitlistId') waitlistId: string) {
+    return this.participantsService.getSkipLineStatus(id, waitlistId);
+  }
+
+  @Public()
+  @Get(':id/debug-rank')
+  async debugRank(@Param('id') id: string, @Query('waitlistId') waitlistId: string) {
+    return this.participantsService.debugRank(waitlistId);
   }
 }

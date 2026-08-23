@@ -10,7 +10,8 @@ export class CreateCheckoutDto {
   participantId?: string;
 
   @IsEnum(PaymentProvider)
-  provider: PaymentProvider;
+  @IsOptional()
+  provider?: PaymentProvider;
 
   @IsEnum(MonetizationPaymentType)
   paymentType: MonetizationPaymentType;

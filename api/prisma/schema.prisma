@@ -438,6 +438,11 @@ model Waitlist {
   showBatchProgress  Boolean   @default(true)
   showCountdown      Boolean   @default(true)
 
+  // ── Skip the Line (Paid Priority) ─────────────
+  skipLineEnabled Boolean @default(false)
+  skipLinePrice    Decimal? @db.Decimal(12, 2)
+  skipLineCurrency String?
+
   // ── Appearance ───────────────────────────────
   themeMode ThemeMode @default(SYSTEM)
 
@@ -589,6 +594,9 @@ model Participant {
   referralCount Int @default(0)
 
   positionBoostBonus Int @default(0)
+
+  hasSkipLinePriority Boolean @default(false)
+  skipLinePriorityGrantedAt DateTime?
 
   currentStreak Int @default(0)
 

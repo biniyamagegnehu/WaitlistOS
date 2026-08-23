@@ -1,11 +1,14 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { MonetizationPaymentStatus, PaymentAccountStatus, PaymentProvider } from '@prisma/client';
+import { BadRequestException, Injectable, Logger, NotFoundException, ConflictException } from '@nestjs/common';
+import { MonetizationPaymentStatus, MonetizationPaymentType, PaymentAccountStatus, PaymentProvider, Prisma } from '@prisma/client';
+import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { FeeService } from './fee.service';
 import { StripeMonetizationProvider } from './providers/stripe-monetization.provider';
 import { ChapaMonetizationProvider } from './providers/chapa-monetization.provider';
-import { IMonetizationProvider } from './providers/monetization-provider.interface';
+import { IMonetizationProvider, VerifyPaymentResult } from './providers/monetization-provider.interface';
 import { CreateCheckoutDto } from './dto/monetization.dtos';
+import { ParticipantsService } from '../participants/participants.service';
+import { randomUUID } from 'crypto';
 
 @Injectable()
 export class MonetizationService {
@@ -16,6 +19,8 @@ export class MonetizationService {
     private readonly feeService: FeeService,
     private readonly stripeProvider: StripeMonetizationProvider,
     private readonly chapaProvider: ChapaMonetizationProvider,
+    private readonly configService: ConfigService,
+    private readonly participantsService: ParticipantsService,
   ) {}
 
   getProvider(provider: PaymentProvider): IMonetizationProvider {
@@ -28,7 +33,7 @@ export class MonetizationService {
    * Looks up the Founder record by userId.
    * The JWT strategy only provides userId; founderId must be resolved from the DB.
    */
-  private async getFounderByUserId(userId: string) {
+  async getFounderByUserId(userId: string) {
     const founder = await this.prisma.founder.findUnique({
       where: { userId },
     });
@@ -299,18 +304,35 @@ export class MonetizationService {
     returnUrl: string,
     cancelUrl: string,
   ) {
+    // Auto-select provider if not provided
+    let provider = dto.provider;
+    if (!provider) {
+      const activeAccount = await this.prisma.paymentAccount.findFirst({
+        where: {
+          founderId,
+          status: PaymentAccountStatus.ACTIVE,
+        },
+      });
+      if (!activeAccount) {
+        throw new BadRequestException(
+          'No active payment account found. Please connect a payment account first.',
+        );
+      }
+      provider = activeAccount.provider;
+    }
+
     const account = await this.prisma.paymentAccount.findUnique({
       where: {
         founderId_provider: {
           founderId,
-          provider: dto.provider,
+          provider,
         },
       },
     });
 
     if (!account || account.status !== PaymentAccountStatus.ACTIVE) {
       throw new BadRequestException(
-        `${dto.provider} account is not connected or not active. Please connect your payment account in Settings.`,
+        `${provider} account is not connected or not active. Please connect your payment account in Settings.`,
       );
     }
 
@@ -321,8 +343,8 @@ export class MonetizationService {
         founderId,
         waitlistId: dto.waitlistId,
         participantId: dto.participantId,
-        provider: dto.provider,
-        providerPaymentId: `temp_${Date.now()}_${Math.random().toString(36).substring(7)}`,
+        provider,
+        providerPaymentId: `temp_${randomUUID()}`,
         paymentType: dto.paymentType,
         amount: dto.amount,
         currency: dto.currency,
@@ -333,7 +355,7 @@ export class MonetizationService {
       },
     });
 
-    const providerService = this.getProvider(dto.provider);
+    const providerService = this.getProvider(provider);
 
     try {
       const { checkoutUrl, providerPaymentId } = await providerService.initializePayment(
@@ -367,44 +389,51 @@ export class MonetizationService {
 
     const eventResult = await providerService.parseWebhookEvent(rawBody, signature);
 
-    // Idempotency check
-    const existingEvent = await this.prisma.monetizationPaymentEvent.findUnique({
-      where: {
-        provider_providerEventId: {
+    // Create event record with idempotency constraint - this acts as a lock
+    try {
+      await this.prisma.monetizationPaymentEvent.create({
+        data: {
           provider,
           providerEventId: eventResult.providerEventId,
+          eventType: eventResult.eventType,
+          payload: eventResult.payload,
         },
-      },
-    });
-
-    if (existingEvent?.processedAt) {
-      this.logger.log(`Webhook already processed: ${eventResult.providerEventId}`);
-      return { received: true };
+      });
+    } catch (error) {
+      // If creation fails due to unique constraint, webhook was already processed
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        this.logger.log(`Webhook already processed: ${eventResult.providerEventId}`);
+        return { received: true, alreadyProcessed: true };
+      }
+      throw error;
     }
 
     const payment = await this.prisma.monetizationPayment.findUnique({
       where: { providerPaymentId: eventResult.providerPaymentId },
     });
 
-    await this.prisma.monetizationPaymentEvent.upsert({
+    // Update the event record with payment ID now that we have it
+    await this.prisma.monetizationPaymentEvent.update({
       where: {
         provider_providerEventId: {
           provider,
           providerEventId: eventResult.providerEventId,
         },
       },
-      update: {},
-      create: {
-        provider,
-        providerEventId: eventResult.providerEventId,
-        paymentId: payment?.id,
-        eventType: eventResult.eventType,
-        payload: eventResult.payload,
-      },
+      data: { paymentId: payment?.id },
     });
 
     if (!payment) {
       this.logger.warn(`Payment not found for providerPaymentId: ${eventResult.providerPaymentId}`);
+      await this.prisma.monetizationPaymentEvent.update({
+        where: {
+          provider_providerEventId: {
+            provider,
+            providerEventId: eventResult.providerEventId,
+          },
+        },
+        data: { processedAt: new Date() },
+      });
       return { received: true };
     }
 
@@ -423,6 +452,40 @@ export class MonetizationService {
           },
           data: { processedAt: new Date() },
         });
+
+        // ── Grant Skip the Line Priority ─────────────────────────
+        if (payment.paymentType === MonetizationPaymentType.SKIP_LINE && payment.participantId) {
+          await tx.participant.update({
+            where: { id: payment.participantId },
+            data: {
+              hasSkipLinePriority: true,
+              skipLinePriorityGrantedAt: new Date(),
+            },
+          });
+
+          this.logger.log(
+            `Skip the Line priority granted to participant ${payment.participantId} for payment ${payment.id}`,
+          );
+        }
+      });
+
+      // ── Rerank participants outside transaction to see committed changes ─────────────
+      if (payment.paymentType === MonetizationPaymentType.SKIP_LINE && payment.participantId) {
+        await this.participantsService.rerankWaitlistParticipants(payment.waitlistId);
+        this.logger.log(
+          `Reranked participants for waitlist ${payment.waitlistId} after Skip the Line priority grant`,
+        );
+      }
+
+      // Mark event as processed
+      await this.prisma.monetizationPaymentEvent.update({
+        where: {
+          provider_providerEventId: {
+            provider,
+            providerEventId: eventResult.providerEventId,
+          },
+        },
+        data: { processedAt: new Date() },
       });
     } else if (eventResult.status === 'FAILED' && payment.status === MonetizationPaymentStatus.PENDING) {
       await this.prisma.$transaction(async (tx) => {
@@ -440,8 +503,519 @@ export class MonetizationService {
           data: { processedAt: new Date() },
         });
       });
+    } else {
+      // Mark event as processed for other statuses
+      await this.prisma.monetizationPaymentEvent.update({
+        where: {
+          provider_providerEventId: {
+            provider,
+            providerEventId: eventResult.providerEventId,
+          },
+        },
+        data: { processedAt: new Date() },
+      });
     }
 
     return { received: true };
+  }
+
+  // ── Skip the Line ───────────────────────────────────────────────────────────
+
+  /**
+   * Creates a Skip the Line checkout session (public endpoint).
+   * This is for participants on the public waitlist page.
+   * Auto-selects the active payment provider for the waitlist.
+   */
+  async createSkipLineCheckoutPublic(dto: CreateCheckoutDto) {
+    // Load waitlist and validate Skip the Line is enabled
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { id: dto.waitlistId },
+    });
+
+    if (!waitlist) {
+      throw new NotFoundException('Waitlist not found');
+    }
+
+    if (!waitlist.skipLineEnabled) {
+      throw new BadRequestException('Skip the Line is not enabled for this waitlist');
+    }
+
+    // Validate participant
+    if (!dto.participantId) {
+      throw new BadRequestException('Participant ID is required');
+    }
+
+    const participant = await this.prisma.participant.findUnique({
+      where: { id: dto.participantId },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Participant not found');
+    }
+
+    if (participant.waitlistId !== waitlist.id) {
+      throw new BadRequestException('Participant does not belong to this waitlist');
+    }
+
+    // Check if participant already has Skip the Line priority
+    if (participant.hasSkipLinePriority) {
+      throw new ConflictException('You already have Skip the Line priority');
+    }
+
+    // Check for existing successful payment
+    const existingPayment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        participantId: dto.participantId,
+        waitlistId: dto.waitlistId,
+        paymentType: MonetizationPaymentType.SKIP_LINE,
+        status: MonetizationPaymentStatus.SUCCEEDED,
+      },
+    });
+
+    if (existingPayment) {
+      throw new ConflictException('You have already purchased Skip the Line');
+    }
+
+    // Use server-side configured price if not provided
+    const amount = dto.amount || Number(waitlist.skipLinePrice) || 10.00;
+    const currency = dto.currency || waitlist.skipLineCurrency || 'USD';
+
+    // Create checkout using existing infrastructure
+    const frontendUrl = this.configService.get<string>('app.frontendUrl') ?? 'http://localhost:3001';
+    const returnUrl = `${frontendUrl}/payment/skip-line/success`;
+    const cancelUrl = `${frontendUrl}/payment/skip-line/cancel`;
+
+    const { checkoutUrl } = await this.createCheckout(
+      waitlist.founderId,
+      participant.email,
+      {
+        ...dto,
+        paymentType: MonetizationPaymentType.SKIP_LINE,
+        amount,
+        currency,
+      },
+      returnUrl,
+      cancelUrl,
+    );
+
+    this.logger.log(
+      `Skip the Line checkout created for participant ${participant.id} on waitlist ${waitlist.id}`,
+    );
+
+    return { checkoutUrl };
+  }
+
+  /**
+   * Creates a Skip the Line checkout session (founder endpoint).
+   * This is for founders testing the checkout flow.
+   */
+  async createSkipLineCheckout(founderId: string, dto: CreateCheckoutDto) {
+    // Load waitlist and validate Skip the Line is enabled
+    const waitlist = await this.prisma.waitlist.findUnique({
+      where: { id: dto.waitlistId },
+    });
+
+    if (!waitlist) {
+      throw new NotFoundException('Waitlist not found');
+    }
+
+    if (!waitlist.skipLineEnabled) {
+      throw new BadRequestException('Skip the Line is not enabled for this waitlist');
+    }
+
+    if (waitlist.founderId !== founderId) {
+      throw new BadRequestException('You do not own this waitlist');
+    }
+
+    // Validate participant
+    if (!dto.participantId) {
+      throw new BadRequestException('Participant ID is required');
+    }
+
+    const participant = await this.prisma.participant.findUnique({
+      where: { id: dto.participantId },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Participant not found');
+    }
+
+    if (participant.waitlistId !== waitlist.id) {
+      throw new BadRequestException('Participant does not belong to this waitlist');
+    }
+
+    // Check if participant already has Skip the Line priority
+    if (participant.hasSkipLinePriority) {
+      throw new ConflictException('You already have Skip the Line priority');
+    }
+
+    // Check for existing successful payment
+    const existingPayment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        participantId: dto.participantId,
+        waitlistId: dto.waitlistId,
+        paymentType: MonetizationPaymentType.SKIP_LINE,
+        status: MonetizationPaymentStatus.SUCCEEDED,
+      },
+    });
+
+    if (existingPayment) {
+      throw new ConflictException('You have already purchased Skip the Line');
+    }
+
+    // Use server-side configured price if not provided
+    const amount = dto.amount || Number(waitlist.skipLinePrice) || 10.00;
+    const currency = dto.currency || waitlist.skipLineCurrency || 'USD';
+
+    // Create checkout using existing infrastructure
+    const frontendUrl = this.configService.get<string>('app.frontendUrl') ?? 'http://localhost:3001';
+    const returnUrl = `${frontendUrl}/payment/skip-line/success`;
+    const cancelUrl = `${frontendUrl}/payment/skip-line/cancel`;
+
+    const { checkoutUrl } = await this.createCheckout(
+      founderId,
+      participant.email,
+      {
+        ...dto,
+        paymentType: MonetizationPaymentType.SKIP_LINE,
+        amount,
+        currency,
+      },
+      returnUrl,
+      cancelUrl,
+    );
+
+    this.logger.log(
+      `Skip the Line checkout created for participant ${participant.id} on waitlist ${waitlist.id}`,
+    );
+
+    return { checkoutUrl };
+  }
+
+  /**
+   * Retrieves the status of a Skip the Line payment (public endpoint).
+   */
+  async getSkipLinePaymentStatusPublic(paymentId: string) {
+    const payment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        id: paymentId,
+        paymentType: MonetizationPaymentType.SKIP_LINE,
+      },
+      include: {
+        participant: {
+          select: {
+            id: true,
+            email: true,
+            position: true,
+            hasSkipLinePriority: true,
+          },
+        },
+        waitlist: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            skipLineEnabled: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    return {
+      payment: {
+        id: payment.id,
+        status: payment.status,
+        amount: payment.amount,
+        currency: payment.currency,
+        createdAt: payment.createdAt,
+      },
+      participant: payment.participant,
+      waitlist: payment.waitlist,
+    };
+  }
+
+  /**
+   * Retrieves the status of a Skip the Line payment (protected endpoint).
+   */
+  async getSkipLinePaymentStatus(paymentId: string, userId: string) {
+    const founder = await this.getFounderByUserId(userId);
+
+    const payment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        id: paymentId,
+        founderId: founder.id,
+        paymentType: MonetizationPaymentType.SKIP_LINE,
+      },
+      include: {
+        participant: {
+          select: {
+            id: true,
+            email: true,
+            position: true,
+            hasSkipLinePriority: true,
+          },
+        },
+        waitlist: {
+          select: {
+            id: true,
+            name: true,
+            skipLineEnabled: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    return {
+      payment: {
+        id: payment.id,
+        status: payment.status,
+        amount: payment.amount,
+        currency: payment.currency,
+        createdAt: payment.createdAt,
+      },
+      participant: payment.participant,
+      waitlist: payment.waitlist,
+    };
+  }
+
+  /**
+   * Retrieves the latest Skip the Line payment for a founder (protected endpoint).
+   */
+  async getLatestSkipLinePaymentStatus(userId: string) {
+    const founder = await this.getFounderByUserId(userId);
+
+    const payment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        founderId: founder.id,
+        paymentType: MonetizationPaymentType.SKIP_LINE,
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        participant: {
+          select: {
+            id: true,
+            email: true,
+            position: true,
+            hasSkipLinePriority: true,
+          },
+        },
+        waitlist: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            skipLineEnabled: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('No Skip the Line payment found');
+    }
+
+    return {
+      payment: {
+        id: payment.id,
+        status: payment.status,
+        amount: payment.amount,
+        currency: payment.currency,
+        createdAt: payment.createdAt,
+      },
+      participant: payment.participant,
+      waitlist: payment.waitlist,
+    };
+  }
+
+  /**
+   * Retrieves the latest Skip the Line payment for a participant (public endpoint).
+   */
+  async getLatestSkipLinePaymentStatusPublic(participantId: string, waitlistId: string) {
+    const payment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        participantId,
+        waitlistId,
+        paymentType: MonetizationPaymentType.SKIP_LINE,
+      },
+      orderBy: { createdAt: 'desc' },
+      include: {
+        participant: {
+          select: {
+            id: true,
+            email: true,
+            position: true,
+            hasSkipLinePriority: true,
+          },
+        },
+        waitlist: {
+          select: {
+            id: true,
+            name: true,
+            slug: true,
+            skipLineEnabled: true,
+          },
+        },
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('No Skip the Line payment found');
+    }
+
+    return {
+      payment: {
+        id: payment.id,
+        status: payment.status,
+        amount: payment.amount,
+        currency: payment.currency,
+        createdAt: payment.createdAt,
+      },
+      participant: payment.participant,
+      waitlist: payment.waitlist,
+    };
+  }
+
+  /**
+   * Manually verify a Chapa payment by checking its status directly from Chapa API.
+   * This is used as a fallback when webhooks fail or for testing purposes.
+   */
+  async verifyChapaPayment(paymentId: string): Promise<{ message: string; payment: any }> {
+    const payment = await this.prisma.monetizationPayment.findUnique({
+      where: { id: paymentId },
+      include: {
+        participant: true,
+        waitlist: true,
+      },
+    });
+
+    if (!payment) {
+      throw new NotFoundException('Payment not found');
+    }
+
+    if (payment.status === MonetizationPaymentStatus.SUCCEEDED) {
+      return { message: 'Payment already verified', payment };
+    }
+
+    if (payment.provider !== PaymentProvider.CHAPA) {
+      throw new BadRequestException('Payment is not a Chapa payment');
+    }
+
+    // Get the payment account for this waitlist/founder
+    const account = await this.prisma.paymentAccount.findFirst({
+      where: {
+        founderId: payment.founderId,
+        provider: PaymentProvider.CHAPA,
+        status: PaymentAccountStatus.ACTIVE,
+      },
+    });
+
+    if (!account) {
+      throw new BadRequestException('No active Chapa account found for this payment');
+    }
+
+    // Get Chapa provider
+    const provider = this.getProvider(PaymentProvider.CHAPA);
+
+    // Verify payment status with Chapa
+    const verificationResult: VerifyPaymentResult = await provider.verifyPayment(paymentId, account);
+
+    if (verificationResult.status === 'SUCCEEDED') {
+      this.logger.log(`Chapa payment verification returned SUCCEEDED for payment ${paymentId}`);
+      this.logger.log(`Payment participantId: ${payment.participantId}, waitlistId: ${payment.waitlistId}`);
+      
+      // Update payment status and grant priority in a transaction
+      await this.prisma.$transaction(async (tx) => {
+        await tx.monetizationPayment.update({
+          where: { id: paymentId },
+          data: {
+            status: MonetizationPaymentStatus.SUCCEEDED,
+            providerPaymentId: verificationResult.providerPaymentId,
+          },
+        });
+
+        // Grant skip line priority if participant exists
+        if (payment.participantId) {
+          this.logger.log(`Updating participant ${payment.participantId} hasSkipLinePriority to true`);
+          await tx.participant.update({
+            where: { id: payment.participantId },
+            data: { hasSkipLinePriority: true },
+          });
+          this.logger.log(`Successfully set hasSkipLinePriority=true for participant ${payment.participantId}`);
+        } else {
+          this.logger.warn(`No participantId found for payment ${paymentId}`);
+        }
+      });
+
+      // Rerank participants outside transaction to see committed changes
+      if (payment.waitlistId) {
+        this.logger.log(`Starting rerank for waitlist ${payment.waitlistId}`);
+        await this.participantsService.rerankWaitlistParticipants(payment.waitlistId);
+        this.logger.log(`Completed rerank for waitlist ${payment.waitlistId}`);
+      }
+
+      this.logger.log(`Chapa payment ${paymentId} verified successfully via manual check with reranking`);
+    } else {
+      this.logger.log(`Chapa payment verification returned status: ${verificationResult.status} for payment ${paymentId}`);
+    }
+
+    return { message: 'Payment verification completed', payment };
+  }
+  async getPayments(userId: string, query: any) {
+    const founder = await this.getFounderByUserId(userId);
+
+    const { waitlistId, paymentType, status } = query;
+
+    const where: any = {
+      founderId: founder.id,
+    };
+
+    if (waitlistId) {
+      where.waitlistId = waitlistId;
+    }
+
+    if (paymentType) {
+      where.paymentType = paymentType;
+    }
+
+    if (status) {
+      where.status = status;
+    }
+
+    const payments = await this.prisma.monetizationPayment.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        paymentType: true,
+        amount: true,
+        currency: true,
+        platformFee: true,
+        founderAmount: true,
+        status: true,
+        createdAt: true,
+        participant: {
+          select: {
+            id: true,
+            email: true,
+          },
+        },
+        waitlist: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+    });
+
+    return payments;
   }
 }

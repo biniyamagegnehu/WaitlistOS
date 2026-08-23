@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MonetizationPayment, PaymentAccount } from '@prisma/client';
 import Stripe from 'stripe';
-import { IMonetizationProvider, InitializePaymentResult, WebhookEventResult } from './monetization-provider.interface';
+import { IMonetizationProvider, InitializePaymentResult, WebhookEventResult, VerifyPaymentResult } from './monetization-provider.interface';
 
 export interface StripeAccountStatus {
   detailsSubmitted: boolean;
@@ -213,5 +213,40 @@ export class StripeMonetizationProvider implements IMonetizationProvider {
       eventType: event.type,
       payload: event,
     };
+  }
+
+  async verifyPayment(
+    paymentId: string,
+    account: PaymentAccount,
+  ): Promise<VerifyPaymentResult> {
+    const stripe = this.assertStripeInitialized();
+
+    try {
+      // For Stripe, paymentId is the session ID
+      const session = await stripe.checkout.sessions.retrieve(paymentId);
+
+      if (session.payment_status === 'paid') {
+        return {
+          status: 'SUCCEEDED',
+          providerPaymentId: paymentId,
+        };
+      } else if (session.status === 'expired') {
+        return {
+          status: 'FAILED',
+          providerPaymentId: paymentId,
+        };
+      }
+
+      return {
+        status: 'PENDING',
+        providerPaymentId: paymentId,
+      };
+    } catch (error) {
+      this.logger.error(`Stripe payment verification failed: ${error instanceof Error ? error.message : String(error)}`);
+      return {
+        status: 'PENDING',
+        providerPaymentId: paymentId,
+      };
+    }
   }
 }

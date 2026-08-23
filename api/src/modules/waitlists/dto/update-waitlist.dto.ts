@@ -6,6 +6,8 @@ import {
   MaxLength,
   MinLength,
   IsEnum,
+  IsNumber,
+  Min,
 } from 'class-validator';
 import { ThemeMode } from '@prisma/client';
 
@@ -94,4 +96,17 @@ export class UpdateWaitlistDto {
   @IsOptional()
   @IsEnum(ThemeMode)
   themeMode?: ThemeMode;
+
+  // ── Skip the Line Configuration ─────────────────
+  @IsOptional()
+  skipLineEnabled?: boolean;
+
+  @IsOptional()
+  @IsNumber()
+  @Min(0.01)
+  skipLinePrice?: number;
+
+  @IsOptional()
+  @IsString()
+  skipLineCurrency?: string;
 }

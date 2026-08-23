@@ -1,9 +1,11 @@
-import { Body, Controller, Delete, Get, Param, Post, Req, Res } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Headers, Param, Post, Query, Req, Res, UseGuards, BadRequestException } from '@nestjs/common';
 import { MonetizationService } from './monetization.service';
-import { ConnectChapaDto } from './dto/monetization.dtos';
+import { ConnectChapaDto, CreateCheckoutDto } from './dto/monetization.dtos';
 import { PaymentProvider } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
-import type { Response } from 'express';
+import { AccessTokenGuard } from '../auth/guards/access-token.guard';
+import { Public } from '../../common/decorators/public.decorator';
+import type { Response, Request } from 'express';
 
 @Controller('monetization')
 export class MonetizationController {
@@ -105,5 +107,132 @@ export class MonetizationController {
   async disconnectAccount(@Req() req: any, @Param('provider') provider: PaymentProvider) {
     await this.monetizationService.disconnectAccount(req.user.userId, provider);
     return { success: true };
+  }
+
+  // ── Skip the Line Checkout ──────────────────────────────────────────────────
+
+  /**
+   * POST /api/monetization/skip-line/checkout
+   *
+   * Creates a Skip the Line checkout session for a participant.
+   * The participant must be authenticated and the waitlist must have Skip the Line enabled.
+   */
+  @UseGuards(AccessTokenGuard)
+  /**
+   * POST /api/monetization/skip-line/checkout
+   *
+   * Creates a Skip the Line checkout session.
+   * This endpoint is public (no auth) but requires waitlistId and participantId.
+   * It auto-selects the active payment provider for the waitlist.
+   */
+  @Public()
+  @Post('skip-line/checkout')
+  async createSkipLineCheckout(@Body() dto: CreateCheckoutDto) {
+    return this.monetizationService.createSkipLineCheckoutPublic(dto);
+  }
+
+  /**
+   * GET /api/monetization/skip-line/status/:paymentId
+   *
+   * Retrieves the status of a Skip the Line payment (public endpoint).
+   */
+  @Public()
+  @Get('skip-line/status/:paymentId')
+  async getSkipLineStatusPublic(@Param('paymentId') paymentId: string) {
+    return this.monetizationService.getSkipLinePaymentStatusPublic(paymentId);
+  }
+
+  /**
+   * GET /api/monetization/skip-line/status/:paymentId
+   *
+   * Retrieves the status of a Skip the Line payment (protected endpoint).
+   */
+  @UseGuards(AccessTokenGuard)
+  @Get('skip-line/status/protected/:paymentId')
+  async getSkipLineStatus(@Req() req: any, @Param('paymentId') paymentId: string) {
+    return this.monetizationService.getSkipLinePaymentStatus(paymentId, req.user.userId);
+  }
+
+  /**
+   * GET /api/monetization/skip-line/status/latest
+   *
+   * Retrieves the latest Skip the Line payment for the current user (protected).
+   */
+  @UseGuards(AccessTokenGuard)
+  @Get('skip-line/status/latest')
+  async getLatestSkipLineStatus(@Req() req: any) {
+    return this.monetizationService.getLatestSkipLinePaymentStatus(req.user.userId);
+  }
+
+  /**
+   * GET /api/monetization/skip-line/status/public/latest
+   *
+   * Retrieves the latest Skip the Line payment by participant ID (public endpoint).
+   */
+  @Public()
+  @Get('skip-line/status/public/latest')
+  async getLatestSkipLineStatusPublic(@Query('participantId') participantId: string, @Query('waitlistId') waitlistId: string) {
+    return this.monetizationService.getLatestSkipLinePaymentStatusPublic(participantId, waitlistId);
+  }
+
+  /**
+   * POST /api/monetization/skip-line/verify/:paymentId
+   *
+   * Manually verify a Chapa payment (for testing/fallback when webhooks fail).
+   * This endpoint is public for testing purposes.
+   */
+  @Public()
+  @Post('skip-line/verify/:paymentId')
+  async verifyChapaPayment(@Param('paymentId') paymentId: string) {
+    return this.monetizationService.verifyChapaPayment(paymentId);
+  }
+
+  /**
+   * POST /api/monetization/webhooks/stripe
+   *
+   * Receives Stripe event webhooks. This route is public — Stripe servers
+   * do not send a JWT. Signature verification is performed inside the service.
+   */
+  @Public()
+  @Post('webhooks/stripe')
+  async handleStripeWebhook(
+    @Req() req: Request,
+    @Headers('stripe-signature') signature: string | undefined,
+  ) {
+    if (!signature) throw new BadRequestException('Missing stripe-signature header');
+
+    // NestFactory is bootstrapped with rawBody: true, so req.rawBody is available.
+    const rawBody = (req as any).rawBody?.toString('utf8') ?? JSON.stringify(req.body);
+
+    return this.monetizationService.handleWebhook(PaymentProvider.STRIPE, rawBody, signature);
+  }
+
+  /**
+   * POST /api/monetization/webhooks/chapa
+   *
+   * Receives Chapa event webhooks. This route is public — Chapa servers
+   * do not send a JWT. Signature verification is performed inside the service.
+   */
+  @Public()
+  @Post('webhooks/chapa')
+  async handleChapaWebhook(
+    @Req() req: Request,
+    @Headers('chapa-signature') signature: string | undefined,
+  ) {
+    if (!signature) throw new BadRequestException('Missing chapa-signature header');
+
+    const rawBody = (req as any).rawBody?.toString('utf8') ?? JSON.stringify(req.body);
+    return this.monetizationService.handleWebhook(PaymentProvider.CHAPA, rawBody, signature);
+  }
+
+  /**
+   * GET /api/monetization/payments
+   *
+   * Retrieves monetization payments with optional filters.
+   */
+  @UseGuards(AccessTokenGuard)
+  @Get('payments')
+  async getPayments(@Req() req: any, @Query() query: any) {
+    return this.monetizationService.getPayments(req.user.userId, query);
   }
 }

@@ -33,6 +33,9 @@ export interface DashboardWaitlist {
   showBatchProgress: boolean;
   showCountdown: boolean;
   themeMode?: 'SYSTEM' | 'LIGHT' | 'DARK';
+  skipLineEnabled?: boolean;
+  skipLinePrice?: number | null;
+  skipLineCurrency?: string | null;
 }
 
 export interface DashboardParticipant {
@@ -42,6 +45,7 @@ export interface DashboardParticipant {
   referralCount: number;
   createdAt: Date;
   status: string;
+  hasSkipLinePriority?: boolean;
   engagement?: any;
 }
 
@@ -276,6 +280,9 @@ export class DashboardService {
       showRemainingSpots: w.showRemainingSpots,
       showBatchProgress: w.showBatchProgress,
       showCountdown: w.showCountdown,
+      skipLineEnabled: w.skipLineEnabled,
+      skipLinePrice: w.skipLinePrice ? Number(w.skipLinePrice) : null,
+      skipLineCurrency: w.skipLineCurrency,
     }));
   }
 
@@ -346,6 +353,7 @@ export class DashboardService {
             referralCount: true,
             createdAt: true,
             status: true,
+            hasSkipLinePriority: true,
             engagement: {
               select: {
                 riskScore: true,
@@ -410,8 +418,20 @@ export class DashboardService {
         showBatchProgress: waitlist.showBatchProgress,
         showCountdown: waitlist.showCountdown,
         themeMode: waitlist.themeMode,
+        skipLineEnabled: waitlist.skipLineEnabled,
+        skipLinePrice: waitlist.skipLinePrice ? Number(waitlist.skipLinePrice) : null,
+        skipLineCurrency: waitlist.skipLineCurrency,
       },
-      participants: waitlist.participants,
+      participants: waitlist.participants.map((p) => ({
+        id: p.id,
+        email: p.email,
+        position: p.position,
+        referralCount: p.referralCount,
+        createdAt: p.createdAt,
+        status: p.status,
+        hasSkipLinePriority: p.hasSkipLinePriority,
+        engagement: p.engagement,
+      })),
       pagination: {
         currentPage: page,
         pageSize,

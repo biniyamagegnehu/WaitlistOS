@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { MonetizationPayment, PaymentAccount } from '@prisma/client';
-import { IMonetizationProvider, InitializePaymentResult, WebhookEventResult } from './monetization-provider.interface';
+import { IMonetizationProvider, InitializePaymentResult, WebhookEventResult, VerifyPaymentResult } from './monetization-provider.interface';
 import * as crypto from 'crypto';
 
 @Injectable()
@@ -36,16 +36,12 @@ export class ChapaMonetizationProvider implements IMonetizationProvider {
         callback_url: returnUrl,
         return_url: returnUrl,
         customization: {
-          title: `WaitlistOS: ${payment.paymentType}`,
+          title: 'WaitlistOS',
           description: 'Payment',
         },
-        subaccounts: [
-          {
-            id: account.providerAccountId,
-            split_type: 'flat',
-            transaction_charge: Number(payment.founderAmount).toString(), // The founder receives this
-          },
-        ],
+        subaccount: account.providerAccountId,
+        split_type: 'flat',
+        split_value: Number(payment.founderAmount).toString(),
       };
 
       const response = await fetch(`${this.baseUrl}/transaction/initialize`, {
@@ -57,10 +53,19 @@ export class ChapaMonetizationProvider implements IMonetizationProvider {
         body: JSON.stringify(payload),
       });
 
-      const data = await response.json();
+      const responseText = await response.text();
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        this.logger.error(`Failed to parse Chapa response as JSON: ${responseText}`);
+        throw new Error('Invalid response from Chapa API');
+      }
 
       if (!data.status || data.status !== 'success') {
-        throw new Error(data.message || 'Failed to initialize Chapa payment');
+        const errorMessage = typeof data.message === 'string' ? data.message : JSON.stringify(data.message || data);
+        this.logger.error(`Chapa API error: ${errorMessage}`);
+        throw new Error(errorMessage);
       }
 
       return {
@@ -68,7 +73,11 @@ export class ChapaMonetizationProvider implements IMonetizationProvider {
         providerPaymentId: payment.id, // For Chapa we use our tx_ref as the payment ID reference
       };
     } catch (error) {
-      this.logger.error(`Chapa checkout failed: ${error instanceof Error ? error.message : String(error)}`);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Chapa checkout failed: ${errorMessage}`);
+      if (error instanceof Error && error.stack) {
+        this.logger.error(`Chapa checkout stack: ${error.stack}`);
+      }
       throw new Error('Failed to initialize Chapa payment');
     }
   }
@@ -100,6 +109,71 @@ export class ChapaMonetizationProvider implements IMonetizationProvider {
       eventType: payload.event || payload.status,
       payload,
     };
+  }
+
+  async verifyPayment(
+    paymentId: string,
+    account: PaymentAccount,
+  ): Promise<VerifyPaymentResult> {
+    try {
+      this.logger.log(`Verifying Chapa payment with ID: ${paymentId}`);
+      const response = await fetch(`${this.baseUrl}/transaction/verify/${paymentId}`, {
+        method: 'GET',
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      const responseText = await response.text();
+      this.logger.log(`Chapa verify response status: ${response.status}`);
+      this.logger.log(`Chapa verify response body: ${responseText}`);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        this.logger.error(`Failed to parse Chapa verify response as JSON: ${responseText}`);
+        throw new Error('Invalid response from Chapa API');
+      }
+
+      if (!data.status || data.status !== 'success') {
+        const errorMessage = typeof data.message === 'string' ? data.message : JSON.stringify(data.message || data);
+        this.logger.error(`Chapa verify error: ${errorMessage}`);
+        return {
+          status: 'PENDING',
+          providerPaymentId: paymentId,
+        };
+      }
+
+      // Check the payment status from Chapa
+      const chapaStatus = data.data?.status;
+      this.logger.log(`Chapa payment status: ${chapaStatus}`);
+      
+      let status: 'SUCCEEDED' | 'FAILED' | 'PENDING' = 'PENDING';
+      
+      if (chapaStatus === 'success') {
+        status = 'SUCCEEDED';
+        this.logger.log(`Chapa payment ${paymentId} verified as SUCCEEDED`);
+      } else if (chapaStatus === 'failed') {
+        status = 'FAILED';
+        this.logger.log(`Chapa payment ${paymentId} verified as FAILED`);
+      } else {
+        this.logger.log(`Chapa payment ${paymentId} status is ${chapaStatus}, treating as PENDING`);
+      }
+
+      return {
+        status,
+        providerPaymentId: paymentId,
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Chapa payment verification failed: ${errorMessage}`);
+      return {
+        status: 'PENDING',
+        providerPaymentId: paymentId,
+      };
+    }
   }
 
   /**

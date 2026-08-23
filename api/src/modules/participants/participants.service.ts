@@ -50,21 +50,26 @@ export class ParticipantsService {
 
   // ── Rerank all participants in a waitlist ─────────────────
   // Fetches all participants ordered by:
-  //   1. (referralCount + positionBoostBonus) DESC  — more referrals = higher priority
-  //   2. createdAt ASC                              — earlier joiner wins on tie
+  //   1. hasSkipLinePriority DESC                    — paid participants first
+  //   2. (referralCount + positionBoostBonus) DESC  — more referrals = higher priority
+  //   3. createdAt ASC                              — earlier joiner wins on tie
   // Then assigns sequential positions 1, 2, 3... and bulk-updates any that changed.
   private async rerankParticipants(
     waitlistId: string,
     tx: TransactionClient,
   ): Promise<void> {
+    this.logger.log(`Starting rerank for waitlist ${waitlistId}`);
+    
     await tx.$executeRaw(
       Prisma.sql`
         UPDATE "participants"
         SET position = ranked.new_pos
         FROM (
-          SELECT id, 
+          SELECT id,
                  ROW_NUMBER() OVER (
-                   ORDER BY ("referralCount" + COALESCE("positionBoostBonus", 0)) DESC, "createdAt" ASC
+                   ORDER BY "hasSkipLinePriority" DESC,
+                          ("referralCount" + COALESCE("positionBoostBonus", 0)) DESC,
+                          "createdAt" ASC
                  ) as new_pos
           FROM "participants"
           WHERE "waitlistId" = ${waitlistId}
@@ -73,6 +78,46 @@ export class ParticipantsService {
           AND "participants".position IS DISTINCT FROM ranked.new_pos;
       `
     );
+    
+    this.logger.log(`Rerank completed for waitlist ${waitlistId}`);
+  }
+
+  // ── Public rerank method for external calls ─────────────────────────
+  async rerankWaitlistParticipants(waitlistId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      await this.rerankParticipants(waitlistId, tx);
+    });
+  }
+
+  // ── Debug method to check current ranking state ─────────────────────
+  async debugRank(waitlistId: string) {
+    const participants = await this.prisma.participant.findMany({
+      where: { waitlistId },
+      select: {
+        id: true,
+        email: true,
+        position: true,
+        hasSkipLinePriority: true,
+        referralCount: true,
+        positionBoostBonus: true,
+        createdAt: true,
+      },
+      orderBy: { position: 'asc' },
+    });
+
+    return {
+      total: participants.length,
+      paidPriority: participants.filter(p => p.hasSkipLinePriority).length,
+      normal: participants.filter(p => !p.hasSkipLinePriority).length,
+      participants: participants.map(p => ({
+        position: p.position,
+        email: p.email,
+        hasSkipLinePriority: p.hasSkipLinePriority,
+        referralCount: p.referralCount,
+        positionBoostBonus: p.positionBoostBonus,
+        createdAt: p.createdAt,
+      })),
+    };
   }
 
   // ── Create participant ────────────────────────────────────
@@ -578,5 +623,54 @@ export class ParticipantsService {
     }
 
     return { success: true, data: updated };
+  }
+
+  // ── Skip the Line Status ────────────────────────────────────
+  async getSkipLineStatus(participantId: string, waitlistId: string) {
+    const participant = await this.prisma.participant.findUnique({
+      where: { id: participantId },
+      include: {
+        waitlist: {
+          select: {
+            id: true,
+            skipLineEnabled: true,
+            skipLinePrice: true,
+            skipLineCurrency: true,
+          },
+        },
+      },
+    });
+
+    if (!participant) {
+      throw new NotFoundException('Participant not found');
+    }
+
+    if (participant.waitlistId !== waitlistId) {
+      throw new BadRequestException('Participant does not belong to this waitlist');
+    }
+
+    // Check for existing successful payment
+    const existingPayment = await this.prisma.monetizationPayment.findFirst({
+      where: {
+        participantId,
+        waitlistId,
+        paymentType: 'SKIP_LINE',
+        status: 'SUCCEEDED',
+      },
+    });
+
+    return {
+      success: true,
+      data: {
+        eligible: !participant.hasSkipLinePriority && !existingPayment,
+        hasPriority: participant.hasSkipLinePriority,
+        waitlist: {
+          skipLineEnabled: participant.waitlist.skipLineEnabled,
+          skipLinePrice: participant.waitlist.skipLinePrice,
+          skipLineCurrency: participant.waitlist.skipLineCurrency,
+        },
+        position: participant.position,
+      },
+    };
   }
 }

@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  BadRequestException,
 } from '@nestjs/common';
 import { DEFAULT_BRANDING } from '../branding/constants/branding.defaults';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -13,7 +14,7 @@ import { UpdateWaitlistDto } from './dto/update-waitlist.dto';
 import { SlugService } from './services/slug.service';
 import { PaymentService } from '../payments/payment.service';
 import { defaultPageConfig, upgradePageConfig, validatePageConfig } from './page-config';
-import { Prisma } from '@prisma/client';
+import { Prisma, PaymentAccountStatus, PaymentProvider } from '@prisma/client';
 
 @Injectable()
 export class WaitlistsService {
@@ -87,6 +88,38 @@ export class WaitlistsService {
       await this.filesService.assertOwnership(dto.logoId, userId);
     }
 
+    // ── Skip the Line Validation ─────────────────────────────
+    if (dto.skipLineEnabled && !waitlist.skipLineEnabled) {
+      // Enabling Skip the Line - check payment account
+      const paymentAccount = await this.prisma.paymentAccount.findFirst({
+        where: {
+          founderId: founder.id,
+          status: PaymentAccountStatus.ACTIVE,
+        },
+      });
+
+      if (!paymentAccount) {
+        throw new BadRequestException(
+          'Skip the Line requires a connected payment account. Please connect Stripe or Chapa in Settings first.',
+        );
+      }
+
+      // Validate price if provided
+      if (dto.skipLinePrice !== undefined && dto.skipLinePrice <= 0) {
+        throw new BadRequestException('Skip the Line price must be greater than 0');
+      }
+
+      // Validate currency if provided
+      if (dto.skipLineCurrency !== undefined) {
+        const supportedCurrencies = ['USD', 'ETB', 'EUR', 'GBP'];
+        if (!supportedCurrencies.includes(dto.skipLineCurrency.toUpperCase())) {
+          throw new BadRequestException(
+            `Currency ${dto.skipLineCurrency} is not supported. Supported currencies: ${supportedCurrencies.join(', ')}`,
+          );
+        }
+      }
+    }
+
     let slug = waitlist.slug;
 
     if (dto.slug && dto.slug !== waitlist.slug) {
@@ -128,6 +161,10 @@ export class WaitlistsService {
           ...(dto.showBatchProgress !== undefined && { showBatchProgress: dto.showBatchProgress }),
           ...(dto.showCountdown !== undefined && { showCountdown: dto.showCountdown }),
           ...(dto.themeMode !== undefined && { themeMode: dto.themeMode }),
+          // ── Skip the Line Configuration ─────────────────────
+          ...(dto.skipLineEnabled !== undefined && { skipLineEnabled: dto.skipLineEnabled }),
+          ...(dto.skipLinePrice !== undefined && { skipLinePrice: dto.skipLinePrice }),
+          ...(dto.skipLineCurrency !== undefined && { skipLineCurrency: dto.skipLineCurrency?.toUpperCase() }),
         },
         include: { logo: true },
       });
