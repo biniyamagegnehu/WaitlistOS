@@ -153,7 +153,7 @@ export function SkipLineSection() {
                   variant="outline"
                   size="sm"
                   className="ml-4 shrink-0 gap-2"
-                  onClick={() => router.push(routes.waitlistMonetization(s.id) + "/skip-line")}
+                  onClick={() => router.push(routes.waitlistMonetizationSkipLine(s.id))}
                 >
                   Configure <ArrowRight className="h-4 w-4" />
                 </Button>

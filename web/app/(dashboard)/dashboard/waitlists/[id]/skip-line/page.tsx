@@ -10,8 +10,8 @@ export default function SkipLineRedirect() {
   const waitlistId = params?.id as string;
 
   useEffect(() => {
-    // Redirect to the new monetization path
-    router.replace(routes.waitlistMonetizationSkipLine(waitlistId));
+    // Redirect to the waitlist monetization page
+    router.replace(routes.waitlistMonetization(waitlistId));
   }, [waitlistId, router]);
 
   return null;

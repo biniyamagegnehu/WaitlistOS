@@ -189,7 +189,7 @@ export default function PreOrderPage() {
     <div className="min-h-screen bg-background px-4 py-12">
       <div className="mx-auto max-w-7xl">
         <div className="mb-8">
-          <Button variant="ghost" onClick={() => router.push(routes.waitlistMonetization(waitlistId))} className="mb-4">
+          <Button variant="ghost" onClick={() => router.push(routes.monetization)} className="mb-4">
             <ArrowLeft className="mr-2 h-4 w-4" /> Back to Monetization
           </Button>
           <div className="flex items-center justify-between">

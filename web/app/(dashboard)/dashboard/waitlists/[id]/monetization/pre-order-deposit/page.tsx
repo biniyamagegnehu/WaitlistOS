@@ -34,7 +34,7 @@ export default function PreOrderDepositPage() {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => router.push(routes.waitlistMonetization(waitlistId))}
+            onClick={() => router.push(routes.monetization)}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />
@@ -98,7 +98,7 @@ export default function PreOrderDepositPage() {
               </div>
               <Button
                 variant="outline"
-                onClick={() => router.push(routes.waitlistMonetization(waitlistId))}
+                onClick={() => router.push(routes.monetization)}
               >
                 Back to Monetization Overview
               </Button>

@@ -30,7 +30,7 @@ export const routes = {
   waitlistAnalyticsGrowthVelocity: (id: string) => `/dashboard/waitlists/${id}/analytics/growth-velocity`,
   waitlistMonetization: (id: string) => `/dashboard/waitlists/${id}/monetization`,
   waitlistMonetizationSkipLine: (id: string) => `/dashboard/waitlists/${id}/monetization/skip-line`,
-  waitlistMonetizationPreOrder: (id: string) => `/dashboard/waitlists/${id}/monetization/pre-order-deposit`,
+  waitlistMonetizationPreOrder: (id: string) => `/dashboard/waitlists/${id}/monetization/pre-order`,
   waitlistMonetizationAffiliate: (id: string) => `/dashboard/waitlists/${id}/monetization/affiliate`,
   waitlistSkipLine: (id: string) => `/dashboard/waitlists/${id}/monetization/skip-line`, // Legacy route
   settings: "/dashboard/settings",

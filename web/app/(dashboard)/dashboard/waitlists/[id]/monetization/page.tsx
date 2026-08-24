@@ -196,7 +196,7 @@ export default function WaitlistMonetizationPage() {
 
             <Card 
               className="cursor-pointer hover:border-primary/50 transition-colors"
-              onClick={() => router.push(routes.waitlistMonetization(waitlistId) + "/pre-order")}
+              onClick={() => router.push(routes.waitlistMonetizationPreOrder(waitlistId))}
             >
               <CardContent className="p-6">
                 <div className="flex items-start gap-4">

@@ -254,7 +254,7 @@ export default function SkipLinePage() {
             {error}
           </Alert>
           <Button
-            onClick={() => router.push(routes.waitlistMonetization(waitlistId))}
+            onClick={() => router.push(routes.monetization)}
             className="mt-4"
           >
             Back to Monetization
@@ -270,7 +270,7 @@ export default function SkipLinePage() {
         <div className="mb-8">
           <Button
             variant="ghost"
-            onClick={() => router.push(routes.waitlistMonetization(waitlistId))}
+            onClick={() => router.push(routes.monetization)}
             className="mb-4"
           >
             <ArrowLeft className="mr-2 h-4 w-4" />

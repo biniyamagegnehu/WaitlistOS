@@ -154,7 +154,7 @@ export function PreOrderSection() {
                   size="sm"
                   className="ml-4 shrink-0 gap-2"
                   onClick={() =>
-                    router.push(routes.waitlistMonetization(s.id) + "/pre-order")
+                    router.push(routes.waitlistMonetizationPreOrder(s.id))
                   }
                 >
                   Configure <ArrowRight className="h-4 w-4" />
