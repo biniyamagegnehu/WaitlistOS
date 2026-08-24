@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { affiliateService, AffiliatePayout, PaymentAccountSummary } from "@/services/affiliates";
-import { CheckCircle2, XCircle, Loader2, ExternalLink, Settings } from "lucide-react";
+import { CheckCircle2, XCircle, Loader2, ExternalLink, Settings, CreditCard } from "lucide-react";
 import toast from "react-hot-toast";
 
 interface AffiliatePayoutsTabProps {
@@ -50,7 +50,23 @@ export function AffiliatePayoutsTab({
       toast.success("Payout preference saved.");
       onPreferenceUpdated();
     } catch (err: any) {
-      toast.error(err?.response?.data?.message || "Failed to save preference.");
+      console.error('Payout preference save error:', err);
+      
+      let errorMessage = "Failed to save preference.";
+      
+      if (err?.response?.status === 401) {
+        errorMessage = "Please log in to save your payout preference.";
+      } else if (err?.response?.status === 400) {
+        errorMessage = "Invalid payout provider selected.";
+      } else if (err?.response?.status === 404) {
+        errorMessage = "Payment account not found. Please connect it in Payment Settings.";
+      } else if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setSaving(false);
     }
@@ -201,9 +217,19 @@ export function AffiliatePayoutsTab({
         </CardHeader>
         <CardContent>
           {payouts.length === 0 ? (
-            <p className="text-sm text-muted-foreground text-center py-6">
-              No payouts yet. Your first payout will be processed once you have eligible commissions.
-            </p>
+            <div className="text-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                  <CreditCard className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <div className="text-center">
+                  <p className="font-medium text-foreground">No payouts yet</p>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Your first payout will be processed once you have eligible commissions.
+                  </p>
+                </div>
+              </div>
+            </div>
           ) : (
             <div className="divide-y">
               {payouts.map((payout) => (

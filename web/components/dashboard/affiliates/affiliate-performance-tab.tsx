@@ -4,6 +4,7 @@ import { AffiliateConversion, AffiliateCommission } from "@/services/affiliates"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHeadCell, TableHead, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { DollarSign, Users } from "lucide-react";
 
 function formatDate(dateStr: string) {
   return new Intl.DateTimeFormat('en-US', {
@@ -36,6 +37,8 @@ export function AffiliatePerformanceTab({
     }
   };
 
+  const hasData = commissions.length > 0 || conversions.length > 0;
+
   return (
     <div className="space-y-6">
       <Card>
@@ -58,8 +61,18 @@ export function AffiliatePerformanceTab({
               <TableBody>
                 {commissions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={3} className="text-center py-8 text-muted-foreground">
-                      No commissions earned yet. Share your links to get started!
+                    <TableCell colSpan={3} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                          <DollarSign className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-foreground">No commissions yet</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            Share your affiliate link to start earning commissions!
+                          </p>
+                        </div>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -98,8 +111,18 @@ export function AffiliatePerformanceTab({
               <TableBody>
                 {conversions.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={2} className="text-center py-8 text-muted-foreground">
-                      No conversions yet.
+                    <TableCell colSpan={2} className="text-center py-12">
+                      <div className="flex flex-col items-center gap-3">
+                        <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
+                          <Users className="h-6 w-6 text-muted-foreground" />
+                        </div>
+                        <div className="text-center">
+                          <p className="font-medium text-foreground">No conversions yet</p>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            When referred founders upgrade to paid plans, they'll appear here.
+                          </p>
+                        </div>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ) : (
@@ -119,6 +142,18 @@ export function AffiliatePerformanceTab({
           </div>
         </CardContent>
       </Card>
+
+      {!hasData && (
+        <Card className="border-dashed">
+          <CardContent className="pt-6">
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">
+                Start sharing your affiliate link to track your performance and earnings here.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

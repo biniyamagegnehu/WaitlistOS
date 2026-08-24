@@ -76,4 +76,9 @@ export const affiliateService = {
     const { data } = await api.patch('/affiliates/payout-preference', { provider });
     return data;
   },
+
+  trackClick: async (ref: string): Promise<{ tracked: boolean; ref?: string; reason?: string }> => {
+    const { data } = await api.get('/affiliates/track', { params: { ref } });
+    return data;
+  }
 };
