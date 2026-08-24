@@ -15,6 +15,16 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHeadCell, TableRow } from "@/components/ui/table";
 import { getDashboardWaitlistDetail } from "@/services/dashboard";
 import { api } from "@/lib/axios";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const configSchema = z.object({
+  price: z.string().min(1, "Price is required").refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Price must be a positive number"),
+  currency: z.enum(["USD", "EUR", "GBP", "ETB", "NGN", "KES", "ZAR"]),
+});
+
+type ConfigFormData = z.infer<typeof configSchema>;
 
 interface SkipLineAnalytics {
   paidParticipants: number;
@@ -92,11 +102,15 @@ export default function SkipLinePage() {
   const [isLoadingData, setIsLoadingData] = React.useState(true);
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [showConfig, setShowConfig] = React.useState(false);
-  
-  // Config form states
-  const [configPrice, setConfigPrice] = React.useState("");
-  const [configCurrency, setConfigCurrency] = React.useState("USD");
   const [isSavingConfig, setIsSavingConfig] = React.useState(false);
+
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ConfigFormData>({
+    resolver: zodResolver(configSchema),
+    defaultValues: {
+      price: "",
+      currency: "USD",
+    },
+  });
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -119,10 +133,10 @@ export default function SkipLinePage() {
       
       // Set config form values
       if (analyticsResponse.data.skipLinePrice) {
-        setConfigPrice(Number(analyticsResponse.data.skipLinePrice).toString());
-      }
-      if (analyticsResponse.data.skipLineCurrency) {
-        setConfigCurrency(analyticsResponse.data.skipLineCurrency);
+        reset({
+          price: Number(analyticsResponse.data.skipLinePrice).toString(),
+          currency: analyticsResponse.data.skipLineCurrency || "USD",
+        });
       }
     } catch (err) {
       console.error("Failed to fetch Skip the Line analytics:", err);
@@ -183,22 +197,17 @@ export default function SkipLinePage() {
     }
   };
 
-  const handleSaveConfig = async () => {
+  const handleSaveConfig = async (data: ConfigFormData) => {
     setIsSavingConfig(true);
     setError(null);
 
     try {
-      const price = parseFloat(configPrice);
-      if (isNaN(price) || price <= 0) {
-        setError("Price must be a positive number");
-        setIsSavingConfig(false);
-        return;
-      }
-
+      const price = parseFloat(data.price);
+      
       await api.patch(`/monetization/skip-line/config/${waitlistId}`, {
         skipLineEnabled: true,
         skipLinePrice: price,
-        skipLineCurrency: configCurrency,
+        skipLineCurrency: data.currency,
       });
       
       await fetchAnalytics();
@@ -286,20 +295,31 @@ export default function SkipLinePage() {
                 Monetization analytics and configuration
               </p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Button
                 onClick={() => setShowConfig(!showConfig)}
                 variant="outline"
               >
                 {showConfig ? "Hide Config" : "Configure"}
               </Button>
-              <Button
-                onClick={handleToggleSkipLine}
-                disabled={isUpdating}
-                variant={analytics?.skipLineEnabled ? "destructive" : "primary"}
-              >
-                {isUpdating ? "Updating..." : analytics?.skipLineEnabled ? "Disable Skip the Line" : "Enable Skip the Line"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleToggleSkipLine}
+                  disabled={isUpdating}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    analytics?.skipLineEnabled ? 'bg-primary' : 'bg-surface-muted'
+                  } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      analytics?.skipLineEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm text-muted-foreground">
+                  {isUpdating ? "Updating..." : analytics?.skipLineEnabled ? "Enabled" : "Disabled"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -316,25 +336,24 @@ export default function SkipLinePage() {
               <CardTitle>Skip the Line Configuration</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
+              <form onSubmit={handleSubmit(handleSaveConfig)} className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium text-foreground">Price</label>
                   <Input
                     type="number"
                     step="0.01"
                     min="0"
-                    value={configPrice}
-                    onChange={(e) => setConfigPrice(e.target.value)}
                     placeholder="10.00"
                     className="mt-1"
+                    {...register("price")}
                   />
+                  {errors.price && <p className="text-xs text-destructive mt-1">{errors.price.message}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Currency</label>
                   <select
-                    value={configCurrency}
-                    onChange={(e) => setConfigCurrency(e.target.value)}
                     className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    {...register("currency")}
                   >
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
@@ -344,22 +363,24 @@ export default function SkipLinePage() {
                     <option value="KES">KES (KSh)</option>
                     <option value="ZAR">ZAR (R)</option>
                   </select>
+                  {errors.currency && <p className="text-xs text-destructive mt-1">{errors.currency.message}</p>}
                 </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => setShowConfig(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSaveConfig}
-                  disabled={isSavingConfig}
-                >
-                  {isSavingConfig ? "Saving..." : "Save Configuration"}
-                </Button>
-              </div>
+                <div className="md:col-span-2 flex justify-end gap-2 mt-2">
+                  <Button
+                    variant="outline"
+                    type="button"
+                    onClick={() => setShowConfig(false)}
+                  >
+                    Cancel
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isSavingConfig}
+                  >
+                    {isSavingConfig ? "Saving..." : "Save Configuration"}
+                  </Button>
+                </div>
+              </form>
             </CardContent>
           </Card>
         )}
