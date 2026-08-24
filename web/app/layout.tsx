@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import Script from "next/script";
+import { Suspense } from "react";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
 import { AuthProvider } from "@/contexts/auth-context";
 import { ThemeProvider } from "@/contexts/theme-context";
 import { QueryProvider } from "@/providers/query-provider";
+import { AffiliateTracker } from "@/components/analytics/AffiliateTracker";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -36,6 +38,9 @@ export default function RootLayout({
         <ThemeProvider>
           <QueryProvider>
             <AuthProvider>
+              <Suspense fallback={null}>
+                <AffiliateTracker />
+              </Suspense>
               {children}
               <Toaster position="top-right" toastOptions={{
                 style: {
