@@ -48,7 +48,7 @@ export default function EditWaitlistPage() {
     fetchWaitlist();
   }, [waitlistId]);
 
-  const onSubmit = async (data: CreateWaitlistFormData & { logoId?: string; slug?: string; themeMode?: "SYSTEM" | "LIGHT" | "DARK"; skipLineEnabled?: boolean; skipLinePrice?: number; skipLineCurrency?: string }) => {
+  const onSubmit = async (data: CreateWaitlistFormData & { logoId?: string; slug?: string; themeMode?: "SYSTEM" | "LIGHT" | "DARK" }) => {
     setServerError("");
 
     try {
@@ -59,18 +59,12 @@ export default function EditWaitlistPage() {
         slug?: string;
         logoId?: string;
         themeMode?: "SYSTEM" | "LIGHT" | "DARK";
-        skipLineEnabled?: boolean;
-        skipLinePrice?: number;
-        skipLineCurrency?: string;
       } = {
         name: data.name,
         tagline: data.tagline,
         description: data.description,
         slug: data.slug,
         themeMode: data.themeMode,
-        skipLineEnabled: data.skipLineEnabled,
-        skipLinePrice: data.skipLinePrice,
-        skipLineCurrency: data.skipLineCurrency,
       };
 
       if (data.logoId) {
@@ -164,9 +158,6 @@ export default function EditWaitlistPage() {
             logoUrl: waitlistData?.waitlist.logoUrl || null,
             slug: waitlistData?.waitlist.slug,
             themeMode: waitlistData?.waitlist.themeMode || "SYSTEM",
-            skipLineEnabled: waitlistData?.waitlist.skipLineEnabled ?? false,
-            skipLinePrice: waitlistData?.waitlist.skipLinePrice ?? 10,
-            skipLineCurrency: waitlistData?.waitlist.skipLineCurrency ?? "USD",
           }}
           onSubmit={onSubmit}
           submitButtonText="Save changes"
