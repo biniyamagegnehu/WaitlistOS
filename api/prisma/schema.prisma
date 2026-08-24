@@ -469,7 +469,7 @@ model Waitlist {
   preOrderDepositEnabled     Boolean                @default(false)
   preOrderDepositAmount      Decimal?               @db.Decimal(12, 2)
   preOrderDepositCurrency    String?
-  preOrderDepositPolicy      PreOrderDepositPolicy?
+
   preOrderDepositDescription String?
 
   // â”€â”€ Appearance â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€

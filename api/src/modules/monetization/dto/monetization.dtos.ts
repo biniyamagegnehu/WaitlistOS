@@ -1,4 +1,4 @@
-import { MonetizationPaymentType, PaymentProvider, PreOrderDepositPolicy } from '@prisma/client';
+import { MonetizationPaymentType, PaymentProvider } from '@prisma/client';
 import { IsBoolean, IsEnum, IsNumber, IsOptional, IsString, MaxLength, Min } from 'class-validator';
 
 export class CreateCheckoutDto {
@@ -53,10 +53,6 @@ export class UpdatePreOrderDepositConfigDto {
   @IsString()
   @IsOptional()
   preOrderDepositCurrency?: string;
-
-  @IsEnum(PreOrderDepositPolicy)
-  @IsOptional()
-  preOrderDepositPolicy?: PreOrderDepositPolicy;
 
   @IsString()
   @MaxLength(500)

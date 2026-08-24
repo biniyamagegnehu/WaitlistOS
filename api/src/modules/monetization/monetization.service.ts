@@ -574,7 +574,6 @@ export class MonetizationService {
       preOrderDepositEnabled: waitlist.preOrderDepositEnabled,
       preOrderDepositAmount: waitlist.preOrderDepositAmount,
       preOrderDepositCurrency: waitlist.preOrderDepositCurrency,
-      preOrderDepositPolicy: waitlist.preOrderDepositPolicy,
       preOrderDepositDescription: waitlist.preOrderDepositDescription,
     };
   }
@@ -593,7 +592,6 @@ export class MonetizationService {
         preOrderDepositEnabled: config.preOrderDepositEnabled,
         preOrderDepositAmount: config.preOrderDepositAmount,
         preOrderDepositCurrency: config.preOrderDepositCurrency,
-        preOrderDepositPolicy: config.preOrderDepositPolicy,
         preOrderDepositDescription: config.preOrderDepositDescription,
       },
     });
@@ -602,7 +600,6 @@ export class MonetizationService {
       preOrderDepositEnabled: updated.preOrderDepositEnabled,
       preOrderDepositAmount: updated.preOrderDepositAmount,
       preOrderDepositCurrency: updated.preOrderDepositCurrency,
-      preOrderDepositPolicy: updated.preOrderDepositPolicy,
       preOrderDepositDescription: updated.preOrderDepositDescription,
     };
   }
@@ -612,7 +609,7 @@ export class MonetizationService {
     if (!waitlist || !waitlist.preOrderDepositEnabled) {
       throw new BadRequestException('Pre-Order Deposit is not enabled for this waitlist');
     }
-    if (!waitlist.preOrderDepositPolicy || !waitlist.preOrderDepositAmount) {
+    if (!waitlist.preOrderDepositAmount) {
       throw new BadRequestException('Pre-Order Deposit is misconfigured');
     }
 
@@ -672,7 +669,7 @@ export class MonetizationService {
           currency: payment.currency,
           provider: payment.provider,
           status: PreOrderDepositStatus.PENDING,
-          policy: waitlist.preOrderDepositPolicy,
+          policy: 'CREDIT_TOWARD_PURCHASE',
         }
       });
     }
@@ -714,7 +711,9 @@ export class MonetizationService {
 
     const deposits = await this.prisma.preOrderDeposit.findMany({
       where: { waitlistId },
-      include: { participant: { select: { email: true, createdAt: true } } },
+      include: { 
+        participant: { select: { email: true, createdAt: true } }
+      },
       orderBy: { createdAt: 'desc' },
     });
     return deposits;
@@ -731,7 +730,11 @@ export class MonetizationService {
     const totalDeposits = deposits.length;
     const grossRevenue = deposits.reduce((sum, d) => sum + Number(d.amount), 0);
 
-    return { totalDeposits, grossRevenue };
+    return { 
+      totalDeposits, 
+      grossRevenue: Number(grossRevenue),
+      preOrderEnabled: waitlist.preOrderDepositEnabled 
+    };
   }
 
   // ── Skip the Line ───────────────────────────────────────────────────────────
@@ -1452,6 +1455,8 @@ export class MonetizationService {
       skipLineEnabled: waitlist.skipLineEnabled,
       skipLinePrice: waitlist.skipLinePrice,
       skipLineCurrency: waitlist.skipLineCurrency,
+      totalRevenue: summary.totalRevenue,
+      paidParticipants: summary.paidParticipants,
     };
   }
 
