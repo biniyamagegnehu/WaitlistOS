@@ -121,14 +121,19 @@ export class AuthService {
       try {
         const payload = JSON.parse(Buffer.from(affiliateCookie, 'base64').toString('utf8'));
         if (payload && payload.ref) {
+          this.logger.log(`Processing affiliate attribution for founder ${founder.id} with code ${payload.ref}, clickId: ${payload.clickId || 'none'}`);
           // Fire and forget (it is safe against duplicate exceptions internally)
           this.affiliatesService.attributeFounderToAffiliate(founder.id, payload.ref, payload.clickId).catch((err) => {
-            this.logger.error(`Affiliate attribution failed for founder ${founder.id}`, err);
+            this.logger.error(`Affiliate attribution failed for founder ${founder.id} with code ${payload.ref}: ${err.message}`, err.stack);
           });
+        } else {
+          this.logger.log(`Affiliate cookie present but no ref code found for founder ${founder.id}`);
         }
       } catch (err) {
-        this.logger.warn(`Failed to parse affiliate cookie: ${err}`);
+        this.logger.warn(`Failed to parse affiliate cookie for founder ${founder.id}: ${err instanceof Error ? err.message : String(err)}`);
       }
+    } else {
+      this.logger.log(`No affiliate cookie present for founder ${founder.id} registration`);
     }
 
     // Do NOT generate tokens, user must verify email first
@@ -506,6 +511,7 @@ export class AuthService {
     googleUser: GoogleUser,
     ipAddress?: string,
     userAgent?: string,
+    affiliateCookie?: string,
   ): Promise<AuthResponse> {
     let user = await this.usersService.findByEmail(googleUser.email);
     let founder: Founder | null;
@@ -543,6 +549,26 @@ export class AuthService {
       user = result.user;
       founder = result.founder;
       this.logger.log(`New Google user registered: ${user.email}`);
+
+      // Process affiliate attribution for new Google users
+      if (affiliateCookie && founder) {
+        try {
+          const payload = JSON.parse(Buffer.from(affiliateCookie, 'base64').toString('utf8'));
+          if (payload && payload.ref) {
+            this.logger.log(`Processing affiliate attribution for Google founder ${founder.id} with code ${payload.ref}, clickId: ${payload.clickId || 'none'}`);
+            // Fire and forget (it is safe against duplicate exceptions internally)
+            this.affiliatesService.attributeFounderToAffiliate(founder.id, payload.ref, payload.clickId).catch((err) => {
+              this.logger.error(`Affiliate attribution failed for Google founder ${founder?.id} with code ${payload.ref}: ${err.message}`, err.stack);
+            });
+          } else {
+            this.logger.log(`Affiliate cookie present but no ref code found for Google founder ${founder.id}`);
+          }
+        } catch (err) {
+          this.logger.warn(`Failed to parse affiliate cookie for Google founder ${founder.id}: ${err instanceof Error ? err.message : String(err)}`);
+        }
+      } else {
+        this.logger.log(`No affiliate cookie present for Google founder ${founder?.id} registration`);
+      }
     }
 
     // Google users don't trigger 2FA by default unless they set it up explicitly via email/pass addition

@@ -8,6 +8,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import {
   AffiliateStatus,
   AffiliateCommissionStatus,
+  AffiliateConversionStatus,
   PaymentProvider,
   PaymentAccountStatus,
   AffiliateAttributionStatus,
@@ -63,7 +64,7 @@ export class AffiliatesService {
     const existing = await this.prisma.affiliate.findUnique({
       where: { founderId: founder.id },
     });
-    if (existing) return existing;
+    if (existing) return this.serializeAffiliate(existing);
 
     const code = await this.generateUniqueCode();
 
@@ -78,7 +79,25 @@ export class AffiliatesService {
     });
 
     this.logger.log(`Created affiliate ${affiliate.id} for founder ${founder.id} with code ${code}`);
-    return affiliate;
+    return this.serializeAffiliate(affiliate);
+  }
+
+  private serializeAffiliate(affiliate: {
+    id: string;
+    founderId: string;
+    code: string;
+    status: AffiliateStatus;
+    commissionRate: Prisma.Decimal;
+    commissionDurationMonths: number;
+    clickCount: number;
+    preferredPayoutProvider: PaymentProvider | null;
+    createdAt: Date;
+    updatedAt: Date;
+  }) {
+    return {
+      ...affiliate,
+      commissionRate: Number(affiliate.commissionRate),
+    };
   }
 
   // ─────────────────────────────────────────────────────────────────────────────
@@ -152,16 +171,20 @@ export class AffiliatesService {
 
     // Anti-self-referral: the new founder must not BE the affiliate
     if (affiliate.founderId === newFounderId) {
-      this.logger.warn(`Attribution blocked: self-referral attempt by founder ${newFounderId}`);
+      this.logger.warn(`Attribution blocked: self-referral attempt by founder ${newFounderId} for affiliate code ${affiliateCode}`);
       return;
     }
 
-    // Check if already attributed
+    // Check if already attributed (only active/converted count, not expired)
     const existing = await this.prisma.affiliateAttribution.findUnique({
       where: { referredFounderId: newFounderId },
     });
     if (existing) {
-      this.logger.log(`Attribution skipped: founder ${newFounderId} already has an attribution`);
+      if (existing.status === AffiliateAttributionStatus.ACTIVE || existing.status === AffiliateAttributionStatus.CONVERTED) {
+        this.logger.log(`Attribution skipped: founder ${newFounderId} already has an active attribution to affiliate ${existing.affiliateId}`);
+      } else {
+        this.logger.log(`Attribution skipped: founder ${newFounderId} has an expired attribution, but not creating new one per policy`);
+      }
       return;
     }
 
@@ -172,9 +195,12 @@ export class AffiliatesService {
         const clickAge = Date.now() - click.createdAt.getTime();
         const maxAge = AFFILIATE_ATTRIBUTION_COOKIE_DAYS * 24 * 60 * 60 * 1000;
         if (clickAge > maxAge) {
-          this.logger.log(`Attribution skipped: click ${clickId} is older than 30 days`);
+          this.logger.log(`Attribution skipped: click ${clickId} is older than ${AFFILIATE_ATTRIBUTION_COOKIE_DAYS} days (${Math.floor(clickAge / (24 * 60 * 60 * 1000))} days old)`);
           return;
         }
+      } else {
+        this.logger.warn(`Attribution skipped: click ${clickId} not found in database`);
+        return;
       }
     }
 
@@ -191,12 +217,13 @@ export class AffiliatesService {
           expiresAt,
         },
       });
-      this.logger.log(`Attribution created: founder ${newFounderId} → affiliate ${affiliate.id}`);
+      this.logger.log(`Attribution created successfully: founder ${newFounderId} → affiliate ${affiliate.id} (code: ${affiliateCode}, clickId: ${clickId || 'none'})`);
     } catch (err: any) {
       // Unique constraint on referredFounderId — safe to swallow
       if (err.code === 'P2002') {
-        this.logger.log(`Attribution conflict for founder ${newFounderId} — already attributed`);
+        this.logger.log(`Attribution conflict for founder ${newFounderId} — already attributed (race condition handled)`);
       } else {
+        this.logger.error(`Attribution creation failed for founder ${newFounderId} → affiliate ${affiliate.id}: ${err.message}`, err.stack);
         throw err;
       }
     }
@@ -209,13 +236,54 @@ export class AffiliatesService {
   async getDashboard(userId: string) {
     const founder = await this.getFounderByUserId(userId);
 
-    // Auto-create affiliate on first access
-    let affiliate = await this.prisma.affiliate.findUnique({
+    // Auto-create affiliate on first access (raw — we serialize in the return below)
+    let rawAffiliate = await this.prisma.affiliate.findUnique({
       where: { founderId: founder.id },
     });
-    if (!affiliate) {
-      affiliate = await this.getOrCreateAffiliate(userId);
+    if (!rawAffiliate) {
+      const code = await this.generateUniqueCode();
+      rawAffiliate = await this.prisma.affiliate.create({
+        data: {
+          founderId: founder.id,
+          code,
+          status: AffiliateStatus.ACTIVE,
+          commissionRate: new Prisma.Decimal(AFFILIATE_DEFAULT_COMMISSION_RATE),
+          commissionDurationMonths: AFFILIATE_COMMISSION_DURATION_MONTHS,
+        },
+      });
+      this.logger.log(`Auto-created affiliate ${rawAffiliate.id} for founder ${founder.id} during dashboard load`);
     }
+    const affiliate = rawAffiliate;
+
+    // If affiliate is not active, return limited data
+    if (affiliate.status !== AffiliateStatus.ACTIVE) {
+      this.logger.log(`Affiliate ${affiliate.id} is not active (status: ${affiliate.status}), returning limited dashboard data`);
+      return {
+        affiliate: {
+          id: affiliate.id,
+          code: affiliate.code,
+          status: affiliate.status,
+          commissionRate: Number(affiliate.commissionRate),
+          commissionDurationMonths: affiliate.commissionDurationMonths,
+          clickCount: affiliate.clickCount,
+          preferredPayoutProvider: affiliate.preferredPayoutProvider,
+        },
+        stats: {
+          totalEarned: 0,
+          pendingBalance: 0,
+          eligibleBalance: 0,
+          paidOut: 0,
+          referredCount: 0,
+          convertedCount: 0,
+          conversionRate: '0.0',
+        },
+        paymentAccounts: [],
+        recentCommissions: [],
+        recentPayouts: [],
+        conversions: [],
+      };
+    }
+
 
     // Get the founder's central payment accounts
     const paymentAccounts = await this.prisma.paymentAccount.findMany({
@@ -223,10 +291,13 @@ export class AffiliatesService {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Calculate commission totals
+    // Calculate commission totals (exclude reversals)
     const commissions = await this.prisma.affiliateCommission.groupBy({
       by: ['status'],
-      where: { affiliateId: affiliate.id },
+      where: { 
+        affiliateId: affiliate.id,
+        isReversal: false,
+      },
       _sum: { amount: true },
       _count: { id: true },
     });
@@ -241,12 +312,28 @@ export class AffiliatesService {
     const eligibleBalance = toAmount(AffiliateCommissionStatus.ELIGIBLE);
     const paidOut = toAmount(AffiliateCommissionStatus.PAID);
 
-    const referredCount = await this.prisma.affiliateAttribution.count({ where: { affiliateId: affiliate.id } });
-    const convertedCount = await this.prisma.affiliateConversion.count({ where: { affiliateId: affiliate.id } });
+    // Count only active/converted attributions (exclude expired)
+    const referredCount = await this.prisma.affiliateAttribution.count({ 
+      where: { 
+        affiliateId: affiliate.id,
+        status: { in: [AffiliateAttributionStatus.ACTIVE, AffiliateAttributionStatus.CONVERTED] }
+      } 
+    });
+    
+    // Count only confirmed conversions (exclude reversed)
+    const convertedCount = await this.prisma.affiliateConversion.count({ 
+      where: { 
+        affiliateId: affiliate.id,
+        status: AffiliateConversionStatus.CONFIRMED
+      } 
+    });
 
-    // Recent commissions
+    // Recent commissions (exclude reversals)
     const recentCommissions = await this.prisma.affiliateCommission.findMany({
-      where: { affiliateId: affiliate.id },
+      where: { 
+        affiliateId: affiliate.id,
+        isReversal: false,
+      },
       orderBy: { createdAt: 'desc' },
       take: 20,
     });
@@ -258,9 +345,12 @@ export class AffiliatesService {
       take: 10,
     });
 
-    // Conversions
+    // Conversions (only confirmed)
     const conversions = await this.prisma.affiliateConversion.findMany({
-      where: { affiliateId: affiliate.id },
+      where: { 
+        affiliateId: affiliate.id,
+        status: AffiliateConversionStatus.CONFIRMED,
+      },
       orderBy: { convertedAt: 'desc' },
       take: 20,
     });
@@ -291,9 +381,27 @@ export class AffiliatesService {
         providerAccountId: pa.providerAccountId,
         isEligible: pa.status === PaymentAccountStatus.ACTIVE || pa.status === PaymentAccountStatus.RESTRICTED,
       })),
-      recentCommissions,
-      recentPayouts,
-      conversions,
+      recentCommissions: recentCommissions.map((c) => ({
+        id: c.id,
+        amount: Number(c.amount),
+        currency: c.currency,
+        status: c.status,
+        createdAt: c.createdAt.toISOString(),
+      })),
+      recentPayouts: recentPayouts.map((p) => ({
+        id: p.id,
+        amount: Number(p.amount),
+        currency: p.currency,
+        status: p.status,
+        createdAt: p.createdAt.toISOString(),
+        processedAt: p.processedAt?.toISOString() ?? null,
+      })),
+      conversions: conversions.map((cv) => ({
+        id: cv.id,
+        sourcePaymentId: cv.sourcePaymentId,
+        status: cv.status,
+        convertedAt: cv.convertedAt.toISOString(),
+      })),
     };
   }
 

@@ -527,6 +527,7 @@ export class PaymentService {
     try {
       const founder = await this.repository.findFounderByUserId(userId);
       if (founder) {
+        this.logger.log(`Processing affiliate commission for payment ${paymentId}, founder ${founder.id}, amount ${amount} ${currency}`);
         await this.affiliateCommissionEngine.handleSubscriptionPayment({
           payingFounderId: founder.id,
           paymentId,
@@ -534,10 +535,13 @@ export class PaymentService {
           currency,
           planCode,
         });
+      } else {
+        this.logger.warn(`Founder not found for userId ${userId} during affiliate commission processing for payment ${paymentId}`);
       }
     } catch (commissionErr) {
       this.logger.error(
-        `Affiliate commission generation failed for payment ${paymentId}: ${commissionErr instanceof Error ? commissionErr.message : String(commissionErr)}`,
+        `Affiliate commission generation failed for payment ${paymentId} (userId: ${userId}, amount: ${amount} ${currency}, plan: ${planCode}): ${commissionErr instanceof Error ? commissionErr.message : String(commissionErr)}`,
+        commissionErr instanceof Error ? commissionErr.stack : undefined,
       );
     }
   }

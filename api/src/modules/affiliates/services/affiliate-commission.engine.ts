@@ -42,11 +42,13 @@ export class AffiliateCommissionEngine {
 
     // No commissions for free plan
     if (planCode === SubscriptionPlanCode.FREE) {
+      this.logger.log(`Commission skipped: FREE plan payment ${paymentId} for founder ${payingFounderId}`);
       return;
     }
 
     // No commissions for zero-value payments
     if (amount.lessThanOrEqualTo(0)) {
+      this.logger.log(`Commission skipped: zero-value payment ${paymentId} for founder ${payingFounderId}`);
       return;
     }
 
@@ -56,13 +58,22 @@ export class AffiliateCommissionEngine {
       include: { affiliate: true },
     });
 
-    if (!attribution || attribution.status !== AffiliateAttributionStatus.ACTIVE) {
-      return; // Founder not attributed to any affiliate
+    if (!attribution) {
+      this.logger.log(`Commission skipped: No attribution found for founder ${payingFounderId} on payment ${paymentId}`);
+      return;
+    }
+
+    if (!(
+      attribution.status === AffiliateAttributionStatus.ACTIVE || 
+      attribution.status === AffiliateAttributionStatus.CONVERTED
+    )) {
+      this.logger.log(`Commission skipped: Attribution ${attribution.id} has status ${attribution.status} for founder ${payingFounderId} on payment ${paymentId}`);
+      return;
     }
 
     // Check the affiliate is still active
     if (attribution.affiliate.status !== 'ACTIVE') {
-      this.logger.log(`Affiliate ${attribution.affiliateId} is not active, skipping commission`);
+      this.logger.log(`Commission skipped: Affiliate ${attribution.affiliateId} is not active (status: ${attribution.affiliate.status}) for payment ${paymentId}`);
       return;
     }
 
@@ -80,7 +91,7 @@ export class AffiliateCommissionEngine {
       windowEnd.setMonth(windowEnd.getMonth() + AFFILIATE_COMMISSION_DURATION_MONTHS);
       if (new Date() > windowEnd) {
         this.logger.log(
-          `Commission window expired for founder ${payingFounderId} (first conversion: ${firstConversion.convertedAt.toISOString()})`,
+          `Commission skipped: Commission window expired for founder ${payingFounderId} (first conversion: ${firstConversion.convertedAt.toISOString()}, window ended: ${windowEnd.toISOString()})`,
         );
         return;
       }
@@ -92,6 +103,7 @@ export class AffiliateCommissionEngine {
     });
 
     if (!conversion) {
+      this.logger.log(`Creating new conversion for payment ${paymentId} for founder ${payingFounderId} → affiliate ${attribution.affiliateId}`);
       conversion = await this.prisma.affiliateConversion.create({
         data: {
           affiliateId: attribution.affiliateId,
@@ -104,11 +116,14 @@ export class AffiliateCommissionEngine {
 
       // Mark attribution as converted on first conversion
       if (!firstConversion) {
+        this.logger.log(`Marking attribution ${attribution.id} as CONVERTED for founder ${payingFounderId}`);
         await this.prisma.affiliateAttribution.update({
           where: { id: attribution.id },
           data: { status: AffiliateAttributionStatus.CONVERTED },
         });
       }
+    } else {
+      this.logger.log(`Using existing conversion ${conversion.id} for payment ${paymentId}`);
     }
 
     // Calculate commission using Decimal (no floating point)
@@ -127,7 +142,7 @@ export class AffiliateCommissionEngine {
     });
 
     this.logger.log(
-      `Commission generated: ${commissionAmount} ${currency} (rate: ${commissionRate}) for affiliate ${attribution.affiliateId}`,
+      `Commission generated successfully: ${commissionAmount} ${currency} (rate: ${commissionRate}) for affiliate ${attribution.affiliateId} from payment ${paymentId}`,
     );
   }
 

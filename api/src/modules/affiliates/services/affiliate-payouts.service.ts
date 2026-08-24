@@ -159,6 +159,17 @@ export class AffiliatePayoutsService {
   }
 
   async getEligibleBalance(affiliateId: string): Promise<{ amount: Prisma.Decimal; currency: string }> {
+    // Verify affiliate is active before calculating balance
+    const affiliate = await this.prisma.affiliate.findUnique({
+      where: { id: affiliateId },
+      select: { status: true },
+    });
+
+    if (!affiliate || affiliate.status !== 'ACTIVE') {
+      this.logger.warn(`Eligible balance requested for inactive/non-existent affiliate ${affiliateId}`);
+      return { amount: new Prisma.Decimal(0), currency: 'USD' };
+    }
+
     const result = await this.prisma.affiliateCommission.aggregate({
       where: {
         affiliateId,
@@ -172,8 +183,14 @@ export class AffiliatePayoutsService {
     const amount = result._sum.amount ?? new Prisma.Decimal(0);
 
     const first = await this.prisma.affiliateCommission.findFirst({
-      where: { affiliateId, status: AffiliateCommissionStatus.ELIGIBLE },
+      where: { 
+        affiliateId, 
+        status: AffiliateCommissionStatus.ELIGIBLE,
+        isReversal: false,
+      },
     });
+
+    this.logger.log(`Eligible balance for affiliate ${affiliateId}: ${amount} ${first?.currency ?? 'USD'}`);
 
     return { amount, currency: first?.currency ?? 'USD' };
   }
@@ -243,7 +260,7 @@ export class AffiliatePayoutsService {
 
         if (paymentAccounts.length === 0) {
           skipped++;
-          this.logger.log(`Affiliate ${affiliate.id}: No eligible payment account connected, skipping`);
+          this.logger.log(`Affiliate ${affiliate.id}: No eligible payment account connected, skipping payout`);
           continue;
         }
 
@@ -252,17 +269,22 @@ export class AffiliatePayoutsService {
           paymentAccounts.find((pa) => pa.provider === affiliate.preferredPayoutProvider) ??
           paymentAccounts[0];
 
+        this.logger.log(`Affiliate ${affiliate.id}: Using payment account ${paymentAccount.provider} (${paymentAccount.id}) for payout`);
+
         const { amount, currency } = await this.getEligibleBalance(affiliate.id);
 
-        if (amount.lessThan(AFFILIATE_MINIMUM_PAYOUT_AMOUNT)) {
+        const minimumThreshold = new Prisma.Decimal(AFFILIATE_MINIMUM_PAYOUT_AMOUNT);
+        if (amount.lessThan(minimumThreshold)) {
           skipped++;
           this.logger.log(
-            `Affiliate ${affiliate.id}: balance ${amount} ${currency} below threshold ${AFFILIATE_MINIMUM_PAYOUT_AMOUNT}`,
+            `Affiliate ${affiliate.id}: balance ${amount} ${currency} below threshold ${minimumThreshold} ${currency}, skipping payout`,
           );
           continue;
         }
 
         const provider = this.getProvider(paymentAccount.provider);
+
+        this.logger.log(`Affiliate ${affiliate.id}: Initiating payout of ${amount} ${currency} via ${paymentAccount.provider}`);
 
         const payout = await this.prisma.$transaction(async (tx) => {
           const p = await tx.affiliatePayout.create({
@@ -289,6 +311,8 @@ export class AffiliatePayoutsService {
             data: { payoutId: p.id },
           });
 
+          this.logger.log(`Affiliate ${affiliate.id}: Created payout record ${p.id} and linked ${p.idempotencyKey} commissions`);
+
           return p;
         });
 
@@ -298,6 +322,8 @@ export class AffiliatePayoutsService {
             currency,
             metadata: paymentAccount.metadata as Record<string, unknown> | undefined,
           });
+
+          this.logger.log(`Affiliate ${affiliate.id}: Payout result - status: ${result.status}, transactionId: ${result.providerTransactionId || 'none'}`);
 
           if (result.status === 'PAID' || result.status === 'PROCESSING') {
             await this.prisma.$transaction(async (tx) => {
@@ -318,10 +344,12 @@ export class AffiliatePayoutsService {
                     paidAt: new Date(),
                   },
                 });
+                this.logger.log(`Affiliate ${affiliate.id}: Marked ${payout.id} as PAID and updated commissions`);
               }
             });
 
             succeeded++;
+            this.logger.log(`Affiliate ${affiliate.id}: Payout ${result.status} successfully`);
           } else {
             await this.prisma.$transaction(async (tx) => {
               await tx.affiliatePayout.update({
@@ -338,7 +366,7 @@ export class AffiliatePayoutsService {
             });
 
             failed++;
-            this.logger.error(`Payout failed for affiliate ${affiliate.id}: ${result.failureReason}`);
+            this.logger.error(`Affiliate ${affiliate.id}: Payout failed with status '${result.status}': ${result.failureReason}`);
           }
         } catch (err: any) {
           await this.prisma.$transaction(async (tx) => {
@@ -356,7 +384,7 @@ export class AffiliatePayoutsService {
           });
 
           failed++;
-          this.logger.error(`Payout exception for affiliate ${affiliate.id}: ${err.message}`);
+          this.logger.error(`Affiliate ${affiliate.id}: Payout exception: ${err.message}`, err.stack);
         }
       }
 

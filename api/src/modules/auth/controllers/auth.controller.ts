@@ -258,10 +258,12 @@ export class AuthController {
     @Req() req: Request & { user: GoogleUser },
     @Res({ passthrough: false }) res: Response,
   ) {
+    const affiliateCookie = req.cookies?.[AFFILIATE_ATTRIBUTION_COOKIE_NAME];
     const response = await this.authService.googleLogin(
       req.user,
       req.ip,
       req.headers['user-agent'],
+      affiliateCookie as string | undefined,
     );
 
     const frontendUrl =
