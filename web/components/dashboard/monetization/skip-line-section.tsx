@@ -38,7 +38,7 @@ export function SkipLineSection() {
                 name: w.name,
                 totalParticipants: w.totalParticipants || 0,
                 skipLineEnabled: data.skipLineEnabled || false,
-                skipLineRevenue: data.totalRevenue || 0,
+                skipLineRevenue: Number(data.totalRevenue) || 0,
                 skipLinePaidParticipants: data.paidParticipants || 0,
               };
             } catch {
@@ -46,7 +46,7 @@ export function SkipLineSection() {
                 id: w.id,
                 name: w.name,
                 totalParticipants: w.totalParticipants || 0,
-                skipLineEnabled: false,
+                skipLineEnabled: w.skipLineEnabled || false,
                 skipLineRevenue: 0,
                 skipLinePaidParticipants: 0,
               };

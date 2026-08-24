@@ -19,7 +19,6 @@ interface PreOrderStatus {
     preOrderDepositEnabled: boolean;
     preOrderDepositAmount: number | null;
     preOrderDepositCurrency: string | null;
-    preOrderDepositPolicy: string | null;
     preOrderDepositDescription: string | null;
   };
 }
@@ -124,7 +123,6 @@ export function PreOrderDepositCard({
 
   const price = Number(status.waitlist.preOrderDepositAmount) || 50;
   const currency = status.waitlist.preOrderDepositCurrency || "USD";
-  const policy = status.waitlist.preOrderDepositPolicy;
   const description = status.waitlist.preOrderDepositDescription;
 
   return (
@@ -139,12 +137,9 @@ export function PreOrderDepositCard({
           <p className="text-sm text-foreground">
             {description || "Place a deposit to secure your spot for the product launch."}
           </p>
-
-          {policy === "CREDIT_TOWARD_PURCHASE" && (
-            <p className="text-xs text-muted-foreground">
-              Deposit will be credited toward your final purchase.
-            </p>
-          )}
+          <p className="text-xs text-muted-foreground">
+            Deposit will be credited toward your final purchase.
+          </p>
         </div>
 
         <div className="flex items-center justify-between pt-2 border-t border-border">

@@ -14,6 +14,17 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHeadCell, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/axios";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+
+const configSchema = z.object({
+  amount: z.string().min(1, "Amount is required").refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Amount must be a positive number"),
+  currency: z.enum(["USD", "EUR", "GBP"]),
+  description: z.string().max(500, "Description must be less than 500 characters").optional(),
+});
+
+type ConfigFormData = z.infer<typeof configSchema>;
 
 interface PreOrderAnalytics {
   totalDeposits: number;
@@ -24,7 +35,6 @@ interface PreOrderConfig {
   preOrderDepositEnabled: boolean;
   preOrderDepositAmount: number | string | null;
   preOrderDepositCurrency: string | null;
-  preOrderDepositPolicy: string | null;
   preOrderDepositDescription: string | null;
 }
 
@@ -34,7 +44,6 @@ interface Deposit {
   currency: string;
   provider: string;
   status: string;
-  policy: string;
   createdAt: string;
   participant: {
     name: string | null;
@@ -55,13 +64,16 @@ export default function PreOrderPage() {
   const [isLoadingData, setIsLoadingData] = React.useState(true);
   const [isUpdating, setIsUpdating] = React.useState(false);
   const [showConfig, setShowConfig] = React.useState(false);
-  
-  // Config form states
-  const [configAmount, setConfigAmount] = React.useState("");
-  const [configCurrency, setConfigCurrency] = React.useState("USD");
-  const [configPolicy, setConfigPolicy] = React.useState("CREDIT_TOWARD_PURCHASE");
-  const [configDescription, setConfigDescription] = React.useState("");
   const [isSavingConfig, setIsSavingConfig] = React.useState(false);
+
+  const { register, handleSubmit, formState: { errors }, reset } = useForm<ConfigFormData>({
+    resolver: zodResolver(configSchema),
+    defaultValues: {
+      amount: "",
+      currency: "USD",
+      description: "",
+    },
+  });
 
   React.useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -82,16 +94,11 @@ export default function PreOrderPage() {
       setDeposits(depositsRes.data);
 
       if (configRes.data.preOrderDepositAmount) {
-        setConfigAmount(Number(configRes.data.preOrderDepositAmount).toString());
-      }
-      if (configRes.data.preOrderDepositCurrency) {
-        setConfigCurrency(configRes.data.preOrderDepositCurrency);
-      }
-      if (configRes.data.preOrderDepositPolicy) {
-        setConfigPolicy(configRes.data.preOrderDepositPolicy);
-      }
-      if (configRes.data.preOrderDepositDescription) {
-        setConfigDescription(configRes.data.preOrderDepositDescription);
+        reset({
+          amount: Number(configRes.data.preOrderDepositAmount).toString(),
+          currency: configRes.data.preOrderDepositCurrency || "USD",
+          description: configRes.data.preOrderDepositDescription || "",
+        });
       }
     } catch (err) {
       console.error("Failed to fetch Pre-Order data:", err);
@@ -129,24 +136,18 @@ export default function PreOrderPage() {
     }
   };
 
-  const handleSaveConfig = async () => {
+  const handleSaveConfig = async (data: ConfigFormData) => {
     setIsSavingConfig(true);
     setError(null);
 
     try {
-      const amount = parseFloat(configAmount);
-      if (isNaN(amount) || amount <= 0) {
-        setError("Amount must be a positive number");
-        setIsSavingConfig(false);
-        return;
-      }
-
+      const amount = parseFloat(data.amount);
+      
       await api.patch(`/monetization/pre-order/config/${waitlistId}`, {
         preOrderDepositEnabled: true,
         preOrderDepositAmount: amount,
-        preOrderDepositCurrency: configCurrency,
-        preOrderDepositPolicy: configPolicy,
-        preOrderDepositDescription: configDescription,
+        preOrderDepositCurrency: data.currency,
+        preOrderDepositDescription: data.description?.trim() || null,
       });
       
       await fetchData();
@@ -199,13 +200,28 @@ export default function PreOrderPage() {
               </h1>
               <p className="mt-2 text-muted-foreground">Manage deposits and waitlist reservations</p>
             </div>
-            <div className="flex gap-2">
+            <div className="flex gap-2 items-center">
               <Button onClick={() => setShowConfig(!showConfig)} variant="outline">
                 {showConfig ? "Hide Config" : "Configure"}
               </Button>
-              <Button onClick={handleToggleFeature} disabled={isUpdating} variant={config?.preOrderDepositEnabled ? "destructive" : "primary"}>
-                {isUpdating ? "Updating..." : config?.preOrderDepositEnabled ? "Disable Deposits" : "Enable Deposits"}
-              </Button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleToggleFeature}
+                  disabled={isUpdating}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                    config?.preOrderDepositEnabled ? 'bg-primary' : 'bg-surface-muted'
+                  } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      config?.preOrderDepositEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+                <span className="text-sm text-muted-foreground">
+                  {isUpdating ? "Updating..." : config?.preOrderDepositEnabled ? "Enabled" : "Disabled"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -216,52 +232,64 @@ export default function PreOrderPage() {
           <Card className="mb-6">
             <CardHeader><CardTitle>Deposit Configuration</CardTitle></CardHeader>
             <CardContent>
-              <div className="grid gap-4 md:grid-cols-2">
+              <form onSubmit={handleSubmit(handleSaveConfig)} className="grid gap-4 md:grid-cols-2">
                 <div>
                   <label className="text-sm font-medium text-foreground">Deposit Amount</label>
-                  <Input type="number" step="0.01" min="0" value={configAmount} onChange={(e) => setConfigAmount(e.target.value)} placeholder="50.00" className="mt-1" />
+                  <Input 
+                    type="number" 
+                    step="0.01" 
+                    min="0" 
+                    placeholder="50.00" 
+                    className="mt-1" 
+                    {...register("amount")}
+                  />
+                  {errors.amount && <p className="text-xs text-destructive mt-1">{errors.amount.message}</p>}
                 </div>
                 <div>
                   <label className="text-sm font-medium text-foreground">Currency</label>
-                  <select value={configCurrency} onChange={(e) => setConfigCurrency(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
+                  <select 
+                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    {...register("currency")}
+                  >
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
                   </select>
+                  {errors.currency && <p className="text-xs text-destructive mt-1">{errors.currency.message}</p>}
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Deposit Policy</label>
-                  <select value={configPolicy} onChange={(e) => setConfigPolicy(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="CREDIT_TOWARD_PURCHASE">Credit Toward Purchase</option>
-                  </select>
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-foreground">Product Description (Optional)</label>
+                  <Input 
+                    placeholder="A short description of the product (max 500 characters)" 
+                    className="mt-1" 
+                    {...register("description")}
+                  />
+                  {errors.description && <p className="text-xs text-destructive mt-1">{errors.description.message}</p>}
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Product Description</label>
-                  <Input value={configDescription} onChange={(e) => setConfigDescription(e.target.value)} placeholder="A short description of the product." className="mt-1" />
+                <div className="md:col-span-2 flex justify-end gap-2 mt-2">
+                  <Button variant="outline" type="button" onClick={() => setShowConfig(false)}>Cancel</Button>
+                  <Button type="submit" disabled={isSavingConfig}>
+                    {isSavingConfig ? "Saving..." : "Save Configuration"}
+                  </Button>
                 </div>
-              </div>
-              <div className="flex justify-end gap-2 mt-4">
-                <Button variant="outline" onClick={() => setShowConfig(false)}>Cancel</Button>
-                <Button onClick={handleSaveConfig} disabled={isSavingConfig}>
-                  {isSavingConfig ? "Saving..." : "Save Configuration"}
-                </Button>
-              </div>
+              </form>
             </CardContent>
           </Card>
         )}
 
         {config && analytics && (
           <div className="space-y-6">
-            <Card className={config.preOrderDepositEnabled ? "border-success/20 bg-success/5" : "border-border"}>
+            <Card className={config?.preOrderDepositEnabled ? "border-success/20 bg-success/5" : "border-border"}>
               <CardContent className="p-6 flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-foreground">{config.preOrderDepositEnabled ? "Deposits are Enabled" : "Deposits are Disabled"}</h3>
+                  <h3 className="font-semibold text-foreground">{config?.preOrderDepositEnabled ? "Deposits are Enabled" : "Deposits are Disabled"}</h3>
                   <p className="text-sm text-muted-foreground">Charge participants an upfront deposit to secure their spot.</p>
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-foreground">
-                    {config.preOrderDepositCurrency === "USD" ? "$" : ""}{Number(config.preOrderDepositAmount || 0).toFixed(2)}
+                    {config?.preOrderDepositCurrency === "USD" ? "$" : ""}{Number(config?.preOrderDepositAmount || 0).toFixed(2)}
                   </p>
+                  <p className="text-xs text-muted-foreground">{config?.preOrderDepositCurrency || "USD"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -271,12 +299,16 @@ export default function PreOrderPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2"><Users className="h-4 w-4 text-primary" /><p className="text-sm font-medium text-muted-foreground">Total Deposits</p></div>
                   <p className="text-3xl font-bold text-foreground">{analytics.totalDeposits}</p>
+                  <p className="text-xs text-muted-foreground mt-1">Paid deposits</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2"><DollarSign className="h-4 w-4 text-success" /><p className="text-sm font-medium text-muted-foreground">Gross Revenue</p></div>
-                  <p className="text-3xl font-bold text-foreground">{config.preOrderDepositCurrency === "USD" ? "$" : ""}{Number(analytics.grossRevenue).toFixed(2)}</p>
+                  <p className="text-3xl font-bold text-foreground">
+                    {config?.preOrderDepositCurrency === "USD" ? "$" : ""}{Number(analytics.grossRevenue).toFixed(2)}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1">{config?.preOrderDepositCurrency || "USD"}</p>
                 </CardContent>
               </Card>
             </div>
@@ -290,9 +322,9 @@ export default function PreOrderPage() {
                       <TableRow>
                         <TableHeadCell>Participant</TableHeadCell>
                         <TableHeadCell>Amount</TableHeadCell>
+                        <TableHeadCell>Provider</TableHeadCell>
                         <TableHeadCell>Status</TableHeadCell>
                         <TableHeadCell>Date</TableHeadCell>
-                        <TableHeadCell>Action</TableHeadCell>
                       </TableRow>
                     </thead>
                     <TableBody>
@@ -300,11 +332,13 @@ export default function PreOrderPage() {
                         <TableRow key={deposit.id}>
                           <TableCell>{deposit.participant.email}</TableCell>
                           <TableCell>{deposit.currency === "USD" ? "$" : ""}{Number(deposit.amount).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Badge variant="outline" className="text-xs">
+                              {deposit.provider === 'STRIPE' ? 'Stripe' : deposit.provider === 'CHAPA' ? 'Chapa' : deposit.provider}
+                            </Badge>
+                          </TableCell>
                           <TableCell>{getStatusBadge(deposit.status)}</TableCell>
                           <TableCell>{new Date(deposit.createdAt).toLocaleDateString()}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            -
-                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

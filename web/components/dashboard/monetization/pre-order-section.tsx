@@ -38,7 +38,7 @@ export function PreOrderSection() {
                 name: w.name,
                 totalParticipants: w.totalParticipants || 0,
                 preOrderEnabled: data.preOrderEnabled || false,
-                preOrderRevenue: data.totalRevenue || 0,
+                preOrderRevenue: Number(data.grossRevenue) || 0,
                 preOrderDeposits: data.totalDeposits || 0,
               };
             } catch {
@@ -46,7 +46,7 @@ export function PreOrderSection() {
                 id: w.id,
                 name: w.name,
                 totalParticipants: w.totalParticipants || 0,
-                preOrderEnabled: false,
+                preOrderEnabled: w.preOrderDepositEnabled || false,
                 preOrderRevenue: 0,
                 preOrderDeposits: 0,
               };

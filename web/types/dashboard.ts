@@ -47,7 +47,6 @@ export interface DashboardWaitlist {
   preOrderDepositEnabled?: boolean;
   preOrderDepositAmount?: number | null;
   preOrderDepositCurrency?: string | null;
-  preOrderDepositPolicy?: string | null;
   preOrderDepositDescription?: string | null;
 }
 
