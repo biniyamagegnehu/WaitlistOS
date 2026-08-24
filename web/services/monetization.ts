@@ -115,9 +115,4 @@ export const monetizationService = {
     const { data } = await api.get(`/monetization/pre-order/analytics/${waitlistId}?${params.toString()}`);
     return data;
   },
-
-  refundPreOrderDeposit: async (depositId: string): Promise<any> => {
-    const { data } = await api.post(`/monetization/pre-order/refund`, { depositId });
-    return data;
-  },
 };

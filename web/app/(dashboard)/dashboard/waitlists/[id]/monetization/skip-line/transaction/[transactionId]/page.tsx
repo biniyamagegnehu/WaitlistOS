@@ -104,7 +104,6 @@ export default function TransactionDetailPage() {
       PENDING: { variant: "warning", label: "Pending", icon: Clock },
       FAILED: { variant: "danger", label: "Failed", icon: XCircle },
       EXPIRED: { variant: "outline", label: "Expired", icon: Clock },
-      REFUNDED: { variant: "outline", label: "Refunded", icon: CreditCard },
     };
     
     const { variant, label, icon: Icon } = statusMap[status] || { variant: "outline", label: status, icon: Clock };

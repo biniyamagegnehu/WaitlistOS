@@ -139,11 +139,7 @@ export function PreOrderDepositCard({
           <p className="text-sm text-foreground">
             {description || "Place a deposit to secure your spot for the product launch."}
           </p>
-          {policy === "REFUNDABLE" && (
-            <p className="text-xs text-success flex items-center gap-1">
-              <CheckCircle className="h-3 w-3" /> Fully refundable
-            </p>
-          )}
+
           {policy === "CREDIT_TOWARD_PURCHASE" && (
             <p className="text-xs text-muted-foreground">
               Deposit will be credited toward your final purchase.

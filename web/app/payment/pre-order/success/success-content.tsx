@@ -207,8 +207,6 @@ export default function PreOrderSuccessContent() {
   }
 
   if (status === "success" && depositData) {
-    const isRefundable = depositData.deposit.policy === "REFUNDABLE";
-
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <Card className="w-full max-w-md">
@@ -263,7 +261,7 @@ export default function PreOrderSuccessContent() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Policy</span>
-                  <span className="font-medium">{isRefundable ? "Fully Refundable" : "Credit Toward Purchase"}</span>
+                  <span className="font-medium">Credit Toward Purchase</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Date</span>
@@ -280,9 +278,7 @@ export default function PreOrderSuccessContent() {
                 <p className="text-xs font-medium text-success-foreground">Reservation Confirmed</p>
               </div>
               <p className="text-sm text-foreground">
-                {isRefundable
-                  ? "Your deposit is fully refundable if you change your mind."
-                  : "Your deposit will be applied as credit toward your purchase."}
+                Your deposit will be applied as credit toward your purchase.
               </p>
             </div>
 

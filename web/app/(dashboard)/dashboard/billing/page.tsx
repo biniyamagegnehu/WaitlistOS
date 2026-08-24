@@ -343,9 +343,7 @@ export default function BillingPage() {
             <p className="text-muted-foreground">
               Are you sure you want to cancel your subscription? You will still have access to premium features until the end of your current billing cycle. After that, your account will automatically be downgraded to the Free plan.
             </p>
-            <p className="mt-4 font-semibold text-destructive">
-              No refund will be issued for the current billing cycle.
-            </p>
+
           </DialogBody>
           <DialogFooter>
             <Button variant="outline" onClick={() => setCancelDialogOpen(false)} disabled={cancelSubscription.isPending}>

@@ -234,7 +234,7 @@ export function AffiliateSection() {
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(data.stats.totalEarned)}</div>
               <p className="text-xs text-muted-foreground">
-                {formatCurrency(data.stats.pendingBalance)} pending · {formatCurrency(data.stats.paidOut)} paid out
+                {formatCurrency(data.stats.pendingBalance)} pending (14-day settlement window) · {formatCurrency(data.stats.paidOut)} paid out
               </p>
             </CardContent>
           </Card>

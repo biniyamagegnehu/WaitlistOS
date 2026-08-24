@@ -59,7 +59,7 @@ export default function PreOrderPage() {
   // Config form states
   const [configAmount, setConfigAmount] = React.useState("");
   const [configCurrency, setConfigCurrency] = React.useState("USD");
-  const [configPolicy, setConfigPolicy] = React.useState("REFUNDABLE");
+  const [configPolicy, setConfigPolicy] = React.useState("CREDIT_TOWARD_PURCHASE");
   const [configDescription, setConfigDescription] = React.useState("");
   const [isSavingConfig, setIsSavingConfig] = React.useState(false);
 
@@ -164,8 +164,8 @@ export default function PreOrderPage() {
       PENDING: { variant: "warning", label: "Pending" },
       FAILED: { variant: "danger", label: "Failed" },
       CANCELLED: { variant: "outline", label: "Cancelled" },
-      REFUND_PENDING: { variant: "warning", label: "Refund Pending" },
-      REFUNDED: { variant: "outline", label: "Refunded" },
+      COLLECTION_PENDING: { variant: "warning", label: "Collection Pending" },
+      COLLECTED: { variant: "success", label: "Collected" },
     };
     
     const { variant, label } = statusMap[status] || { variant: "outline", label: status };
@@ -230,9 +230,8 @@ export default function PreOrderPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Refund Policy</label>
+                  <label className="text-sm font-medium text-foreground">Deposit Policy</label>
                   <select value={configPolicy} onChange={(e) => setConfigPolicy(e.target.value)} className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm">
-                    <option value="REFUNDABLE">Fully Refundable</option>
                     <option value="CREDIT_TOWARD_PURCHASE">Credit Toward Purchase</option>
                   </select>
                 </div>
@@ -303,25 +302,8 @@ export default function PreOrderPage() {
                           <TableCell>{deposit.currency === "USD" ? "$" : ""}{Number(deposit.amount).toFixed(2)}</TableCell>
                           <TableCell>{getStatusBadge(deposit.status)}</TableCell>
                           <TableCell>{new Date(deposit.createdAt).toLocaleDateString()}</TableCell>
-                          <TableCell>
-                            {deposit.status === 'PAID' && deposit.policy === 'REFUNDABLE' && (
-                              <Button 
-                                variant="outline" 
-                                size="sm" 
-                                onClick={async () => {
-                                  if (confirm("Are you sure you want to refund this deposit?")) {
-                                    try {
-                                      await api.post('/monetization/pre-order/refund', { depositId: deposit.id });
-                                      fetchData();
-                                    } catch (err) {
-                                      alert(getApiErrorMessage(err, "Refund failed"));
-                                    }
-                                  }
-                                }}
-                              >
-                                Refund
-                              </Button>
-                            )}
+                          <TableCell className="text-muted-foreground text-sm">
+                            -
                           </TableCell>
                         </TableRow>
                       ))}

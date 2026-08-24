@@ -74,7 +74,7 @@ export default function PreOrderDepositPage() {
                 <div className="flex items-start gap-2">
                   <div className="w-2 h-2 mt-2 rounded-full bg-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Collect refundable or non-refundable deposits
+                    Collect deposits for pre-order product launches
                   </p>
                 </div>
                 <div className="flex items-start gap-2">
@@ -86,7 +86,7 @@ export default function PreOrderDepositPage() {
                 <div className="flex items-start gap-2">
                   <div className="w-2 h-2 mt-2 rounded-full bg-muted-foreground" />
                   <p className="text-sm text-muted-foreground">
-                    Track deposit status and refund requests
+                    Track deposit status and collection progress
                   </p>
                 </div>
                 <div className="flex items-start gap-2">

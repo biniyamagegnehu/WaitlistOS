@@ -220,7 +220,6 @@ export default function SkipLinePage() {
       PENDING: { variant: "warning", label: "Pending" },
       FAILED: { variant: "danger", label: "Failed" },
       EXPIRED: { variant: "outline", label: "Expired" },
-      REFUNDED: { variant: "outline", label: "Refunded" },
     };
     
     const { variant, label } = statusMap[status] || { variant: "outline", label: status };
