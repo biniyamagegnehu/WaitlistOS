@@ -190,11 +190,11 @@ enum MonetizationPaymentStatus {
   SUCCEEDED
   FAILED
   EXPIRED
-  REFUNDED
+  REFUNDED // Historical status for external provider refunds only
 }
 
 enum PreOrderDepositPolicy {
-  REFUNDABLE
+  REFUNDABLE // Historical only - refund functionality removed
   CREDIT_TOWARD_PURCHASE
 }
 
@@ -202,8 +202,8 @@ enum PreOrderDepositStatus {
   PENDING
   PAID
   FAILED
-  REFUND_PENDING
-  REFUNDED
+  REFUND_PENDING // Historical status only - refund functionality removed
+  REFUNDED     // Historical status only - for external provider refunds
   COLLECTION_PENDING
   COLLECTED
   CANCELLED
@@ -1407,7 +1407,7 @@ model PreOrderDeposit {
   policy                PreOrderDepositPolicy
 
   paidAt      DateTime?
-  refundedAt  DateTime?
+  refundedAt  DateTime? // Historical only - for external provider refunds (no manual refund functionality)
   collectedAt DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
@@ -1441,14 +1441,14 @@ enum AffiliateAttributionStatus {
 enum AffiliateConversionStatus {
   PENDING
   CONFIRMED
-  REVERSED
+  REVERSED // Historical status only - conversion reversal functionality removed
 }
 
 enum AffiliateCommissionStatus {
   PENDING
   ELIGIBLE
   PAID
-  REVERSED
+  REVERSED // Historical status only - commission reversal functionality removed
 }
 
 enum AffiliatePayoutStatus {
@@ -1607,7 +1607,7 @@ model AffiliateCommission {
   /// The subscription Payment this commission is derived from
   sourcePaymentId String
 
-  /// Commission amount (always positive; reversals are separate records with isReversal=true)
+  /// Commission amount
   amount Decimal @db.Decimal(12, 2)
 
   currency String
@@ -1617,17 +1617,8 @@ model AffiliateCommission {
 
   status AffiliateCommissionStatus @default(PENDING)
 
-  /// True if this record is a reversal/adjustment of a prior commission
-  isReversal Boolean @default(false)
-
-  /// If reversal, references the original commission this adjusts
-  reversedCommissionId String?
-
-  /// Commission becomes ELIGIBLE after this date (settlement window)
+  /// Commission becomes ELIGIBLE after this date (14-day settlement window for payment processing, verification, and fraud prevention)
   eligibleAt DateTime?
-
-  /// When the commission was reversed (if applicable)
-  reversedAt DateTime?
 
   /// When this commission was included in a payout
   paidAt DateTime?
@@ -1642,9 +1633,6 @@ model AffiliateCommission {
   referredFounder Founder             @relation("AffiliateCommissionFounder", fields: [referredFounderId], references: [id], onDelete: Cascade)
   conversion      AffiliateConversion @relation(fields: [conversionId], references: [id], onDelete: Cascade)
   payout          AffiliatePayout?    @relation(fields: [payoutId], references: [id], onDelete: SetNull)
-
-  reversedCommission AffiliateCommission?  @relation("CommissionReversal", fields: [reversedCommissionId], references: [id])
-  reversalRecords    AffiliateCommission[] @relation("CommissionReversal")
 
   @@index([affiliateId, status])
   @@index([referredFounderId])

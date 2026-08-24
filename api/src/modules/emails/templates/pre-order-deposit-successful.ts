@@ -1,15 +1,11 @@
 import { baseLayout } from './base-layout';
-import { PreOrderDepositPolicy } from '@prisma/client';
 
 export function getPreOrderDepositSuccessfulTemplate(
   waitlistName: string,
   amount: number,
   currency: string,
-  policy: PreOrderDepositPolicy,
 ): string {
-  const policyText = policy === PreOrderDepositPolicy.REFUNDABLE 
-    ? 'Your deposit is fully refundable.' 
-    : 'Your deposit will be credited toward your first purchase.';
+  const policyText = 'Your deposit will be credited toward your first purchase.';
 
   const content = `
     <h2>Your pre-order deposit is confirmed</h2>

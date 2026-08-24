@@ -15,7 +15,6 @@ import { getTwoFactorDisabledTemplate } from './templates/two-factor-disabled';
 import { getPaymentSuccessfulTemplate } from './templates/payment-successful';
 import { getPreOrderDepositSuccessfulTemplate } from './templates/pre-order-deposit-successful';
 import { getSubscriptionActivatedTemplate } from './templates/subscription-activated';
-import { PreOrderDepositPolicy } from '@prisma/client';
 import { getPaymentFailedTemplate } from './templates/payment-failed';
 import { getSubscriptionRenewedTemplate } from './templates/subscription-renewed';
 import { getSubscriptionExpiredTemplate } from './templates/subscription-expired';
@@ -237,10 +236,9 @@ export class EmailsService implements OnModuleInit {
     waitlistName: string,
     amount: number,
     currency: string,
-    policy: PreOrderDepositPolicy,
   ) {
     this.emailsQueue
-      .add('send-pre-order-deposit-successful', { email, waitlistName, amount, currency, policy })
+      .add('send-pre-order-deposit-successful', { email, waitlistName, amount, currency })
       .catch((e) => this.logger.error('Failed to queue pre-order deposit email: ' + e.message));
   }
 
@@ -400,13 +398,11 @@ export class EmailsService implements OnModuleInit {
     waitlistName: string;
     amount: number;
     currency: string;
-    policy: PreOrderDepositPolicy;
   }) {
     const html = getPreOrderDepositSuccessfulTemplate(
       data.waitlistName,
       data.amount,
       data.currency,
-      data.policy,
     );
     await this.executeSend(data.email, 'Your pre-order deposit is confirmed', html);
   }

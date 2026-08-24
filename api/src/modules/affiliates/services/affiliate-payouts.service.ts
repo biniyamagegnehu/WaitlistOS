@@ -52,7 +52,6 @@ export class AffiliatePayoutsService {
     const existing = await this.prisma.affiliateCommission.findFirst({
       where: {
         sourcePaymentId: input.sourcePaymentId,
-        isReversal: false,
       },
     });
 
@@ -62,7 +61,7 @@ export class AffiliatePayoutsService {
     }
 
     const eligibleAt = new Date();
-    // Settlement window: 14 days (gives time to catch refunds before paying out)
+    // Settlement window: 14 days for payment processing, verification, and fraud prevention
     eligibleAt.setDate(eligibleAt.getDate() + 14);
 
     await this.prisma.affiliateCommission.create({
@@ -84,67 +83,19 @@ export class AffiliatePayoutsService {
     );
   }
 
-  /**
-   * Reverse a commission when a subscription payment is refunded.
-   * Creates an adjustment record; never destroys the original.
-   */
-  async reverseCommissionForPayment(sourcePaymentId: string): Promise<void> {
-    const original = await this.prisma.affiliateCommission.findFirst({
-      where: { sourcePaymentId, isReversal: false },
-    });
-
-    if (!original) {
-      this.logger.log(`No commission found for payment ${sourcePaymentId}, no reversal needed`);
-      return;
-    }
-
-    if (original.status === AffiliateCommissionStatus.REVERSED) {
-      this.logger.log(`Commission for payment ${sourcePaymentId} already reversed`);
-      return;
-    }
-
-    await this.prisma.$transaction(async (tx) => {
-      await tx.affiliateCommission.update({
-        where: { id: original.id },
-        data: {
-          status: AffiliateCommissionStatus.REVERSED,
-          reversedAt: new Date(),
-        },
-      });
-
-      await tx.affiliateCommission.create({
-        data: {
-          affiliateId: original.affiliateId,
-          referredFounderId: original.referredFounderId,
-          conversionId: original.conversionId,
-          sourcePaymentId: original.sourcePaymentId,
-          amount: original.amount,
-          currency: original.currency,
-          commissionRate: original.commissionRate,
-          status: AffiliateCommissionStatus.REVERSED,
-          isReversal: true,
-          reversedCommissionId: original.id,
-          reversedAt: new Date(),
-        },
-      });
-    });
-
-    this.logger.log(`Commission for payment ${sourcePaymentId} reversed`);
-  }
-
   // ─────────────────────────────────────────────────────────────────────────────
   // Payout Processing
   // ─────────────────────────────────────────────────────────────────────────────
 
   /**
    * Daily job to clear PENDING commissions that have passed their eligibleAt date.
+   * Commissions move from PENDING to ELIGIBLE after the 14-day settlement window.
    */
   async processSettlements(): Promise<{ cleared: number }> {
     const result = await this.prisma.affiliateCommission.updateMany({
       where: {
         status: AffiliateCommissionStatus.PENDING,
         eligibleAt: { lte: new Date() },
-        isReversal: false,
       },
       data: {
         status: AffiliateCommissionStatus.ELIGIBLE,
@@ -174,7 +125,6 @@ export class AffiliatePayoutsService {
       where: {
         affiliateId,
         status: AffiliateCommissionStatus.ELIGIBLE,
-        isReversal: false,
         payoutId: null,
       },
       _sum: { amount: true },
@@ -186,7 +136,6 @@ export class AffiliatePayoutsService {
       where: { 
         affiliateId, 
         status: AffiliateCommissionStatus.ELIGIBLE,
-        isReversal: false,
       },
     });
 
@@ -224,7 +173,6 @@ export class AffiliatePayoutsService {
           commissions: {
             some: {
               status: AffiliateCommissionStatus.ELIGIBLE,
-              isReversal: false,
               payoutId: null,
             },
           },
@@ -305,7 +253,6 @@ export class AffiliatePayoutsService {
             where: {
               affiliateId: affiliate.id,
               status: AffiliateCommissionStatus.ELIGIBLE,
-              isReversal: false,
               payoutId: null,
             },
             data: { payoutId: p.id },

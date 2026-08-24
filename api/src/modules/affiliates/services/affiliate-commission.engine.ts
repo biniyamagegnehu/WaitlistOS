@@ -145,12 +145,4 @@ export class AffiliateCommissionEngine {
       `Commission generated successfully: ${commissionAmount} ${currency} (rate: ${commissionRate}) for affiliate ${attribution.affiliateId} from payment ${paymentId}`,
     );
   }
-
-  /**
-   * Called when a subscription payment is refunded.
-   * Reverses the corresponding commission without destroying historical data.
-   */
-  async handlePaymentRefund(paymentId: string): Promise<void> {
-    await this.payoutsService.reverseCommissionForPayment(paymentId);
-  }
 }

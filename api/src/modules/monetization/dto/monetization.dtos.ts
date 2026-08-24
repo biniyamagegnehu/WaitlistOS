@@ -63,8 +63,3 @@ export class UpdatePreOrderDepositConfigDto {
   @IsOptional()
   preOrderDepositDescription?: string;
 }
-
-export class RefundPreOrderDepositDto {
-  @IsString()
-  depositId: string;
-}

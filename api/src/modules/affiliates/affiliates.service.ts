@@ -291,12 +291,11 @@ export class AffiliatesService {
       orderBy: { createdAt: 'asc' },
     });
 
-    // Calculate commission totals (exclude reversals)
+    // Calculate commission totals
     const commissions = await this.prisma.affiliateCommission.groupBy({
       by: ['status'],
       where: { 
         affiliateId: affiliate.id,
-        isReversal: false,
       },
       _sum: { amount: true },
       _count: { id: true },
@@ -328,11 +327,10 @@ export class AffiliatesService {
       } 
     });
 
-    // Recent commissions (exclude reversals)
+    // Recent commissions
     const recentCommissions = await this.prisma.affiliateCommission.findMany({
       where: { 
         affiliateId: affiliate.id,
-        isReversal: false,
       },
       orderBy: { createdAt: 'desc' },
       take: 20,

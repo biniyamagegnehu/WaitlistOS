@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Headers, Param, Patch, Post, Query, Req, Res, UseGuards, BadRequestException } from '@nestjs/common';
 import { MonetizationService } from './monetization.service';
-import { ConnectChapaDto, CreateCheckoutDto, UpdatePreOrderDepositConfigDto, RefundPreOrderDepositDto } from './dto/monetization.dtos';
+import { ConnectChapaDto, CreateCheckoutDto, UpdatePreOrderDepositConfigDto } from './dto/monetization.dtos';
 import { PaymentProvider } from '@prisma/client';
 import { ConfigService } from '@nestjs/config';
 import { AccessTokenGuard } from '../auth/guards/access-token.guard';
@@ -319,9 +319,4 @@ export class MonetizationController {
     return this.monetizationService.getPreOrderAnalytics(req.user.userId, waitlistId, filters);
   }
 
-  @UseGuards(AccessTokenGuard)
-  @Post('pre-order/refund')
-  async refundPreOrderDeposit(@Req() req: any, @Body() dto: RefundPreOrderDepositDto) {
-    return this.monetizationService.refundPreOrderDeposit(req.user.userId, dto);
-  }
 }

@@ -6,7 +6,7 @@ import { FeeService } from './fee.service';
 import { StripeMonetizationProvider } from './providers/stripe-monetization.provider';
 import { ChapaMonetizationProvider } from './providers/chapa-monetization.provider';
 import { IMonetizationProvider, VerifyPaymentResult } from './providers/monetization-provider.interface';
-import { CreateCheckoutDto, UpdatePreOrderDepositConfigDto, RefundPreOrderDepositDto } from './dto/monetization.dtos';
+import { CreateCheckoutDto, UpdatePreOrderDepositConfigDto } from './dto/monetization.dtos';
 import { ParticipantsService } from '../participants/participants.service';
 import { EmailsService } from '../emails/emails.service';
 import { randomUUID } from 'crypto';
@@ -492,7 +492,6 @@ export class MonetizationService {
               deposit.waitlist.name,
               Number(deposit.amount),
               deposit.currency,
-              deposit.policy,
             );
           }
         }
@@ -733,43 +732,6 @@ export class MonetizationService {
     const grossRevenue = deposits.reduce((sum, d) => sum + Number(d.amount), 0);
 
     return { totalDeposits, grossRevenue };
-  }
-
-  async refundPreOrderDeposit(userId: string, dto: RefundPreOrderDepositDto) {
-    const founder = await this.getFounderByUserId(userId);
-    
-    const deposit = await this.prisma.preOrderDeposit.findFirst({
-      where: { id: dto.depositId, waitlist: { founderId: founder.id } },
-      include: { monetizationPayment: true },
-    });
-    
-    if (!deposit) throw new NotFoundException('Deposit not found or unauthorized');
-    if (deposit.status !== PreOrderDepositStatus.PAID) throw new BadRequestException('Deposit is not in PAID state');
-    if (deposit.policy !== PreOrderDepositPolicy.REFUNDABLE) throw new BadRequestException('This deposit is not refundable');
-
-    const payment = deposit.monetizationPayment;
-    if (!payment) throw new BadRequestException('No underlying payment found');
-
-    const account = await this.prisma.paymentAccount.findUnique({
-      where: { founderId_provider: { founderId: founder.id, provider: payment.provider } }
-    });
-    if (!account) throw new BadRequestException('Payment account not found');
-
-    const providerService = this.getProvider(payment.provider);
-    const refundResult = await providerService.refundPayment(payment.providerPaymentId, Number(deposit.amount), account, 'requested_by_customer');
-
-    if (refundResult.status === 'SUCCESS' || refundResult.status === 'PENDING') {
-      await this.prisma.preOrderDeposit.update({
-        where: { id: deposit.id },
-        data: {
-          status: refundResult.status === 'SUCCESS' ? PreOrderDepositStatus.REFUNDED : PreOrderDepositStatus.REFUND_PENDING,
-          refundedAt: refundResult.status === 'SUCCESS' ? new Date() : null,
-        }
-      });
-      return { success: true, status: refundResult.status };
-    } else {
-      throw new BadRequestException(`Refund failed: ${refundResult.error}`);
-    }
   }
 
   // ── Skip the Line ───────────────────────────────────────────────────────────
@@ -1215,7 +1177,6 @@ export class MonetizationService {
           deposit.waitlist.name,
           Number(deposit.amount),
           deposit.currency,
-          deposit.policy as any
         );
       }
 
