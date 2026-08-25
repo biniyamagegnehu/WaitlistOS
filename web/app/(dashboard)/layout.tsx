@@ -27,6 +27,14 @@ export default function DashboardLayout({
     }
   }, [isAuthenticated, isLoading, router]);
 
+  // Prevent body scroll when in dashboard
+  React.useEffect(() => {
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, []);
+
   if (isLoading || !isAuthenticated) {
     return <LoadingScreen />;
   }
