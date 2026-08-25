@@ -9,6 +9,7 @@ import { Trash2, GripVertical, Plus, ChevronDown, AlertCircle } from "lucide-rea
 import { LocationOptionPicker } from "./LocationOptionPicker";
 import { ALL_COUNTRIES, ALL_LANGUAGES } from "@/lib/locale-data";
 import { cn } from "@/lib/cn";
+import { getFieldDefaults } from "@/lib/field-validation.defaults";
 
 interface FieldConfigEditorProps {
   field: CustomFieldConfig;
@@ -337,26 +338,40 @@ export function FieldConfigEditor({ field, onChange, onDelete, errors = {} }: Fi
             {isAdvancedExpanded && (
               <div className="mt-3 p-3.5 rounded-lg bg-muted/15 border border-border/40 space-y-4 animate-in fade-in slide-in-from-top-1 duration-200">
                 {/* Text length limits */}
-                {["SHORT_TEXT", "LONG_TEXT"].includes(field.type) && (
-                  <div className="grid grid-cols-2 gap-3">
-                    <Input
-                      label="Min Length"
-                      type="number"
-                      min={0}
-                      className="h-8 text-xs bg-background"
-                      value={(field as any).minLength ?? ""}
-                      onChange={e => updateField({ minLength: e.target.value !== "" ? parseInt(e.target.value) : undefined })}
-                      error={errors.minLength}
-                    />
-                    <Input
-                      label="Max Length"
-                      type="number"
-                      min={0}
-                      className="h-8 text-xs bg-background"
-                      value={(field as any).maxLength ?? ""}
-                      onChange={e => updateField({ maxLength: e.target.value !== "" ? parseInt(e.target.value) : undefined })}
-                      error={errors.maxLength}
-                    />
+                {["SHORT_TEXT", "LONG_TEXT", "EMAIL", "PHONE", "URL"].includes(field.type) && (
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-3">
+                      <Input
+                        label="Min Length"
+                        type="number"
+                        min={0}
+                        className="h-8 text-xs bg-background"
+                        value={(field as any).minLength ?? ""}
+                        onChange={e => updateField({ minLength: e.target.value !== "" ? parseInt(e.target.value) : undefined })}
+                        error={errors.minLength}
+                      />
+                      <Input
+                        label="Max Length"
+                        type="number"
+                        min={0}
+                        className="h-8 text-xs bg-background"
+                        value={(field as any).maxLength ?? ""}
+                        onChange={e => updateField({ maxLength: e.target.value !== "" ? parseInt(e.target.value) : undefined })}
+                        error={errors.maxLength}
+                      />
+                    </div>
+                    {/* Show system defaults when empty */}
+                    {!(field as any).minLength && !(field as any).maxLength && (
+                      <div className="text-xs text-muted-foreground">
+                        Using default: {(() => {
+                          const defaults = getFieldDefaults(field.type);
+                          if (!defaults) return "not configured";
+                          const minText = 'minLength' in defaults && defaults.minLength ? `${defaults.minLength}` : "0";
+                          const maxText = 'maxLength' in defaults && defaults.maxLength ? `${defaults.maxLength}` : "unlimited";
+                          return `${minText}–${maxText} characters`;
+                        })()}
+                      </div>
+                    )}
                   </div>
                 )}
 

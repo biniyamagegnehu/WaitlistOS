@@ -9,6 +9,7 @@ import type {
   LocationFieldConfig,
 } from "@/types/custom-fields";
 import { ALL_COUNTRIES, ALL_LANGUAGES } from "@/lib/locale-data";
+import { resolveTextValidation, FIELD_VALIDATION_LIMITS } from "@/lib/field-validation.defaults";
 
 const COUNTRY_CODE_SET = new Set(ALL_COUNTRIES.map((c) => c.code));
 const LANGUAGE_CODE_SET = new Set(ALL_LANGUAGES.map((l) => l.code));
@@ -113,11 +114,11 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
             const minLen = txt.minLength !== undefined && txt.minLength !== null && (txt.minLength as any) !== "" ? Number(txt.minLength) : undefined;
             const maxLen = txt.maxLength !== undefined && txt.maxLength !== null && (txt.maxLength as any) !== "" ? Number(txt.maxLength) : undefined;
 
-            if (minLen !== undefined && (isNaN(minLen) || minLen < 0 || minLen > 10000)) {
-              addError(fieldId, "minLength", "Min length must be between 0 and 10,000.");
+            if (minLen !== undefined && (isNaN(minLen) || minLen < 0 || minLen > FIELD_VALIDATION_LIMITS.MAX_MIN_LENGTH)) {
+              addError(fieldId, "minLength", `Min length must be between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MIN_LENGTH.toLocaleString()}.`);
             }
-            if (maxLen !== undefined && (isNaN(maxLen) || maxLen < 0 || maxLen > 10000)) {
-              addError(fieldId, "maxLength", "Max length must be between 0 and 10,000.");
+            if (maxLen !== undefined && (isNaN(maxLen) || maxLen < 0 || maxLen > FIELD_VALIDATION_LIMITS.MAX_MAX_LENGTH)) {
+              addError(fieldId, "maxLength", `Max length must be between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MAX_LENGTH.toLocaleString()}.`);
             }
             if (minLen !== undefined && maxLen !== undefined && minLen > maxLen) {
               addError(fieldId, "minLength", "Min length cannot be greater than max length.");
@@ -359,12 +360,20 @@ export function validateSingleParticipantField(
       const txt = field as TextFieldConfig;
       const trimmed = value.trim();
 
-      if (txt.minLength !== undefined && trimmed.length < txt.minLength) {
-        return `${label} must be at least ${txt.minLength} characters.`;
+      // Resolve effective validation constraints using centralized defaults
+      const effectiveValidation = resolveTextValidation(
+        field.type as "SHORT_TEXT" | "LONG_TEXT",
+        txt.minLength ?? null,
+        txt.maxLength ?? null,
+      );
+
+      // Apply minimum length validation (only if > 0)
+      if (effectiveValidation.minLength > 0 && trimmed.length < effectiveValidation.minLength) {
+        return `${label} must be at least ${effectiveValidation.minLength} characters.`;
       }
-      const max = txt.maxLength || (field.type === "SHORT_TEXT" ? 500 : 5000);
-      if (value.length > max) {
-        return `${label} cannot exceed ${max} characters.`;
+      // Apply maximum length validation
+      if (value.length > effectiveValidation.maxLength) {
+        return `${label} cannot exceed ${effectiveValidation.maxLength} characters.`;
       }
       if (/<\s*script|javascript:/i.test(value)) {
         return `${label} contains unsupported content.`;
@@ -378,7 +387,11 @@ export function validateSingleParticipantField(
       if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
         return `Please enter a valid email address.`;
       }
-      if (trimmed.length > 255) return `${label} cannot exceed 255 characters.`;
+      // Use centralized default for email max length
+      const effectiveValidation = resolveTextValidation("EMAIL", null, null);
+      if (trimmed.length > effectiveValidation.maxLength) {
+        return `${label} cannot exceed ${effectiveValidation.maxLength} characters.`;
+      }
       return undefined;
     }
 
@@ -387,6 +400,11 @@ export function validateSingleParticipantField(
       const trimmed = value.trim();
       if (!/^\+?[0-9\s\-()]{7,25}$/.test(trimmed)) {
         return `Please enter a valid phone number.`;
+      }
+      // Use centralized default for phone max length
+      const effectiveValidation = resolveTextValidation("PHONE", null, null);
+      if (trimmed.length > effectiveValidation.maxLength) {
+        return `${label} cannot exceed ${effectiveValidation.maxLength} characters.`;
       }
       return undefined;
     }
@@ -400,7 +418,11 @@ export function validateSingleParticipantField(
       if (!/^https?:\/\/.+/i.test(trimmed)) {
         return `Please enter a valid URL starting with http:// or https://`;
       }
-      if (trimmed.length > 2048) return `${label} cannot exceed 2048 characters.`;
+      // Use centralized default for URL max length
+      const effectiveValidation = resolveTextValidation("URL", null, null);
+      if (trimmed.length > effectiveValidation.maxLength) {
+        return `${label} cannot exceed ${effectiveValidation.maxLength} characters.`;
+      }
       return undefined;
     }
 
