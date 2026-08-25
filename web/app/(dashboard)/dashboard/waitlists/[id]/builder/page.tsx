@@ -3,12 +3,13 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertTriangle, ArrowLeft, ChevronDown, ChevronUp, Copy, Eye, EyeOff, GripVertical, Plus, Redo2, RotateCcw, Trash2, Undo2 } from "lucide-react";
+import { AlertTriangle, ArrowLeft, ChevronDown, ChevronUp, Copy, Eye, EyeOff, FileStack, GripVertical, Plus, Redo2, RotateCcw, SlidersHorizontal, Trash2, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { getPageBuilder, publishPageBuilder, savePageBuilder } from "@/services/dashboard";
+import { getPageBuilder, publishPageBuilder, savePageBuilder, getDashboardWaitlistDetail } from "@/services/dashboard";
+import { getPublicWaitlistBySlug } from "@/services/api";
 import { defaultSection, PAGE_SECTION_TYPES, sectionLabel, singletonSections, type PageConfig, type PageSection, type PageSectionType } from "@/types/page-builder";
 import { routes } from "@/lib/routes";
 import { uploadFile } from "@/services/files";
@@ -22,16 +23,48 @@ import {
   type SectionErrors,
   type ValidationResult,
 } from "@/lib/page-builder-validation";
+import { WaitlistPageRenderer } from "@/components/waitlist/WaitlistPageRenderer";
+import type { PublicWaitlistResponse } from "@/types/waitlist";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 type SaveState = "loading" | "saved" | "saving" | "failed" | "publishing" | "published" | "invalid";
+type BuilderMode = "CUSTOMIZE_ORIGINAL" | "FROM_SCRATCH";
+type ConfirmAction = "reset_to_original" | "build_from_scratch" | null;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 const normalize = (sections: PageSection[]) => sections.map((section, order) => ({ ...section, order }));
 
 const EMPTY_VALIDATION: ValidationResult = { valid: true, fieldErrors: {}, sectionErrors: {} };
+
+/** Build a minimal PageConfig skeleton from a public waitlist response (CUSTOMIZE_ORIGINAL mode) */
+function makeConfigFromPublicData(publicData: PublicWaitlistResponse): PageConfig {
+  const { waitlist, copy } = publicData;
+  return {
+    version: 1,
+    mode: "CUSTOMIZE_ORIGINAL",
+    sections: [
+      { id: "hero", type: "HERO", order: 0, visible: true, content: { headline: copy?.headline ?? waitlist.name, subheadline: copy?.subheadline ?? waitlist.tagline, description: waitlist.description ?? "" } },
+      { id: "social-proof", type: "SOCIAL_PROOF", order: 1, visible: false, content: { title: "Loved by early adopters" } },
+      { id: "features", type: "FEATURES", order: 2, visible: !!(copy?.features?.length), content: { title: "Why join?", items: JSON.stringify(copy?.features ?? []) } },
+      { id: "signup", type: "SIGNUP", order: 3, visible: true, content: { title: "Join the waitlist", subtitle: "" } },
+      { id: "faq", type: "FAQ", order: 4, visible: !!(copy?.faqs?.length), content: { title: "Frequently Asked Questions", items: JSON.stringify(copy?.faqs ?? []) } },
+      { id: "footer", type: "FOOTER", order: 5, visible: true, content: { title: waitlist.name, text: `© ${new Date().getFullYear()} ${waitlist.name}. All rights reserved.` } },
+    ],
+  };
+}
+
+/** Build a minimal FROM_SCRATCH config (just the required SIGNUP section) */
+function makeFromScratchConfig(): PageConfig {
+  return {
+    version: 1,
+    mode: "FROM_SCRATCH",
+    sections: [
+      { id: `signup-${crypto.randomUUID().slice(0, 8)}`, type: "SIGNUP", order: 0, visible: true, content: { title: "Join the waitlist", subtitle: "" } },
+    ],
+  };
+}
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
@@ -50,25 +83,43 @@ export default function PageBuilderPage() {
   const [future, setFuture] = React.useState<PageConfig[]>([]);
   const [validation, setValidation] = React.useState<ValidationResult>(EMPTY_VALIDATION);
   const [summaryOpen, setSummaryOpen] = React.useState(false);
+  // Builder mode — derived from loaded config, or default to CUSTOMIZE_ORIGINAL
+  const [builderMode, setBuilderMode] = React.useState<BuilderMode>("CUSTOMIZE_ORIGINAL");
+  // Public waitlist data used to power the live preview
+  const [previewData, setPreviewData] = React.useState<PublicWaitlistResponse | null>(null);
+  // Confirmation dialog state for destructive mode-switch actions
+  const [confirmAction, setConfirmAction] = React.useState<ConfirmAction>(null);
 
   const pending = React.useRef<PageConfig | null>(null);
   const saveTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
 
   React.useEffect(() => {
-    if (waitlistId) {
-      getPageBuilder(waitlistId)
-        .then((data) => {
-          setConfig(data.draftConfig);
-          setVersion(data.version);
-          versionRef.current = data.version;
-          setSelectedId(data.draftConfig.sections[0]?.id ?? null);
-          // Validate loaded config but start in "saved" state — don't block for existing data
-          const result = validateConfig(data.draftConfig);
-          setValidation(result);
-          setState("saved");
-        })
-        .catch(() => setState("failed"));
-    }
+    if (!waitlistId) return;
+
+    // Fetch page builder config AND the public waitlist data (for preview) in parallel
+    Promise.all([
+      getPageBuilder(waitlistId),
+      getDashboardWaitlistDetail(waitlistId),
+    ])
+      .then(([builderData, detail]) => {
+        const loaded = builderData.draftConfig;
+        setConfig(loaded);
+        setVersion(builderData.version);
+        versionRef.current = builderData.version;
+        setSelectedId(loaded.sections[0]?.id ?? null);
+        setBuilderMode((loaded.mode as BuilderMode) ?? "CUSTOMIZE_ORIGINAL");
+        const result = validateConfig(loaded);
+        setValidation(result);
+        setState("saved");
+
+        // Fetch public waitlist data by slug for the live preview
+        const slug = detail.waitlist.slug;
+        return getPublicWaitlistBySlug(slug);
+      })
+      .then((publicData) => {
+        if (publicData) setPreviewData(publicData);
+      })
+      .catch(() => setState("failed"));
   }, [waitlistId]);
 
   const save = React.useCallback(async () => {
@@ -226,8 +277,63 @@ export default function PageBuilderPage() {
 
   const errorCount = countErrors(validation);
 
+  // ── Mode switching helpers ──
+  const applyResetToOriginal = () => {
+    if (!previewData) return;
+    const next = makeConfigFromPublicData(previewData);
+    setBuilderMode("CUSTOMIZE_ORIGINAL");
+    setHistory([]);
+    setFuture([]);
+    update({ ...next, mode: "CUSTOMIZE_ORIGINAL" }, false);
+    setSelectedId(next.sections[0]?.id ?? null);
+    setConfirmAction(null);
+  };
+
+  const applyBuildFromScratch = () => {
+    const next = makeFromScratchConfig();
+    setBuilderMode("FROM_SCRATCH");
+    setHistory([]);
+    setFuture([]);
+    update({ ...next, mode: "FROM_SCRATCH" }, false);
+    setSelectedId(next.sections[0]?.id ?? null);
+    setConfirmAction(null);
+  };
+
   return (
     <div className="space-y-5">
+      {/* ── Confirmation Modal ── */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
+          <div className="w-full max-w-md rounded-xl border border-border bg-background p-6 shadow-xl">
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 shrink-0 text-amber-500" />
+                <h2 className="font-semibold">
+                  {confirmAction === "reset_to_original" ? "Reset to Original Page" : "Build From Scratch"}
+                </h2>
+              </div>
+              <button onClick={() => setConfirmAction(null)} className="text-muted-foreground hover:text-foreground" aria-label="Close">
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <p className="mt-3 text-sm text-muted-foreground">
+              {confirmAction === "reset_to_original"
+                ? "This will replace your current draft with a layout based on your original waitlist page content. Your current edits will be lost."
+                : "This will clear all current sections and start with a blank canvas. Only the signup form will remain. Your current edits will be lost."}
+            </p>
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="ghost" onClick={() => setConfirmAction(null)}>Cancel</Button>
+              <Button
+                variant={confirmAction === "reset_to_original" ? "secondary" : "destructive"}
+                onClick={confirmAction === "reset_to_original" ? applyResetToOriginal : applyBuildFromScratch}
+              >
+                {confirmAction === "reset_to_original" ? "Reset to Original" : "Clear & Build From Scratch"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* ── Header bar ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
@@ -251,6 +357,56 @@ export default function PageBuilderPage() {
             Publish
           </Button>
         </div>
+      </div>
+
+      {/* ── Mode selector ── */}
+      <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-surface/50 px-4 py-3">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center rounded-md border border-border bg-background p-1">
+            <button
+              onClick={() => {
+                if (builderMode !== "CUSTOMIZE_ORIGINAL") setConfirmAction("reset_to_original");
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors ${
+                builderMode === "CUSTOMIZE_ORIGINAL"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <SlidersHorizontal className="h-3.5 w-3.5" />
+              Customize Original
+            </button>
+            <button
+              onClick={() => {
+                if (builderMode !== "FROM_SCRATCH") setConfirmAction("build_from_scratch");
+              }}
+              className={`inline-flex items-center gap-1.5 rounded-sm px-3 py-1.5 text-sm font-medium transition-colors ${
+                builderMode === "FROM_SCRATCH"
+                  ? "bg-primary text-primary-foreground shadow-sm"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <FileStack className="h-3.5 w-3.5" />
+              Build From Scratch
+            </button>
+          </div>
+          <span className="hidden text-xs text-muted-foreground sm:inline">
+            {builderMode === "CUSTOMIZE_ORIGINAL"
+              ? "Editing your original waitlist page"
+              : "Building a custom page from a blank canvas"}
+          </span>
+        </div>
+        {builderMode === "CUSTOMIZE_ORIGINAL" && previewData && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={() => setConfirmAction("reset_to_original")}
+            className="text-muted-foreground"
+          >
+            <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
+            Reset to Original
+          </Button>
+        )}
       </div>
 
       {/* ── Validation Summary Banner ── */}
@@ -312,12 +468,20 @@ export default function PageBuilderPage() {
 
         {/* Center: Live preview */}
         <Card>
-          <CardContent className="min-h-[640px] bg-surface-muted p-5">
-            <div className={`mx-auto max-w-2xl space-y-4 rounded-xl p-6 shadow-sm ${previewTheme === "dark" ? "dark" : "light"} bg-background text-foreground`}>
-              <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Live draft preview</p>
-              {sections.filter((section) => section.visible).map((section) => (
-                <PreviewSection key={section.id} section={section} />
-              ))}
+          <CardContent className="min-h-[640px] bg-surface-muted p-3">
+            <p className="mb-2 px-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">Live draft preview</p>
+            <div className={`overflow-y-auto rounded-xl border border-border shadow-sm ${previewTheme === "dark" ? "dark" : ""} bg-background text-foreground`} style={{ maxHeight: "80vh" }}>
+              {previewData && config ? (
+                <WaitlistPageRenderer
+                  config={config}
+                  waitlistData={{ ...previewData, pageConfig: config }}
+                  isPreview
+                />
+              ) : (
+                <div className="flex min-h-[400px] items-center justify-center text-sm text-muted-foreground">
+                  {state === "loading" ? "Loading preview…" : "Preview unavailable"}
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>
@@ -773,18 +937,3 @@ function SectionSettings({
   );
 }
 
-// ─── Preview Section ──────────────────────────────────────────────────────────
-
-function PreviewSection({ section }: { section: PageSection }) {
-  const title = String(section.content.headline ?? section.content.title ?? section.type.replace("_", " "));
-  const description = String(section.content.description ?? section.content.text ?? "");
-  return (
-    <section className="rounded-lg border border-border p-5">
-      <p className="mb-2 text-xs font-medium text-muted-foreground">{sectionLabel[section.type]}</p>
-      <h2 className="text-xl font-semibold">{title}</h2>
-      {description && <p className="mt-2 text-sm text-muted-foreground">{description}</p>}
-      {section.type === "SIGNUP" && <div className="mt-4 h-10 rounded-lg bg-primary/15" />}
-      {(section.type as string) === "COUNTDOWN" && <div className="mt-4 text-2xl font-semibold tabular-nums">00 : 00 : 00</div>}
-    </section>
-  );
-}
