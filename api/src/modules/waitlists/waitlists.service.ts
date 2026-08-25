@@ -13,7 +13,7 @@ import { CreateWaitlistDto } from './dto/create-waitlist.dto';
 import { UpdateWaitlistDto } from './dto/update-waitlist.dto';
 import { SlugService } from './services/slug.service';
 import { PaymentService } from '../payments/payment.service';
-import { defaultPageConfig, upgradePageConfig, validatePageConfig } from './page-config';
+import { defaultPageConfig, upgradePageConfig, validatePageConfig, createConfigFromOriginal } from './page-config';
 import { Prisma, PaymentAccountStatus, PaymentProvider } from '@prisma/client';
 
 @Injectable()
@@ -237,7 +237,7 @@ export class WaitlistsService {
   async getPageBuilder(waitlistId: string, userId: string) {
     const waitlist = await this.findOwnedWaitlistOrThrow(waitlistId, userId);
     const config = await this.prisma.waitlistPageConfig.findUnique({ where: { waitlistId: waitlist.id } });
-    return { success: true, data: { draftConfig: config ? upgradePageConfig(config.draftConfig) : defaultPageConfig(), publishedConfig: config?.publishedConfig ? upgradePageConfig(config.publishedConfig) : null, version: config?.version ?? 1 } };
+    return { success: true, data: { draftConfig: config ? upgradePageConfig(config.draftConfig) : createConfigFromOriginal(waitlist, waitlist.copy), publishedConfig: config?.publishedConfig ? upgradePageConfig(config.publishedConfig) : null, version: config?.version ?? 1 } };
   }
 
   async updatePageBuilder(waitlistId: string, input: unknown, version: number, userId: string) {
@@ -277,7 +277,7 @@ export class WaitlistsService {
   private async findOwnedWaitlist(waitlistId: string, founderId: string) {
     const waitlist = await this.prisma.waitlist.findFirst({
       where: { id: waitlistId, founderId },
-      include: { logo: true },
+      include: { logo: true, copy: true },
     });
 
     if (!waitlist) {

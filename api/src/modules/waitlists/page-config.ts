@@ -3,7 +3,7 @@ import { BadRequestException } from '@nestjs/common';
 export const PAGE_SECTION_TYPES = ['HERO', 'FEATURES', 'FAQ', 'SIGNUP', 'SOCIAL_PROOF', 'FOOTER'] as const;
 export type PageSectionType = (typeof PAGE_SECTION_TYPES)[number];
 export interface PageSection { id: string; type: PageSectionType; order: number; visible: boolean; content: Record<string, unknown>; layout?: Record<string, unknown>; style?: Record<string, unknown>; responsive?: Record<string, unknown>; }
-export interface PageConfig { version: 1; theme?: Record<string, unknown>; sections: PageSection[]; }
+export interface PageConfig { version: 1; mode?: 'CUSTOMIZE_ORIGINAL' | 'FROM_SCRATCH'; theme?: Record<string, unknown>; sections: PageSection[]; }
 
 // ─── Limits (mirrored in web/lib/page-builder-validation.ts) ─────────────────
 const LIMITS = {
@@ -15,8 +15,8 @@ const LIMITS = {
   FOOTER: { title: 100, text: 500 },
 } as const;
 
-export function defaultPageConfig(): PageConfig {
-  return { version: 1, theme: { primaryColor: '', background: '', text: '', mutedText: '', containerWidth: 'large', sectionSpacing: 'medium', buttonStyle: 'solid', buttonSize: 'medium', buttonRadius: 'rounded', headingFont: 'inherit', bodyFont: 'inherit' }, sections: [
+export function defaultPageConfig(mode: "CUSTOMIZE_ORIGINAL" | "FROM_SCRATCH" = "CUSTOMIZE_ORIGINAL"): PageConfig {
+  return { version: 1, mode, theme: { primaryColor: '', background: '', text: '', mutedText: '', containerWidth: 'large', sectionSpacing: 'medium', buttonStyle: 'solid', buttonSize: 'medium', buttonRadius: 'rounded', headingFont: 'inherit', bodyFont: 'inherit' }, sections: mode === "FROM_SCRATCH" ? [] : [
     { id: 'hero', type: 'HERO', order: 0, visible: true, content: {} },
     { id: 'social-proof', type: 'SOCIAL_PROOF', order: 1, visible: true, content: {} },
     { id: 'features', type: 'FEATURES', order: 2, visible: true, content: {} },
@@ -24,6 +24,53 @@ export function defaultPageConfig(): PageConfig {
     { id: 'faq', type: 'FAQ', order: 4, visible: true, content: {} },
     { id: 'footer', type: 'FOOTER', order: 5, visible: true, content: {} },
   ] };
+}
+
+export function createConfigFromOriginal(waitlist: any, copy: any): PageConfig {
+  const config = defaultPageConfig("CUSTOMIZE_ORIGINAL");
+  
+  // Hero
+  const hero = config.sections.find(s => s.type === 'HERO');
+  if (hero) {
+    hero.content.headline = copy?.headline || waitlist.name || '';
+    hero.content.subheadline = copy?.subheadline || waitlist.tagline || '';
+    hero.content.description = waitlist.description || '';
+  }
+
+  // Social Proof (optional/default)
+  const socialProof = config.sections.find(s => s.type === 'SOCIAL_PROOF');
+  if (socialProof) {
+    socialProof.content.title = 'Loved by early adopters';
+  }
+
+  // Features
+  const features = config.sections.find(s => s.type === 'FEATURES');
+  if (features && copy?.features && Array.isArray(copy.features)) {
+    features.content.title = 'Why join?';
+    features.content.items = JSON.stringify(copy.features);
+  }
+
+  // Signup
+  const signup = config.sections.find(s => s.type === 'SIGNUP');
+  if (signup) {
+    signup.content.title = 'Join the waitlist';
+  }
+
+  // FAQ
+  const faq = config.sections.find(s => s.type === 'FAQ');
+  if (faq && copy?.faqs && Array.isArray(copy.faqs)) {
+    faq.content.title = 'Frequently Asked Questions';
+    faq.content.items = JSON.stringify(copy.faqs);
+  }
+
+  // Footer
+  const footer = config.sections.find(s => s.type === 'FOOTER');
+  if (footer) {
+    footer.content.title = waitlist.name || '';
+    footer.content.text = `© ${new Date().getFullYear()} ${waitlist.name || 'WaitlistOS'}. All rights reserved.`;
+  }
+
+  return config;
 }
 
 /** Keeps supported sections from earlier builder drafts and restores required defaults. */
