@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { SignupConfigValidator } from '../signup-config.validator';
+import { FIELD_VALIDATION_LIMITS } from '../../../common/constants/field-validation.defaults';
 
 describe('SignupConfigValidator', () => {
   const validQuestionsStep = {
@@ -240,7 +241,7 @@ describe('SignupConfigValidator', () => {
           SignupConfigValidator.validateFields([
             { id: 'f1', type: 'SHORT_TEXT', label: 'Name', minLength: -1 },
           ]),
-        ).toThrow('must be an integer between 0 and 10000');
+        ).toThrow(`must be an integer between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MIN_LENGTH}`);
       });
     });
 

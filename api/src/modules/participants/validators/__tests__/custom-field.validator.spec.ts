@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { CustomFieldValidator } from '../custom-field.validator';
+import { resolveTextValidation, FIELD_VALIDATION_DEFAULTS } from '../../../../common/constants/field-validation.defaults';
 import type {
   CustomFieldConfig,
   TextFieldConfig,
@@ -349,6 +350,183 @@ describe('CustomFieldValidator – All 17 Field Types', () => {
           f_name: 'Alice',
         }),
       ).not.toThrow();
+    });
+  });
+
+  describe('System Default Validation', () => {
+    describe('SHORT_TEXT defaults', () => {
+      it('uses system defaults when minLength and maxLength are not configured', () => {
+        const field: TextFieldConfig = {
+          id: 'f_name',
+          type: 'SHORT_TEXT',
+          label: 'Name',
+          required: true,
+        };
+
+        // Should accept values within default range (1-100)
+        expect(() => CustomFieldValidator.validate(field, 'A')).not.toThrow(); // min=1
+        expect(() => CustomFieldValidator.validate(field, 'A'.repeat(100))).not.toThrow(); // max=100
+        
+        // Should reject values outside default range
+        expect(() => CustomFieldValidator.validate(field, '')).toThrow('required'); // empty string
+        expect(() => CustomFieldValidator.validate(field, 'A'.repeat(101))).toThrow('cannot exceed 100 characters');
+      });
+
+      it('allows founder to override system defaults', () => {
+        const field: TextFieldConfig = {
+          id: 'f_name',
+          type: 'SHORT_TEXT',
+          label: 'Name',
+          required: true,
+          minLength: 5,
+          maxLength: 50,
+        };
+
+        // Should use founder's custom range (5-50)
+        expect(() => CustomFieldValidator.validate(field, 'ABCDE')).not.toThrow(); // min=5
+        expect(() => CustomFieldValidator.validate(field, 'A'.repeat(50))).not.toThrow(); // max=50
+        
+        // Should reject values outside custom range
+        expect(() => CustomFieldValidator.validate(field, 'ABCD')).toThrow('must be at least 5 characters');
+        expect(() => CustomFieldValidator.validate(field, 'A'.repeat(51))).toThrow('cannot exceed 50 characters');
+      });
+
+      it('allows partial founder configuration with default fallback', () => {
+        const fieldMinOnly: TextFieldConfig = {
+          id: 'f_name',
+          type: 'SHORT_TEXT',
+          label: 'Name',
+          required: true,
+          minLength: 10,
+        };
+
+        // Should use founder's min (10) and system default max (100)
+        expect(() => CustomFieldValidator.validate(fieldMinOnly, 'ABCDEFGHIJ')).not.toThrow(); // min=10
+        expect(() => CustomFieldValidator.validate(fieldMinOnly, 'A'.repeat(100))).not.toThrow(); // max=100 (default)
+        expect(() => CustomFieldValidator.validate(fieldMinOnly, 'ABCDEFGHI')).toThrow('must be at least 10 characters');
+        expect(() => CustomFieldValidator.validate(fieldMinOnly, 'A'.repeat(101))).toThrow('cannot exceed 100 characters');
+
+        const fieldMaxOnly: TextFieldConfig = {
+          id: 'f_name',
+          type: 'SHORT_TEXT',
+          label: 'Name',
+          required: true,
+          maxLength: 25,
+        };
+
+        // Should use system default min (1) and founder's max (25)
+        expect(() => CustomFieldValidator.validate(fieldMaxOnly, 'A')).not.toThrow(); // min=1 (default)
+        expect(() => CustomFieldValidator.validate(fieldMaxOnly, 'A'.repeat(25))).not.toThrow(); // max=25
+        expect(() => CustomFieldValidator.validate(fieldMaxOnly, 'A'.repeat(26))).toThrow('cannot exceed 25 characters');
+      });
+    });
+
+    describe('LONG_TEXT defaults', () => {
+      it('uses system defaults when minLength and maxLength are not configured', () => {
+        const field: TextFieldConfig = {
+          id: 'f_bio',
+          type: 'LONG_TEXT',
+          label: 'Bio',
+          required: true,
+        };
+
+        // Should accept values within default range (1-1000)
+        expect(() => CustomFieldValidator.validate(field, 'A')).not.toThrow(); // min=1
+        expect(() => CustomFieldValidator.validate(field, 'A'.repeat(1000))).not.toThrow(); // max=1000
+        
+        // Should reject values outside default range
+        expect(() => CustomFieldValidator.validate(field, 'A'.repeat(1001))).toThrow('cannot exceed 1000 characters');
+      });
+    });
+
+    describe('EMAIL field defaults', () => {
+      it('uses system default max length for EMAIL', () => {
+        const field: TextFieldConfig = {
+          id: 'f_email',
+          type: 'EMAIL',
+          label: 'Email',
+          required: true,
+        };
+
+        // Should use system default max (254)
+        expect(() => CustomFieldValidator.validate(field, 'a'.repeat(240) + '@example.com')).not.toThrow(); // within 254
+        expect(() => CustomFieldValidator.validate(field, 'a'.repeat(250) + '@example.com')).toThrow('cannot exceed 254 characters'); // exceeds 254
+      });
+    });
+
+    describe('PHONE field defaults', () => {
+      it('uses system default max length for PHONE', () => {
+        const field: TextFieldConfig = {
+          id: 'f_phone',
+          type: 'PHONE',
+          label: 'Phone',
+          required: true,
+        };
+
+        // Should use system default max (20)
+        expect(() => CustomFieldValidator.validate(field, '+1 234 567 8901')).not.toThrow(); // 15 chars, within 20
+        expect(() => CustomFieldValidator.validate(field, '+1 234 567 89012345678')).toThrow('cannot exceed 20 characters'); // 21 chars, exceeds 20
+      });
+    });
+
+    describe('URL field defaults', () => {
+      it('uses system default max length for URL', () => {
+        const field: TextFieldConfig = {
+          id: 'f_url',
+          type: 'URL',
+          label: 'Website',
+          required: true,
+        };
+
+        // Should use system default max (2048)
+        expect(() => CustomFieldValidator.validate(field, 'https://example.com/' + 'a'.repeat(2024))).not.toThrow(); // within 2048
+        expect(() => CustomFieldValidator.validate(field, 'https://example.com/' + 'a'.repeat(2045))).toThrow('cannot exceed 2048 characters'); // exceeds 2048
+      });
+    });
+  });
+
+  describe('resolveTextValidation utility', () => {
+    it('resolves SHORT_TEXT defaults correctly', () => {
+      const defaults = resolveTextValidation('SHORT_TEXT', null, null);
+      expect(defaults.minLength).toBe(FIELD_VALIDATION_DEFAULTS.SHORT_TEXT.minLength);
+      expect(defaults.maxLength).toBe(FIELD_VALIDATION_DEFAULTS.SHORT_TEXT.maxLength);
+    });
+
+    it('resolves LONG_TEXT defaults correctly', () => {
+      const defaults = resolveTextValidation('LONG_TEXT', null, null);
+      expect(defaults.minLength).toBe(FIELD_VALIDATION_DEFAULTS.LONG_TEXT.minLength);
+      expect(defaults.maxLength).toBe(FIELD_VALIDATION_DEFAULTS.LONG_TEXT.maxLength);
+    });
+
+    it('resolves EMAIL defaults correctly', () => {
+      const defaults = resolveTextValidation('EMAIL', null, null);
+      expect(defaults.maxLength).toBe(FIELD_VALIDATION_DEFAULTS.EMAIL.maxLength);
+    });
+
+    it('resolves PHONE defaults correctly', () => {
+      const defaults = resolveTextValidation('PHONE', null, null);
+      expect(defaults.maxLength).toBe(FIELD_VALIDATION_DEFAULTS.PHONE.maxLength);
+    });
+
+    it('resolves URL defaults correctly', () => {
+      const defaults = resolveTextValidation('URL', null, null);
+      expect(defaults.maxLength).toBe(FIELD_VALIDATION_DEFAULTS.URL.maxLength);
+    });
+
+    it('applies founder overrides correctly', () => {
+      const defaults = resolveTextValidation('SHORT_TEXT', 10, 50);
+      expect(defaults.minLength).toBe(10);
+      expect(defaults.maxLength).toBe(50);
+    });
+
+    it('applies partial founder overrides with default fallback', () => {
+      const minOnly = resolveTextValidation('SHORT_TEXT', 15, null);
+      expect(minOnly.minLength).toBe(15);
+      expect(minOnly.maxLength).toBe(FIELD_VALIDATION_DEFAULTS.SHORT_TEXT.maxLength);
+
+      const maxOnly = resolveTextValidation('SHORT_TEXT', null, 25);
+      expect(maxOnly.minLength).toBe(FIELD_VALIDATION_DEFAULTS.SHORT_TEXT.minLength);
+      expect(maxOnly.maxLength).toBe(25);
     });
   });
 });

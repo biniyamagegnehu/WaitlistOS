@@ -10,6 +10,7 @@ import type {
   DateTimeFieldConfig,
 } from '../../../common/types/custom-fields';
 import { COUNTRY_CODE_SET, LANGUAGE_CODE_SET } from '../../../common/locale-data';
+import { resolveTextValidation, FIELD_VALIDATION_DEFAULTS } from '../../../common/constants/field-validation.defaults';
 
 export class CustomFieldValidator {
   /**
@@ -59,21 +60,21 @@ export class CustomFieldValidator {
     switch (field.type) {
       case 'SHORT_TEXT':
       case 'LONG_TEXT':
-        this.validateText(field, value, field.type === 'SHORT_TEXT' ? 500 : 5000);
+        this.validateText(field, value, field.type);
         break;
 
       case 'EMAIL':
-        this.validateText(field, value, 255);
+        this.validateText(field, value, 'EMAIL');
         this.validateRegex(field, value.trim(), /^[^\s@]+@[^\s@]+\.[^\s@]+$/, 'valid email address');
         break;
 
       case 'PHONE':
-        this.validateText(field, value, 50);
+        this.validateText(field, value, 'PHONE');
         this.validateRegex(field, value.trim(), /^\+?[0-9\s\-()]{7,25}$/, 'valid phone number');
         break;
 
       case 'URL':
-        this.validateText(field, value, 2048);
+        this.validateText(field, value, 'URL');
         this.validateUrl(field, value.trim());
         break;
 
@@ -246,7 +247,7 @@ export class CustomFieldValidator {
     }
   }
 
-  private static validateText(field: CustomFieldConfig, value: any, absoluteMax: number) {
+  private static validateText(field: CustomFieldConfig, value: any, fieldType: 'SHORT_TEXT' | 'LONG_TEXT' | 'EMAIL' | 'PHONE' | 'URL') {
     const fieldLabel = field.label || field.id;
     if (typeof value !== 'string') {
       throw new BadRequestException(`Field ${fieldLabel} must be text`);
@@ -259,13 +260,21 @@ export class CustomFieldValidator {
     const txtField = field as TextFieldConfig;
     const trimmed = value.trim();
 
-    if (txtField.minLength !== undefined && trimmed.length < txtField.minLength) {
-      throw new BadRequestException(`Field ${fieldLabel} must be at least ${txtField.minLength} characters`);
+    // Resolve effective validation constraints using centralized defaults
+    const effectiveValidation = resolveTextValidation(
+      fieldType,
+      txtField.minLength ?? null,
+      txtField.maxLength ?? null,
+    );
+
+    // Apply minimum length validation (only if > 0)
+    if (effectiveValidation.minLength > 0 && trimmed.length < effectiveValidation.minLength) {
+      throw new BadRequestException(`Field ${fieldLabel} must be at least ${effectiveValidation.minLength} characters`);
     }
 
-    const max = Math.min(txtField.maxLength || absoluteMax, absoluteMax);
-    if (value.length > max) {
-      throw new BadRequestException(`Field ${fieldLabel} cannot exceed ${max} characters`);
+    // Apply maximum length validation
+    if (value.length > effectiveValidation.maxLength) {
+      throw new BadRequestException(`Field ${fieldLabel} cannot exceed ${effectiveValidation.maxLength} characters`);
     }
   }
 

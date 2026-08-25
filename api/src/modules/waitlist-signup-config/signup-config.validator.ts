@@ -1,5 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
 import { COUNTRY_CODE_SET, LANGUAGE_CODE_SET } from '../../common/locale-data';
+import { FIELD_VALIDATION_LIMITS, resolveTextValidation } from '../../common/constants/field-validation.defaults';
 import type {
   CustomFieldConfig,
   FieldType,
@@ -210,16 +211,16 @@ export class SignupConfigValidator {
 
         if (raw.minLength !== undefined && raw.minLength !== null && raw.minLength !== '') {
           const num = Number(raw.minLength);
-          if (!Number.isInteger(num) || num < 0 || num > 10000) {
-            throw new BadRequestException(`Field ${id} minLength must be an integer between 0 and 10000`);
+          if (!Number.isInteger(num) || num < 0 || num > FIELD_VALIDATION_LIMITS.MAX_MIN_LENGTH) {
+            throw new BadRequestException(`Field ${id} minLength must be an integer between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MIN_LENGTH}`);
           }
           minLength = num;
         }
 
         if (raw.maxLength !== undefined && raw.maxLength !== null && raw.maxLength !== '') {
           const num = Number(raw.maxLength);
-          if (!Number.isInteger(num) || num < 0 || num > 10000) {
-            throw new BadRequestException(`Field ${id} maxLength must be an integer between 0 and 10000`);
+          if (!Number.isInteger(num) || num < 0 || num > FIELD_VALIDATION_LIMITS.MAX_MAX_LENGTH) {
+            throw new BadRequestException(`Field ${id} maxLength must be an integer between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MAX_LENGTH}`);
           }
           maxLength = num;
         }
