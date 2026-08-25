@@ -16,6 +16,7 @@ interface FieldConfigEditorProps {
   onChange: (updatedField: CustomFieldConfig) => void;
   onDelete: () => void;
   errors?: Record<string, string>;
+  dragHandleProps?: any;
 }
 const PLACEHOLDER_SUPPORTED_TYPES = new Set<FieldType>([
   "SHORT_TEXT",
@@ -61,7 +62,7 @@ function CharCounter({ value, max }: { value: string; max: number }) {
   );
 }
 
-export function FieldConfigEditor({ field, onChange, onDelete, errors = {} }: FieldConfigEditorProps) {
+export function FieldConfigEditor({ field, onChange, onDelete, errors = {}, dragHandleProps }: FieldConfigEditorProps) {
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const uniqueId = useId();
   const labelInputId = `field-label-${field.id || uniqueId}`;
@@ -121,7 +122,11 @@ export function FieldConfigEditor({ field, onChange, onDelete, errors = {} }: Fi
     <Card className={cn("shadow-sm border-border/60 transition-all hover:border-border/80", hasAnyErrors && "border-destructive/60")}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3 border-b bg-muted/20 px-4 py-3">
         <div className="flex items-center gap-3 flex-1 min-w-0 mr-4">
-          <div className="cursor-grab hover:bg-muted p-1.5 rounded-md text-muted-foreground transition-colors active:cursor-grabbing shrink-0" title="Drag to reorder">
+          <div 
+            {...dragHandleProps}
+            className="cursor-grab hover:bg-muted p-1.5 rounded-md text-muted-foreground transition-colors active:cursor-grabbing shrink-0" 
+            title="Drag to reorder"
+          >
             <GripVertical className="h-4 w-4" />
           </div>
 

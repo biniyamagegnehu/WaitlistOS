@@ -10,6 +10,7 @@ import { CustomFieldConfig, FieldRegistryEntry } from "@/types/custom-fields";
 import { FieldPickerModal } from "@/components/dashboard/waitlists/signup-config/FieldPickerModal";
 import { FieldConfigEditor } from "@/components/dashboard/waitlists/signup-config/FieldConfigEditor";
 import { validateSignupSteps } from "@/lib/signup-config-validation";
+import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 
 type Step = {
   id: string;
@@ -98,21 +99,40 @@ export default function SignupConfigPage() {
     ]);
   };
 
-  const handleAddField = (fieldReg: FieldRegistryEntry) => {
+  const handleAddField = (fieldRegs: FieldRegistryEntry[]) => {
     if (activeStepIndex === null) return;
     const newSteps = [...steps];
     if (!newSteps[activeStepIndex].fields) newSteps[activeStepIndex].fields = [];
-    
-    const newField: CustomFieldConfig = {
+
+    const newFields: CustomFieldConfig[] = fieldRegs.map(fieldReg => ({
       id: crypto.randomUUID(), // stable ID
       type: fieldReg.type,
       label: fieldReg.name,
       required: false,
       ...fieldReg.defaultConfig,
-    } as CustomFieldConfig;
+    } as CustomFieldConfig));
 
-    newSteps[activeStepIndex].fields!.push(newField);
+    newSteps[activeStepIndex].fields!.push(...newFields);
     setSteps(newSteps);
+  };
+
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return;
+
+    const { source, destination } = result;
+    const sourceStepIndex = parseInt(source.droppableId);
+    const destStepIndex = parseInt(destination.droppableId);
+
+    if (sourceStepIndex === destStepIndex) {
+      // Reordering within the same step
+      const newSteps = [...steps];
+      const step = newSteps[sourceStepIndex];
+      const items = Array.from(step.fields || []);
+      const [reorderedItem] = items.splice(source.index, 1);
+      items.splice(destination.index, 0, reorderedItem);
+      step.fields = items;
+      setSteps(newSteps);
+    }
   };
 
   if (loading) {
@@ -197,106 +217,127 @@ export default function SignupConfigPage() {
             </Button>
           </div>
 
-          <div className="space-y-6">
-            {steps.map((step, stepIndex) => (
-              <div
-                key={step.id}
-                className="rounded-lg border bg-card p-6 shadow-sm flex flex-col gap-4"
-              >
-                {/* STEP HEADER */}
-                <div className="flex items-center justify-between mb-4 border-b pb-4">
-                  <div className="flex items-center gap-2">
-                    <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                    <h3 className="font-semibold text-xl">
-                      {step.type === "QUESTIONS" ? "Questions Step" : "Referral Step"}
-                    </h3>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <label className="flex items-center gap-2 text-sm font-medium">
-                      <input 
-                        type="checkbox"
-                        checked={step.enabled}
-                        onChange={(e) => {
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <div className="space-y-6">
+              {steps.map((step, stepIndex) => (
+                <div
+                  key={step.id}
+                  className="rounded-lg border bg-card p-6 shadow-sm flex flex-col gap-4"
+                >
+                  {/* STEP HEADER */}
+                  <div className="flex items-center justify-between mb-4 border-b pb-4">
+                    <div className="flex items-center gap-2">
+                      <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
+                      <h3 className="font-semibold text-xl">
+                        {step.type === "QUESTIONS" ? "Questions Step" : "Referral Step"}
+                      </h3>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <label className="flex items-center gap-2 text-sm font-medium">
+                        <input
+                          type="checkbox"
+                          checked={step.enabled}
+                          onChange={(e) => {
+                            const newSteps = [...steps];
+                            newSteps[stepIndex].enabled = e.target.checked;
+                            setSteps(newSteps);
+                          }}
+                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                        />
+                        Enabled
+                      </label>
+                      <Button
+                        variant="ghost"
+                        onClick={() => {
                           const newSteps = [...steps];
-                          newSteps[stepIndex].enabled = e.target.checked;
+                          newSteps.splice(stepIndex, 1);
                           setSteps(newSteps);
                         }}
-                        className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                      />
-                      Enabled
-                    </label>
-                    <Button
-                      variant="ghost"
-                      onClick={() => {
-                        const newSteps = [...steps];
-                        newSteps.splice(stepIndex, 1);
-                        setSteps(newSteps);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
-                </div>
-
-                {/* QUESTIONS FIELDS */}
-                {step.type === "QUESTIONS" && step.enabled && (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between mb-4">
-                      <div>
-                        <h4 className="font-medium text-foreground">Form Fields</h4>
-                        <p className="text-sm text-muted-foreground">Add questions to qualify your waitlist.</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          setActiveStepIndex(stepIndex);
-                          setIsFieldPickerOpen(true);
-                        }}
                       >
-                        <Plus className="mr-2 h-4 w-4" /> Add Field
+                        <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                     </div>
-                    
-                    <div className="space-y-4">
-                      {step.fields?.map((field, fIndex) => (
-                        <FieldConfigEditor 
-                          key={field.id}
-                          field={field}
-                          errors={validationResult.fieldErrorsMap[field.id]}
-                          onChange={(updated) => {
-                            const newSteps = [...steps];
-                            newSteps[stepIndex].fields![fIndex] = updated;
-                            setSteps(newSteps);
-                          }}
-                          onDelete={() => {
-                            const newSteps = [...steps];
-                            newSteps[stepIndex].fields!.splice(fIndex, 1);
-                            setSteps(newSteps);
-                          }}
-                        />
-                      ))}
-                      {step.fields?.length === 0 && (
-                        <div className="text-center p-8 border border-dashed rounded-lg bg-accent/20">
-                          <p className="text-sm text-muted-foreground mb-4">
-                            No fields added yet.
-                          </p>
-                          <Button
-                            variant="outline"
-                            onClick={() => {
-                              setActiveStepIndex(stepIndex);
-                              setIsFieldPickerOpen(true);
-                            }}
-                          >
-                            <Plus className="mr-2 h-4 w-4" /> Add your first field
-                          </Button>
-                        </div>
-                      )}
-                    </div>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
+
+                  {/* QUESTIONS FIELDS */}
+                  {step.type === "QUESTIONS" && step.enabled && (
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h4 className="font-medium text-foreground">Form Fields</h4>
+                          <p className="text-sm text-muted-foreground">Add questions to qualify your waitlist.</p>
+                        </div>
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            setActiveStepIndex(stepIndex);
+                            setIsFieldPickerOpen(true);
+                          }}
+                        >
+                          <Plus className="mr-2 h-4 w-4" /> Add Field
+                        </Button>
+                      </div>
+
+                      <Droppable droppableId={stepIndex.toString()}>
+                        {(provided) => (
+                          <div
+                            {...provided.droppableProps}
+                            ref={provided.innerRef}
+                            className="space-y-4"
+                          >
+                            {step.fields?.map((field, fIndex) => (
+                              <Draggable key={field.id} draggableId={field.id} index={fIndex}>
+                                {(provided, snapshot) => (
+                                  <div
+                                    ref={provided.innerRef}
+                                    {...provided.draggableProps}
+                                    className={snapshot.isDragging ? "opacity-50" : ""}
+                                  >
+                                    <FieldConfigEditor
+                                      field={field}
+                                      errors={validationResult.fieldErrorsMap[field.id]}
+                                      dragHandleProps={provided.dragHandleProps}
+                                      onChange={(updated) => {
+                                        const newSteps = [...steps];
+                                        newSteps[stepIndex].fields![fIndex] = updated;
+                                        setSteps(newSteps);
+                                      }}
+                                      onDelete={() => {
+                                        const newSteps = [...steps];
+                                        newSteps[stepIndex].fields!.splice(fIndex, 1);
+                                        setSteps(newSteps);
+                                      }}
+                                    />
+                                  </div>
+                                )}
+                              </Draggable>
+                            ))}
+                            {provided.placeholder}
+                            {step.fields?.length === 0 && (
+                              <div className="text-center p-8 border border-dashed rounded-lg bg-accent/20">
+                                <p className="text-sm text-muted-foreground mb-4">
+                                  No fields added yet.
+                                </p>
+                                <Button
+                                  variant="outline"
+                                  onClick={() => {
+                                    setActiveStepIndex(stepIndex);
+                                    setIsFieldPickerOpen(true);
+                                  }}
+                                >
+                                  <Plus className="mr-2 h-4 w-4" /> Add your first field
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </Droppable>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </DragDropContext>
         </div>
       )}
 
