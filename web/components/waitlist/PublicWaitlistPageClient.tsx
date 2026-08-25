@@ -509,12 +509,123 @@ export default function PublicWaitlistPageClient() {
     }
   };
 
+  const isBuilderActive = !!waitlistData.pageConfig;
+
+  if (isBuilderActive) {
+    return (
+      <div className="mx-auto w-full max-w-3xl space-y-8 pb-16">
+        {/* Render page builder sections in founder-defined order */}
+        {orderedSections.map((s) => renderSection(s.type))}
+
+        {/* Urgency engine — not a page builder section, always rendered after SIGNUP if enabled */}
+        <UrgencyWidget
+          urgencyEnabled={waitlist.urgencyEnabled}
+          batchEnabled={waitlist.batchEnabled}
+          batchName={waitlist.batchName}
+          batchSize={waitlist.batchSize}
+          batchDescription={waitlist.batchDescription}
+          countdownEnabled={waitlist.countdownEnabled}
+          launchDate={waitlist.launchDate}
+          showRemainingSpots={waitlist.showRemainingSpots}
+          showBatchProgress={waitlist.showBatchProgress}
+          showCountdown={waitlist.showCountdown}
+          currentParticipants={waitlist.participantCount || 0}
+          batchUrgency={waitlist.batchUrgency}
+        />
+
+        {/* Leaderboard — always after sections */}
+        <LeaderboardSection
+          waitlistId={waitlist.id}
+          teamLeaderboard={waitlistData?.teamLeaderboard}
+          teamReferralsEnabled={waitlist.teamReferralsEnabled ?? false}
+        />
+      </div>
+    );
+  }
+
+  // Render original default logic
   return (
     <div className="mx-auto w-full max-w-3xl space-y-8 pb-16">
-      {/* Render page builder sections in founder-defined order */}
-      {orderedSections.map((s) => renderSection(s.type))}
+      {/* Section 1: Hero Card */}
+      <Card className="overflow-hidden shadow-sm">
+        <CardContent className="p-8 text-center space-y-6">
+          {branding?.logoUrl && (
+            <div className="flex justify-center">
+              <Image
+                src={branding.logoUrl}
+                alt={`${waitlist.name} logo`}
+                width={80}
+                height={80}
+                unoptimized
+                className="h-20 w-20 rounded-lg border border-border object-cover"
+              />
+            </div>
+          )}
+          <div>
+            <h1 className="mb-2 text-3xl font-bold tracking-tight text-foreground">{waitlist.name}</h1>
+            <p className="text-lg font-medium text-muted-foreground">{waitlist.tagline}</p>
+          </div>
+          {waitlist.description && (
+            <p className="mx-auto max-w-xl text-sm text-muted-foreground leading-relaxed">
+              {waitlist.description}
+            </p>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Urgency engine — not a page builder section, always rendered after SIGNUP if enabled */}
+      {/* Section 2: Marketing Content */}
+      {copy && (
+        <div className="text-center space-y-6 py-8">
+          <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">{copy.headline}</h2>
+          <p className="mx-auto max-w-2xl text-lg text-muted-foreground">{copy.subheadline}</p>
+          <Button 
+            size="lg" 
+            className="mt-4 rounded-full px-8 font-semibold shadow-sm hover:opacity-90"
+            style={{ backgroundColor: primaryColor }}
+            onClick={() => document.getElementById("join-form")?.scrollIntoView({ behavior: "smooth" })}
+          >
+            {copy.cta}
+          </Button>
+        </div>
+      )}
+
+      {/* Section 3: Features */}
+      {copy?.features && copy.features.length > 0 && (
+        <div className="grid gap-6 sm:grid-cols-3 py-8">
+          {copy.features.map((feature, idx) => (
+            <Card key={idx} className="bg-surface shadow-sm border-border/50">
+              <CardContent className="p-6 space-y-3 text-center sm:text-left">
+                <h3 className="font-semibold text-foreground">{feature.title}</h3>
+                <p className="text-sm text-muted-foreground leading-relaxed">{feature.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Section 4: FAQs */}
+      {copy?.faqs && copy.faqs.length > 0 && (
+        <div className="py-8 space-y-6">
+          <h3 className="text-2xl font-bold tracking-tight text-center mb-6">Frequently Asked Questions</h3>
+          <div className="space-y-4">
+            {copy.faqs.map((faq, idx) => (
+              <details key={idx} className="group rounded-lg border border-border bg-surface p-4 shadow-sm transition-all [&_summary::-webkit-details-marker]:hidden">
+                <summary className="flex cursor-pointer items-center justify-between font-semibold text-foreground">
+                  {faq.question}
+                  <span className="transition group-open:rotate-180">
+                    <svg fill="none" height="24" shapeRendering="geometricPrecision" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" viewBox="0 0 24 24" width="24"><path d="M6 9l6 6 6-6"></path></svg>
+                  </span>
+                </summary>
+                <p className="mt-4 text-sm text-muted-foreground leading-relaxed">
+                  {faq.answer}
+                </p>
+              </details>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Section 4.5: Urgency Engine */}
       <UrgencyWidget
         urgencyEnabled={waitlist.urgencyEnabled}
         batchEnabled={waitlist.batchEnabled}
@@ -530,7 +641,28 @@ export default function PublicWaitlistPageClient() {
         batchUrgency={waitlist.batchUrgency}
       />
 
-      {/* Leaderboard — always after sections */}
+      {/* Section 5: Join Waitlist Form */}
+      <Card id="join-form" className="shadow-sm border-border/50">
+        <CardContent className="p-8 text-center space-y-6">
+          <div>
+            <h3 className="text-2xl font-bold tracking-tight text-foreground">Join the Waitlist</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {refCode
+                ? "You were referred! Join now to secure your spot."
+                : "Enter your email to secure your spot in line."}
+            </p>
+          </div>
+          <MultiStepSignupForm
+            waitlistSlug={slug}
+            waitlistId={waitlist.id}
+            referralCode={refCode}
+            signupConfig={waitlistData?.signupConfig}
+            onSuccess={(data) => setJoined(data)}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Section 6: Leaderboard (Individual + Team) */}
       <LeaderboardSection
         waitlistId={waitlist.id}
         teamLeaderboard={waitlistData?.teamLeaderboard}
