@@ -23,7 +23,7 @@ interface FieldPickerModalProps {
 }
 
 export function FieldPickerModal({ isOpen, onClose, onSelect }: FieldPickerModalProps) {
-  const [selectedFields, setSelectedFields] = useState<Set<string>>(new Set());
+  const [selectedFields, setSelectedFields] = useState<string[]>([]);
 
   const categories: Record<FieldCategory, FieldRegistryEntry[]> = useMemo(() => {
     const cats = {
@@ -49,25 +49,25 @@ export function FieldPickerModal({ isOpen, onClose, onSelect }: FieldPickerModal
 
   const toggleFieldSelection = (fieldType: string) => {
     setSelectedFields(prev => {
-      const newSet = new Set(prev);
-      if (newSet.has(fieldType)) {
-        newSet.delete(fieldType);
+      if (prev.includes(fieldType)) {
+        return prev.filter(f => f !== fieldType);
       } else {
-        newSet.add(fieldType);
+        return [...prev, fieldType];
       }
-      return newSet;
     });
   };
 
   const handleAddFields = () => {
-    const selectedFieldEntries = FIELD_REGISTRY.filter(f => selectedFields.has(f.type));
+    const selectedFieldEntries = selectedFields.map(fieldType => 
+      FIELD_REGISTRY.find(f => f.type === fieldType)
+    ).filter((f): f is FieldRegistryEntry => f !== undefined);
     onSelect(selectedFieldEntries);
-    setSelectedFields(new Set());
+    setSelectedFields([]);
     onClose();
   };
 
   const handleClose = () => {
-    setSelectedFields(new Set());
+    setSelectedFields([]);
     onClose();
   };
 
@@ -88,13 +88,13 @@ export function FieldPickerModal({ isOpen, onClose, onSelect }: FieldPickerModal
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                   {categories[cat].map(field => {
                     const Icon = ICON_MAP[field.iconName] || Type;
-                    const isSelected = selectedFields.has(field.type);
+                    const isSelected = selectedFields.includes(field.type);
                     return (
                       <button
                         key={field.type}
                         className={`h-auto p-4 flex items-start justify-start text-left bg-card border-2 transition-colors relative ${
-                          isSelected 
-                            ? 'border-primary bg-primary/5' 
+                          isSelected
+                            ? 'border-primary bg-primary/5'
                             : 'border-border hover:bg-gray-100 dark:hover:bg-gray-800'
                         }`}
                         onClick={() => toggleFieldSelection(field.type)}
@@ -121,8 +121,8 @@ export function FieldPickerModal({ isOpen, onClose, onSelect }: FieldPickerModal
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
-          <Button onClick={handleAddFields} disabled={selectedFields.size === 0}>
-            Add {selectedFields.size} {selectedFields.size === 1 ? 'Field' : 'Fields'}
+          <Button onClick={handleAddFields} disabled={selectedFields.length === 0}>
+            Add {selectedFields.length} {selectedFields.length === 1 ? 'Field' : 'Fields'}
           </Button>
         </div>
       </DialogContent>
