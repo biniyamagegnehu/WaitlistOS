@@ -158,12 +158,11 @@ export default function SignupConfigPage() {
                 Please fix {errorCount} configuration error{errorCount > 1 ? "s" : ""} before saving
               </h4>
               <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
-                {validationResult.errors.slice(0, 5).map((err, i) => (
-                  <li key={i}>{err.message}</li>
+                {validationResult.fieldTypeErrors.map((fieldTypeErr, i) => (
+                  <li key={i}>
+                    {fieldTypeErr.errors.length} error{fieldTypeErr.errors.length > 1 ? "s" : ""} in {fieldTypeErr.fieldTypeName}
+                  </li>
                 ))}
-                {validationResult.errors.length > 5 && (
-                  <li>...and {validationResult.errors.length - 5} more issues</li>
-                )}
               </ul>
             </div>
           </div>

@@ -8,6 +8,7 @@ import type {
   DateTimeFieldConfig,
   LocationFieldConfig,
 } from "@/types/custom-fields";
+import { FIELD_REGISTRY } from "@/types/custom-fields";
 import { ALL_COUNTRIES, ALL_LANGUAGES } from "@/lib/locale-data";
 import { resolveTextValidation, FIELD_VALIDATION_LIMITS } from "@/lib/field-validation.defaults";
 
@@ -18,11 +19,20 @@ export interface FieldValidationError {
   fieldId: string;
   property?: string; // e.g. "label", "min", "max", "options"
   message: string;
+  fieldType?: string; // e.g. "SHORT_TEXT", "LONG_TEXT", etc.
+  fieldLabel?: string; // e.g. "Name", "Email", etc.
+}
+
+export interface FieldTypeValidationError {
+  fieldType: string;
+  fieldTypeName: string; // e.g. "Short Text", "Long Text"
+  errors: FieldValidationError[];
 }
 
 export interface StepValidationResult {
   valid: boolean;
   errors: FieldValidationError[];
+  fieldTypeErrors: FieldTypeValidationError[]; // Errors grouped by field type
   fieldErrorsMap: Record<string, Record<string, string>>; // fieldId -> property -> errorMessage
 }
 
@@ -39,16 +49,21 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
   const errors: FieldValidationError[] = [];
   const fieldErrorsMap: Record<string, Record<string, string>> = {};
 
-  const addError = (fieldId: string, property: string, message: string) => {
-    errors.push({ fieldId, property, message });
+  const addError = (fieldId: string, property: string, message: string, fieldType?: string, fieldLabel?: string) => {
+    errors.push({ fieldId, property, message, fieldType, fieldLabel });
     if (!fieldErrorsMap[fieldId]) {
       fieldErrorsMap[fieldId] = {};
     }
     fieldErrorsMap[fieldId][property] = message;
   };
 
+  const getFieldTypeDisplayName = (fieldType: string): string => {
+    const entry = FIELD_REGISTRY.find(f => f.type === fieldType);
+    return entry?.name || fieldType;
+  };
+
   if (!Array.isArray(steps)) {
-    return { valid: true, errors: [], fieldErrorsMap: {} };
+    return { valid: true, errors: [], fieldTypeErrors: [], fieldErrorsMap: {} };
   }
 
   for (const step of steps) {
@@ -60,12 +75,15 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
         if (!field) continue;
 
         const fieldId = field.id || `field_${i}`;
+        const fieldType = field.type;
+        const fieldLabel = field.label;
+        const fieldTypeName = getFieldTypeDisplayName(fieldType);
 
         // ID validation
         if (!field.id || !/^[a-zA-Z0-9_-]{1,64}$/.test(field.id.trim())) {
-          addError(fieldId, "id", "Field ID must contain only letters, numbers, hyphens, and underscores.");
+          addError(fieldId, "id", "Field ID must contain only letters, numbers, hyphens, and underscores.", fieldType, fieldLabel);
         } else if (fieldIds.has(field.id.trim())) {
-          addError(fieldId, "id", `Duplicate field identifier "${field.id}".`);
+          addError(fieldId, "id", `Duplicate field identifier "${field.id}".`, fieldType, fieldLabel);
         } else {
           fieldIds.add(field.id.trim());
         }
@@ -73,19 +91,19 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
         // Label validation
         const label = typeof field.label === "string" ? field.label.trim() : "";
         if (!label) {
-          addError(fieldId, "label", "Field label is required.");
+          addError(fieldId, "label", "Field label is required.", fieldType, fieldLabel);
         } else if (label.length > 100) {
-          addError(fieldId, "label", "Field label must be 100 characters or less.");
+          addError(fieldId, "label", "Field label must be 100 characters or less.", fieldType, fieldLabel);
         } else if (/<\s*script|javascript:/i.test(label)) {
-          addError(fieldId, "label", "Field label contains unsupported content.");
+          addError(fieldId, "label", "Field label contains unsupported content.", fieldType, fieldLabel);
         }
 
         // Description validation (backward compatibility)
         const description = typeof field.description === "string" ? field.description.trim() : "";
         if (description.length > 300) {
-          addError(fieldId, "description", "Description must be 300 characters or less.");
+          addError(fieldId, "description", "Description must be 300 characters or less.", fieldType, fieldLabel);
         } else if (description && /<\s*script|javascript:/i.test(description)) {
-          addError(fieldId, "description", "Description contains unsupported content.");
+          addError(fieldId, "description", "Description contains unsupported content.", fieldType, fieldLabel);
         }
 
         // Placeholder validation (for applicable field types)
@@ -94,11 +112,11 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
           const placeholder = (field as any).placeholder;
           if (placeholder !== undefined && placeholder !== null && typeof placeholder === "string") {
             if (placeholder.length > 0 && placeholder.trim().length === 0) {
-              addError(fieldId, "placeholder", "Placeholder cannot be whitespace only.");
+              addError(fieldId, "placeholder", "Placeholder cannot be whitespace only.", fieldType, fieldLabel);
             } else if (placeholder.trim().length > 150) {
-              addError(fieldId, "placeholder", "Placeholder must be 150 characters or less.");
+              addError(fieldId, "placeholder", "Placeholder must be 150 characters or less.", fieldType, fieldLabel);
             } else if (/<\s*script|javascript:/i.test(placeholder)) {
-              addError(fieldId, "placeholder", "Placeholder contains unsupported content.");
+              addError(fieldId, "placeholder", "Placeholder contains unsupported content.", fieldType, fieldLabel);
             }
           }
         }
@@ -115,13 +133,13 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
             const maxLen = txt.maxLength !== undefined && txt.maxLength !== null && (txt.maxLength as any) !== "" ? Number(txt.maxLength) : undefined;
 
             if (minLen !== undefined && (isNaN(minLen) || minLen < 0 || minLen > FIELD_VALIDATION_LIMITS.MAX_MIN_LENGTH)) {
-              addError(fieldId, "minLength", `Min length must be between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MIN_LENGTH.toLocaleString()}.`);
+              addError(fieldId, "minLength", `Min length must be between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MIN_LENGTH.toLocaleString()}.`, fieldType, fieldLabel);
             }
             if (maxLen !== undefined && (isNaN(maxLen) || maxLen < 0 || maxLen > FIELD_VALIDATION_LIMITS.MAX_MAX_LENGTH)) {
-              addError(fieldId, "maxLength", `Max length must be between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MAX_LENGTH.toLocaleString()}.`);
+              addError(fieldId, "maxLength", `Max length must be between 0 and ${FIELD_VALIDATION_LIMITS.MAX_MAX_LENGTH.toLocaleString()}.`, fieldType, fieldLabel);
             }
             if (minLen !== undefined && maxLen !== undefined && minLen > maxLen) {
-              addError(fieldId, "minLength", "Min length cannot be greater than max length.");
+              addError(fieldId, "minLength", "Min length cannot be greater than max length.", fieldType, fieldLabel);
             }
             break;
           }
@@ -133,9 +151,9 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
             const options = choice.options || [];
 
             if (!Array.isArray(options) || options.length === 0) {
-              addError(fieldId, "options", "You must add at least 1 option.");
+              addError(fieldId, "options", "You must add at least 1 option.", fieldType, fieldLabel);
             } else if (options.length > 50) {
-              addError(fieldId, "options", "Cannot exceed 50 options.");
+              addError(fieldId, "options", "Cannot exceed 50 options.", fieldType, fieldLabel);
             } else {
               const optValues = new Set<string>();
               const optLabels = new Set<string>();
@@ -146,20 +164,20 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
                 const optVal = typeof opt.value === "string" ? opt.value.trim() : "";
 
                 if (!optLabel) {
-                  addError(fieldId, `opt_label_${j}`, `Option ${j + 1} label is required.`);
+                  addError(fieldId, `opt_label_${j}`, `Option ${j + 1} label is required.`, fieldType, fieldLabel);
                 } else if (optLabel.length > 100) {
-                  addError(fieldId, `opt_label_${j}`, `Option ${j + 1} label cannot exceed 100 characters.`);
+                  addError(fieldId, `opt_label_${j}`, `Option ${j + 1} label cannot exceed 100 characters.`, fieldType, fieldLabel);
                 } else if (optLabels.has(optLabel.toLowerCase())) {
-                  addError(fieldId, `opt_label_${j}`, `Option label "${optLabel}" is duplicated.`);
+                  addError(fieldId, `opt_label_${j}`, `Option label "${optLabel}" is duplicated.`, fieldType, fieldLabel);
                 }
                 optLabels.add(optLabel.toLowerCase());
 
                 if (!optVal) {
-                  addError(fieldId, `opt_value_${j}`, `Option ${j + 1} value is required.`);
+                  addError(fieldId, `opt_value_${j}`, `Option ${j + 1} value is required.`, fieldType, fieldLabel);
                 } else if (optVal.length > 100) {
-                  addError(fieldId, `opt_value_${j}`, `Option ${j + 1} value cannot exceed 100 characters.`);
+                  addError(fieldId, `opt_value_${j}`, `Option ${j + 1} value cannot exceed 100 characters.`, fieldType, fieldLabel);
                 } else if (optValues.has(optVal.toLowerCase())) {
-                  addError(fieldId, `opt_value_${j}`, `Option value "${optVal}" is duplicated.`);
+                  addError(fieldId, `opt_value_${j}`, `Option value "${optVal}" is duplicated.`, fieldType, fieldLabel);
                 }
                 optValues.add(optVal.toLowerCase());
               }
@@ -170,19 +188,19 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
               const maxSel = choice.maxSelections !== undefined && choice.maxSelections !== null && (choice.maxSelections as any) !== "" ? Number(choice.maxSelections) : undefined;
 
               if (minSel !== undefined && (isNaN(minSel) || minSel < 0)) {
-                addError(fieldId, "minSelections", "Min selections must be a positive integer.");
+                addError(fieldId, "minSelections", "Min selections must be a positive integer.", fieldType, fieldLabel);
               } else if (minSel !== undefined && minSel > options.length) {
-                addError(fieldId, "minSelections", `Min selections cannot exceed total options (${options.length}).`);
+                addError(fieldId, "minSelections", `Min selections cannot exceed total options (${options.length}).`, fieldType, fieldLabel);
               }
 
               if (maxSel !== undefined && (isNaN(maxSel) || maxSel < 1)) {
-                addError(fieldId, "maxSelections", "Max selections must be at least 1.");
+                addError(fieldId, "maxSelections", "Max selections must be at least 1.", fieldType, fieldLabel);
               } else if (maxSel !== undefined && maxSel > options.length) {
-                addError(fieldId, "maxSelections", `Max selections cannot exceed total options (${options.length}).`);
+                addError(fieldId, "maxSelections", `Max selections cannot exceed total options (${options.length}).`, fieldType, fieldLabel);
               }
 
               if (minSel !== undefined && maxSel !== undefined && minSel > maxSel) {
-                addError(fieldId, "minSelections", "Min selections cannot be greater than max selections.");
+                addError(fieldId, "minSelections", "Min selections cannot be greater than max selections.", fieldType, fieldLabel);
               }
             }
             break;
@@ -194,13 +212,13 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
             const max = numField.max !== undefined && numField.max !== null && (numField.max as any) !== "" ? Number(numField.max) : undefined;
 
             if (min !== undefined && !Number.isFinite(min)) {
-              addError(fieldId, "min", "Min value must be a valid number.");
+              addError(fieldId, "min", "Min value must be a valid number.", fieldType, fieldLabel);
             }
             if (max !== undefined && !Number.isFinite(max)) {
-              addError(fieldId, "max", "Max value must be a valid number.");
+              addError(fieldId, "max", "Max value must be a valid number.", fieldType, fieldLabel);
             }
             if (min !== undefined && max !== undefined && min > max) {
-              addError(fieldId, "min", "Minimum value cannot be greater than maximum value.");
+              addError(fieldId, "min", "Minimum value cannot be greater than maximum value.", fieldType, fieldLabel);
             }
             break;
           }
@@ -211,13 +229,13 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
             const maxR = rField.maxRating || 5;
 
             if (minR < 1 || minR > 10) {
-              addError(fieldId, "minRating", "Min rating must be between 1 and 10.");
+              addError(fieldId, "minRating", "Min rating must be between 1 and 10.", fieldType, fieldLabel);
             }
             if (maxR < 1 || maxR > 10) {
-              addError(fieldId, "maxRating", "Max rating must be between 1 and 10.");
+              addError(fieldId, "maxRating", "Max rating must be between 1 and 10.", fieldType, fieldLabel);
             }
             if (minR > maxR) {
-              addError(fieldId, "minRating", "Min rating cannot be greater than max rating.");
+              addError(fieldId, "minRating", "Min rating cannot be greater than max rating.", fieldType, fieldLabel);
             }
             break;
           }
@@ -228,16 +246,16 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
             const maxS = sField.max !== undefined ? Number(sField.max) : 7;
 
             if (isNaN(minS) || isNaN(maxS) || minS >= maxS) {
-              addError(fieldId, "min", "Min value must be less than max value.");
+              addError(fieldId, "min", "Min value must be less than max value.", fieldType, fieldLabel);
             }
             if (maxS - minS > 20) {
-              addError(fieldId, "max", "Scale range cannot exceed 20 points.");
+              addError(fieldId, "max", "Scale range cannot exceed 20 points.", fieldType, fieldLabel);
             }
             if (sField.leftLabel && sField.leftLabel.length > 50) {
-              addError(fieldId, "leftLabel", "Left label cannot exceed 50 characters.");
+              addError(fieldId, "leftLabel", "Left label cannot exceed 50 characters.", fieldType, fieldLabel);
             }
             if (sField.rightLabel && sField.rightLabel.length > 50) {
-              addError(fieldId, "rightLabel", "Right label cannot exceed 50 characters.");
+              addError(fieldId, "rightLabel", "Right label cannot exceed 50 characters.", fieldType, fieldLabel);
             }
             break;
           }
@@ -250,11 +268,11 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
 
             if (locField.optionMode === "SELECTED") {
               if (!Array.isArray(locField.selectedOptions) || locField.selectedOptions.length === 0) {
-                addError(fieldId, "selectedOptions", `Please select at least one ${labelType}.`);
+                addError(fieldId, "selectedOptions", `Please select at least one ${labelType}.`, fieldType, fieldLabel);
               } else {
                 for (const code of locField.selectedOptions) {
                   if (!codeSet.has(code)) {
-                    addError(fieldId, "selectedOptions", `Invalid ${labelType} code "${code}".`);
+                    addError(fieldId, "selectedOptions", `Invalid ${labelType} code "${code}".`, fieldType, fieldLabel);
                     break;
                   }
                 }
@@ -263,13 +281,13 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
 
             if (locField.defaultValue) {
               if (!codeSet.has(locField.defaultValue)) {
-                addError(fieldId, "defaultValue", `Invalid default ${labelType} code.`);
+                addError(fieldId, "defaultValue", `Invalid default ${labelType} code.`, fieldType, fieldLabel);
               } else if (
                 locField.optionMode === "SELECTED" &&
                 Array.isArray(locField.selectedOptions) &&
                 !locField.selectedOptions.includes(locField.defaultValue)
               ) {
-                addError(fieldId, "defaultValue", `Default ${labelType} must be among selected options.`);
+                addError(fieldId, "defaultValue", `Default ${labelType} must be among selected options.`, fieldType, fieldLabel);
               }
             }
             break;
@@ -279,9 +297,30 @@ export function validateSignupSteps(steps: any[]): StepValidationResult {
     }
   }
 
+  // Group errors by field type
+  const errorsByFieldType = new Map<string, FieldValidationError[]>();
+  for (const error of errors) {
+    if (error.fieldType) {
+      if (!errorsByFieldType.has(error.fieldType)) {
+        errorsByFieldType.set(error.fieldType, []);
+      }
+      errorsByFieldType.get(error.fieldType)!.push(error);
+    }
+  }
+
+  const fieldTypeErrors: FieldTypeValidationError[] = [];
+  for (const [fieldType, fieldErrors] of errorsByFieldType) {
+    fieldTypeErrors.push({
+      fieldType,
+      fieldTypeName: getFieldTypeDisplayName(fieldType),
+      errors: fieldErrors,
+    });
+  }
+
   return {
     valid: errors.length === 0,
     errors,
+    fieldTypeErrors,
     fieldErrorsMap,
   };
 }
