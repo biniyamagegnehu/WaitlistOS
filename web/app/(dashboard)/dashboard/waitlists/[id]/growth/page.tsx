@@ -1,13 +1,12 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { SectionHeader } from "@/components/ui/section-header";
-import { Skeleton } from "@/components/ui/skeleton";
-import { EmptyState } from "@/components/ui/empty-state";
-import { Button } from "@/components/ui/button";
+import { useParams, useRouter } from "next/navigation";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { MetricCard } from "@/components/patterns/metric-card";
 import { getDashboardWaitlistDetail } from "@/services/dashboard";
 import type { DashboardWaitlistDetail } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
@@ -20,6 +19,7 @@ import { UrgencyEngineCard } from "@/components/dashboard/growth/UrgencyEngineCa
 
 export default function GrowthSettingsPage() {
   const params = useParams();
+  const router = useRouter();
   const waitlistId = params?.id as string;
 
   const [detail, setDetail] = React.useState<DashboardWaitlistDetail | null>(null);
@@ -39,24 +39,21 @@ export default function GrowthSettingsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-10 w-72" />
-        <Skeleton variant="rectangular" className="h-64" />
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={4} />
+      </PageContainer>
     );
   }
 
   if (error || !detail) {
     return (
-      <EmptyState
-        title="Waitlist not found"
-        description={error ?? "This waitlist could not be loaded."}
-        action={
-          <Link href={routes.waitlists}>
-            <Button variant="secondary">Back to waitlists</Button>
-          </Link>
-        }
-      />
+      <PageContainer>
+        <ErrorState
+          title="Waitlist not found"
+          description={error ?? "This waitlist could not be loaded."}
+          onHome={() => router.push(routes.waitlists)}
+        />
+      </PageContainer>
     );
   }
 
@@ -72,34 +69,31 @@ export default function GrowthSettingsPage() {
   const enabledCount = features.filter((f) => f.enabled).length;
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={routes.waitlist(waitlistId)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to {waitlist.name}
-      </Link>
-
-      <SectionHeader
+    <PageContainer>
+      <PageHeader
         title="Growth Engine"
         description="Boost referrals, engagement, collaboration, and conversions using WaitlistOS Growth Engine."
+        breadcrumbs={[
+          { label: waitlist.name, href: routes.waitlist(waitlistId) },
+          { label: "Growth Engine" },
+        ]}
       />
 
       {/* Growth Overview */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-        <div className="rounded-lg border border-border bg-background p-4">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Total Features</p>
-          <p className="text-2xl font-bold text-foreground">4</p>
-        </div>
-        <div className="rounded-lg border border-border bg-background p-4">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Enabled</p>
-          <p className="text-2xl font-bold text-success">{enabledCount}</p>
-        </div>
-        <div className="rounded-lg border border-border bg-background p-4">
-          <p className="text-xs font-medium text-muted-foreground mb-1">Disabled</p>
-          <p className="text-2xl font-bold text-muted-foreground">{4 - enabledCount}</p>
-        </div>
+        <MetricCard
+          label="Total Features"
+          value="4"
+        />
+        <MetricCard
+          label="Enabled"
+          value={enabledCount}
+          status={enabledCount > 0 ? "success" : "neutral"}
+        />
+        <MetricCard
+          label="Disabled"
+          value={4 - enabledCount}
+        />
       </div>
 
       <div className="space-y-8">
@@ -127,6 +121,6 @@ export default function GrowthSettingsPage() {
           <UrgencyEngineCard waitlistId={waitlistId} initialData={waitlist} />
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

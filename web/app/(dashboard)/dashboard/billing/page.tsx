@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import Link from "next/link";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import toast from "react-hot-toast";
 import {
   useInitializePayment,
@@ -15,10 +15,17 @@ import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import type { SubscriptionPlanCode, PaymentProvider, PaymentHistoryItem } from "@/types/billing";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogBody, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Spinner } from "@/components/ui/loader";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { EmptyState } from "@/components/ui/empty-state";
+import { StatusIndicator } from "@/components/patterns/status-indicator";
+import { MetricCard } from "@/components/patterns/metric-card";
+import { DataTable } from "@/components/patterns/data-table";
 
 
 export default function BillingPage() {
@@ -72,11 +79,7 @@ export default function BillingPage() {
 
 
   if (subscriptionLoading) {
-    return (
-      <div className="flex items-center justify-center py-20">
-        <Spinner className="h-6 w-6 text-primary" />
-      </div>
-    );
+    return <LoadingState variant="page" message="Loading billing information..." />;
   }
 
   const planCode = subscription?.planCode ?? "FREE";
@@ -86,13 +89,11 @@ export default function BillingPage() {
   const stillHasAccess = isCancelled && subscription?.expiresAt && new Date(subscription.expiresAt) > new Date();
 
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-2xl font-semibold text-foreground">Billing</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your subscription, billing information, and payment history.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Billing"
+        description="Manage your subscription, billing information, and payment history."
+      />
 
       {/* Section 1: Current Subscription */}
       <Card>
@@ -106,42 +107,35 @@ export default function BillingPage() {
                 {subscription?.planName ?? "Free"}
               </h2>
             </div>
-            <Badge variant={isActive ? "default" : isCancelled ? "warning" : "outline"}>
-              {subscription?.status ?? "ACTIVE"}
-            </Badge>
+            <StatusIndicator
+              status={isActive ? "active" : isCancelled ? "pending" : "inactive"}
+              label={subscription?.status ?? "ACTIVE"}
+            />
           </div>
 
           <div className="grid gap-4 sm:grid-cols-4">
-            <div>
-              <p className="text-xs text-muted-foreground">Billing cycle</p>
-              <p className="font-medium text-foreground">
-                {subscription?.billingCycle ?? "FREE"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Amount</p>
-              <p className="font-medium text-foreground">
-                {subscription && subscription.amount > 0
-                  ? `${subscription.amount} ${subscription.currency}`
-                  : "$0"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Renews on</p>
-              <p className="font-medium text-foreground">
-                {subscription?.expiresAt
-                  ? new Date(subscription.expiresAt).toLocaleDateString()
-                  : "—"}
-              </p>
-            </div>
-            <div>
-              <p className="text-xs text-muted-foreground">Started at</p>
-              <p className="font-medium text-foreground">
-                {subscription?.startedAt
-                  ? new Date(subscription.startedAt).toLocaleDateString()
-                  : "—"}
-              </p>
-            </div>
+            <MetricCard
+              label="Billing cycle"
+              value={subscription?.billingCycle ?? "FREE"}
+            />
+            <MetricCard
+              label="Amount"
+              value={subscription && subscription.amount > 0
+                ? `${subscription.amount} ${subscription.currency}`
+                : "$0"}
+            />
+            <MetricCard
+              label="Renews on"
+              value={subscription?.expiresAt
+                ? new Date(subscription.expiresAt).toLocaleDateString()
+                : "—"}
+            />
+            <MetricCard
+              label="Started at"
+              value={subscription?.startedAt
+                ? new Date(subscription.startedAt).toLocaleDateString()
+                : "—"}
+            />
           </div>
           
           {stillHasAccess && (
@@ -212,42 +206,49 @@ export default function BillingPage() {
           {historyLoading ? (
             <Spinner className="h-5 w-5 text-primary" />
           ) : !history?.length ? (
-            <p className="text-sm text-muted-foreground">No payments yet.</p>
+            <EmptyState
+              title="No payments yet"
+              description="Your payment history will appear here once you make a payment."
+            />
           ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-border text-muted-foreground">
-                    <th className="py-2 pr-4">Date</th>
-                    <th className="py-2 pr-4">Plan</th>
-                    <th className="py-2 pr-4">Amount</th>
-                    <th className="py-2 pr-4">Status</th>
-                    <th className="py-2">Reference</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {history.map((payment) => (
-                    <tr 
-                      key={payment.id} 
-                      className="cursor-pointer border-b border-border/60 hover:bg-surface-muted transition-colors"
-                      onClick={() => setSelectedPaymentDetails(payment)}
-                    >
-                      <td className="py-3 pr-4">
-                        {new Date(payment.createdAt).toLocaleDateString()}
-                      </td>
-                      <td className="py-3 pr-4">{payment.planCode}</td>
-                      <td className="py-3 pr-4">{payment.amount} {payment.currency}</td>
-                      <td className="py-3 pr-4">
-                        <Badge variant={payment.paymentStatus === "SUCCESS" ? "default" : "warning"}>
-                          {payment.paymentStatus}
-                        </Badge>
-                      </td>
-                      <td className="py-3 font-mono text-xs">{payment.providerReference}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+            <DataTable
+              data={history}
+              columns={[
+                {
+                  key: "date",
+                  header: "Date",
+                  render: (row) => new Date(row.createdAt).toLocaleDateString(),
+                },
+                {
+                  key: "plan",
+                  header: "Plan",
+                  render: (row) => row.planCode,
+                },
+                {
+                  key: "amount",
+                  header: "Amount",
+                  render: (row) => `${row.amount} ${row.currency}`,
+                },
+                {
+                  key: "status",
+                  header: "Status",
+                  render: (row) => (
+                    <Badge variant={row.paymentStatus === "SUCCESS" ? "default" : "warning"}>
+                      {row.paymentStatus}
+                    </Badge>
+                  ),
+                },
+                {
+                  key: "reference",
+                  header: "Reference",
+                  render: (row) => (
+                    <span className="font-mono text-xs">{row.providerReference}</span>
+                  ),
+                },
+              ]}
+              onRowClick={(row) => setSelectedPaymentDetails(row)}
+              rowKey={(row) => row.id}
+            />
           )}
         </CardContent>
       </Card>
@@ -380,9 +381,10 @@ export default function BillingPage() {
                 <div className="flex justify-between border-b border-border pb-2">
                   <span className="text-muted-foreground">Status</span>
                   <span className="font-medium">
-                    <Badge variant={selectedPaymentDetails.paymentStatus === "SUCCESS" ? "default" : "warning"}>
-                      {selectedPaymentDetails.paymentStatus}
-                    </Badge>
+                    <StatusIndicator
+                      status={selectedPaymentDetails.paymentStatus === "SUCCESS" ? "completed" : "failed"}
+                      label={selectedPaymentDetails.paymentStatus}
+                    />
                   </span>
                 </div>
                 <div className="flex flex-col gap-1 border-b border-border pb-2">
@@ -405,6 +407,6 @@ export default function BillingPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

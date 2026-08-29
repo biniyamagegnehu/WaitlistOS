@@ -1,4 +1,5 @@
 import { Metadata } from "next";
+import { Suspense } from "react";
 import SkipLineCancelContent from "./cancel-content";
 
 export const metadata: Metadata = {
@@ -7,5 +8,9 @@ export const metadata: Metadata = {
 };
 
 export default function SkipLineCancelPage() {
-  return <SkipLineCancelContent />;
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SkipLineCancelContent />
+    </Suspense>
+  );
 }

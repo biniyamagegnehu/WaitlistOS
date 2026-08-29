@@ -2,13 +2,16 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { Users, TrendingUp, Trophy, List, Activity, AlertTriangle } from "lucide-react";
+import { Users, TrendingUp, Trophy, List, Activity, AlertTriangle, Plus } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { SectionHeader } from "@/components/ui/section-header";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Badge } from "@/components/ui/badge";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { MetricCard } from "@/components/patterns/metric-card";
 import { getDashboardOverview } from "@/services/dashboard";
 import type { DashboardOverview } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
@@ -30,27 +33,21 @@ export default function DashboardPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-10 w-64" />
-        <div className="grid gap-4 sm:grid-cols-3">
-          {[1, 2, 3].map((i) => (
-            <Skeleton key={i} variant="rectangular" className="h-28" />
-          ))}
-        </div>
-        <Skeleton variant="rectangular" className="h-64" />
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={5} />
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <EmptyState
-        title="Unable to load dashboard"
-        description={error}
-        action={
-          <Button onClick={() => window.location.reload()}>Try again</Button>
-        }
-      />
+      <PageContainer>
+        <ErrorState
+          title="Unable to load dashboard"
+          description={error}
+          onRetry={() => window.location.reload()}
+        />
+      </PageContainer>
     );
   }
 
@@ -69,35 +66,36 @@ export default function DashboardPage() {
   const totalAtRisk = stats.health.mediumRisk + stats.health.highRisk;
 
   return (
-    <div className="space-y-8">
-      <SectionHeader
-        title="Dashboard"
-        description="Overview of your waitlist performance"
-        action={
-          <Link href={routes.create}>
-            <Button>Create waitlist</Button>
-          </Link>
-        }
-      />
+    <PageContainer>
+      <div className="space-y-8">
+        <PageHeader
+          title="Dashboard"
+          description="Overview of your waitlist performance"
+          primaryAction={
+            <Link href={routes.create}>
+              <Button leftIcon={<Plus className="h-4 w-4" />}>Create waitlist</Button>
+            </Link>
+          }
+        />
 
-      <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard
-          label="Total signups"
-          value={stats.totalSignups.toLocaleString()}
-          icon={<Users className="h-5 w-5 text-primary" />}
-        />
-        <StatCard
-          label="Referral conversion"
-          value={`${stats.referralConversionRate}%`}
-          icon={<TrendingUp className="h-5 w-5 text-success" />}
-          helper="Signups that joined via a referral link"
-        />
-        <StatCard
-          label="Active waitlists"
-          value={stats.waitlistCount.toLocaleString()}
-          icon={<List className="h-5 w-5 text-accent" />}
-        />
-      </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <MetricCard
+            label="Total signups"
+            value={stats.totalSignups.toLocaleString()}
+            icon={<Users className="h-5 w-5" />}
+          />
+          <MetricCard
+            label="Referral conversion"
+            value={`${stats.referralConversionRate}%`}
+            icon={<TrendingUp className="h-5 w-5" />}
+            description="Signups that joined via a referral link"
+          />
+          <MetricCard
+            label="Active waitlists"
+            value={stats.waitlistCount.toLocaleString()}
+            icon={<List className="h-5 w-5" />}
+          />
+        </div>
 
       {/* Waitlist Health Metrics */}
       <div className="grid gap-4 sm:grid-cols-2">
@@ -111,29 +109,29 @@ export default function DashboardPage() {
           <CardContent>
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-muted-foreground">Total Participants</span>
-                <span className="font-semibold text-foreground">{stats.totalSignups.toLocaleString()}</span>
+                <span className="text-sm font-medium text-text-muted">Total Participants</span>
+                <span className="font-semibold text-text-primary">{stats.totalSignups.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-success"></div>
-                  <span className="text-sm text-foreground">Healthy</span>
+                  <span className="text-sm text-text-primary">Healthy</span>
                 </div>
-                <span className="font-semibold text-foreground">{stats.health.healthy.toLocaleString()}</span>
+                <span className="font-semibold text-text-primary">{stats.health.healthy.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-warning"></div>
-                  <span className="text-sm text-foreground">Medium Risk</span>
+                  <span className="text-sm text-text-primary">Medium Risk</span>
                 </div>
-                <span className="font-semibold text-foreground">{stats.health.mediumRisk.toLocaleString()}</span>
+                <span className="font-semibold text-text-primary">{stats.health.mediumRisk.toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full bg-destructive"></div>
-                  <span className="text-sm text-foreground">High Risk</span>
+                  <div className="w-2 h-2 rounded-full bg-error"></div>
+                  <span className="text-sm text-text-primary">High Risk</span>
                 </div>
-                <span className="font-semibold text-foreground">{stats.health.highRisk.toLocaleString()}</span>
+                <span className="font-semibold text-text-primary">{stats.health.highRisk.toLocaleString()}</span>
               </div>
             </div>
           </CardContent>
@@ -149,9 +147,9 @@ export default function DashboardPage() {
           <CardContent className="flex flex-col items-center justify-center h-[180px] text-center">
             {totalAtRisk > 0 ? (
               <>
-                <p className="text-4xl font-bold text-foreground mb-2">{totalAtRisk.toLocaleString()}</p>
-                <p className="text-sm text-muted-foreground">participants need re-engagement</p>
-                <p className="text-xs text-muted-foreground mt-2">
+                <p className="text-4xl font-bold text-text-primary mb-2">{totalAtRisk.toLocaleString()}</p>
+                <p className="text-sm text-text-muted">participants need re-engagement</p>
+                <p className="text-xs text-text-muted mt-2">
                   Re-engagement emails are queued automatically for high-risk users.
                 </p>
               </>
@@ -160,7 +158,7 @@ export default function DashboardPage() {
                 <div className="w-12 h-12 rounded-full bg-success/10 flex items-center justify-center mb-4">
                   <Activity className="h-6 w-6 text-success" />
                 </div>
-                <p className="text-sm font-medium text-foreground">All participants are healthy!</p>
+                <p className="text-sm font-medium text-text-primary">All participants are healthy!</p>
               </>
             )}
           </CardContent>
@@ -176,7 +174,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           {stats.topReferrers.length === 0 ? (
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-text-muted">
               No referrals yet. Share waitlist links to start tracking referrers.
             </p>
           ) : (
@@ -184,13 +182,13 @@ export default function DashboardPage() {
               {stats.topReferrers.map((referrer, index) => (
                 <div
                   key={`${referrer.email}-${index}`}
-                  className="flex items-center justify-between gap-4 rounded-md border border-border bg-background px-4 py-3"
+                  className="flex items-center justify-between gap-4 rounded-md border border-border bg-surface px-4 py-3"
                 >
                   <div className="min-w-0">
-                    <p className="truncate font-medium text-foreground">
+                    <p className="truncate font-medium text-text-primary">
                       {referrer.email}
                     </p>
-                    <p className="truncate text-xs text-muted-foreground">
+                    <p className="truncate text-xs text-text-muted">
                       {referrer.waitlistName}
                     </p>
                   </div>
@@ -201,31 +199,7 @@ export default function DashboardPage() {
           )}
         </CardContent>
       </Card>
-    </div>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  icon,
-  helper,
-}: {
-  label: string;
-  value: string;
-  icon: React.ReactNode;
-  helper?: string;
-}) {
-  return (
-    <Card>
-      <CardContent className="p-5">
-        <div className="mb-3 flex items-center justify-between">
-          <p className="text-sm font-medium text-muted-foreground">{label}</p>
-          <div className="rounded-md bg-surface-muted p-2">{icon}</div>
-        </div>
-        <p className="text-3xl font-semibold text-foreground">{value}</p>
-        {helper && <p className="mt-2 text-xs text-muted-foreground">{helper}</p>}
-      </CardContent>
-    </Card>
+      </div>
+    </PageContainer>
   );
 }

@@ -3,13 +3,16 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { ArrowLeft, DollarSign, Zap, Package, Users, ChevronRight, ShoppingCart } from "lucide-react";
+import { DollarSign, Zap, Package, Users, ChevronRight, ShoppingCart } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import { LoadingScreen } from "@/components/layouts/loading-screen";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
 import { Badge } from "@/components/ui/badge";
 import { getDashboardWaitlistDetail } from "@/services/dashboard";
 import { api } from "@/lib/axios";
@@ -90,67 +93,50 @@ export default function WaitlistMonetizationPage() {
   }, [waitlistId]);
 
   if (isLoading || !isAuthenticated) {
-    return <LoadingScreen />;
+    return (
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={1} />
+      </PageContainer>
+    );
   }
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl font-semibold text-foreground">Loading...</h1>
-          </div>
-        </div>
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={3} />
+      </PageContainer>
     );
   }
 
   if (error && !overview) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-6xl">
-          <Alert variant="error" title="Error">
-            {error}
-          </Alert>
-          <Button
-            onClick={() => router.push(routes.waitlist(waitlistId))}
-            className="mt-4"
-          >
-            Back to Waitlist
-          </Button>
-        </div>
-      </div>
+      <PageContainer>
+        <ErrorState
+          title="Failed to load monetization data"
+          description={error}
+          onHome={() => router.push(routes.waitlist(waitlistId))}
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
-      <div className="mx-auto max-w-6xl">
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(routes.waitlist(waitlistId))}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Waitlist
-          </Button>
-          <div>
-            <h1 className="text-3xl font-semibold text-foreground flex items-center gap-2">
-              <DollarSign className="h-8 w-8 text-primary" />
-              Monetization
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              {waitlist?.name} - Revenue and monetization features
-            </p>
-          </div>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="Monetization"
+        description={`${waitlist?.name} - Revenue and monetization features`}
+        breadcrumbs={[
+          { label: "Waitlists", href: routes.waitlists },
+          { label: waitlist?.name || "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Monetization" },
+        ]}
+      />
 
-        {error && (
-          <Alert variant="error" title="Error" className="mb-6">
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert variant="error" title="Error" className="mb-6">
+          {error}
+        </Alert>
+      )}
 
         {overview && (
           <div className="space-y-6">
@@ -170,16 +156,16 @@ export default function WaitlistMonetizationPage() {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-text-muted mb-2">
                       Allow participants to pay for priority placement in your waitlist.
                     </p>
                     <div className="flex gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Revenue: </span>
+                        <span className="text-text-muted">Revenue: </span>
                         <span className="font-medium">${overview.skipLineRevenue.toFixed(2)}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Paid: </span>
+                        <span className="text-text-muted">Paid: </span>
                         <span className="font-medium">{overview.skipLinePaidParticipants}</span>
                       </div>
                     </div>
@@ -194,7 +180,7 @@ export default function WaitlistMonetizationPage() {
               </CardContent>
             </Card>
 
-            <Card 
+            <Card
               className="cursor-pointer hover:border-primary/50 transition-colors"
               onClick={() => router.push(routes.waitlistMonetizationPreOrder(waitlistId))}
             >
@@ -204,8 +190,8 @@ export default function WaitlistMonetizationPage() {
                     <ShoppingCart className="h-6 w-6 text-primary" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg text-foreground mb-1">Pre-Order Deposit</h3>
-                    <p className="text-muted-foreground text-sm">
+                    <h3 className="font-semibold text-lg text-text-primary mb-1">Pre-Order Deposit</h3>
+                    <p className="text-text-muted text-sm">
                       Allow participants to secure their spot by placing a monetary deposit. Great for physical products or high-ticket services.
                     </p>
                   </div>
@@ -227,16 +213,16 @@ export default function WaitlistMonetizationPage() {
               <CardContent>
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-muted-foreground mb-2">
+                    <p className="text-sm text-text-muted mb-2">
                       Turn your WaitlistOS experience into a referral channel.
                     </p>
                     <div className="flex gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground">Earnings: </span>
+                        <span className="text-text-muted">Earnings: </span>
                         <span className="font-medium">${overview.affiliateEarnings.toFixed(2)}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground">Conversions: </span>
+                        <span className="text-text-muted">Conversions: </span>
                         <span className="font-medium">{overview.affiliateConversions}</span>
                       </div>
                     </div>
@@ -254,7 +240,6 @@ export default function WaitlistMonetizationPage() {
             </Card>
           </div>
         )}
-      </div>
-    </div>
+    </PageContainer>
   );
 }

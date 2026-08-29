@@ -143,10 +143,10 @@ export function ProfileSettingsSection() {
                     : user.firstName || user.lastName || user.email}
                 </h2>
                 <Button 
-                  variant="outline" 
+                  variant="secondary" 
                   size="sm" 
                   onClick={handleNameEdit}
-                  className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200"
+                  className="transition-all duration-200"
                 >
                   <Edit className="h-3 w-3" />
                 </Button>
@@ -179,10 +179,10 @@ export function ProfileSettingsSection() {
           <CardTitle>Company Profile</CardTitle>
           {founder?.companyName && (
             <Button 
-              variant="outline" 
+              variant="secondary" 
               size="sm" 
               onClick={() => setIsEditCompanyDialogOpen(true)}
-              className="bg-gray-200 hover:bg-gray-300 dark:bg-gray-700 dark:hover:bg-gray-600 transition-all duration-200"
+              className="transition-all duration-200"
             >
               <Edit className="h-4 w-4 mr-2" />
               Edit

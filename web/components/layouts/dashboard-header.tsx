@@ -5,6 +5,7 @@ import { Menu, Plus, Bell } from "lucide-react";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { UserMenu } from "@/components/navigation/user-menu";
+import { Button } from "@/components/ui/button";
 import { routes } from "@/lib/routes";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/cn";
@@ -19,7 +20,7 @@ export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
       <button
         onClick={onMobileMenuToggle}
         aria-label="Open navigation"
-        className="inline-flex items-center justify-center p-2 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none lg:hidden"
+        className="inline-flex items-center justify-center p-2 text-text-muted transition-colors hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none lg:hidden"
       >
         <Menu className="h-5 w-5" />
       </button>
@@ -33,20 +34,16 @@ export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
 
         <button
           aria-label="Notifications"
-          className="inline-flex items-center justify-center p-2 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none"
+          className="inline-flex items-center justify-center p-2 text-text-muted transition-colors hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none"
         >
           <Bell className="h-4 w-4" />
         </button>
 
-        <Link
-          href={routes.create}
-          className={cn(
-            "hidden sm:inline-flex h-8 items-center gap-1.5 bg-primary px-3 text-xs font-medium text-primary-foreground transition-colors hover:bg-primary-hover",
-            "focus-visible:outline-none"
-          )}
-        >
-          <Plus className="h-3.5 w-3.5" />
-          New Waitlist
+        <Link href={routes.create} className="hidden sm:inline-flex">
+          <Button size="sm">
+            <Plus className="h-3.5 w-3.5 mr-2" />
+            New Waitlist
+          </Button>
         </Link>
 
         <UserMenu />

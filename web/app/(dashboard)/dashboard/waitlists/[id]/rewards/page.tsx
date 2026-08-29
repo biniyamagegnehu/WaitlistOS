@@ -1,12 +1,15 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, Plus, Edit2, Trash2 } from "lucide-react";
-import { SectionHeader } from "@/components/ui/section-header";
+import { useParams, useRouter } from "next/navigation";
+import { Plus, Edit2, Trash2 } from "lucide-react";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { MetricCard } from "@/components/patterns/metric-card";
+import { DataTable } from "@/components/patterns/data-table";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +64,7 @@ type RewardFormData = z.infer<typeof rewardSchema>;
 
 export default function RewardsPage() {
   const params = useParams();
+  const router = useRouter();
   const waitlistId = params?.id as string;
 
   const [rewards, setRewards] = React.useState<Reward[]>([]);
@@ -187,39 +191,81 @@ export default function RewardsPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-10 w-72" />
-        <Skeleton variant="rectangular" className="h-40" />
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={4} />
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <EmptyState
-        title="Error loading rewards"
-        description={error}
-        action={
-          <Button onClick={loadData} variant="secondary">Try Again</Button>
-        }
-      />
+      <PageContainer>
+        <ErrorState
+          title="Error loading rewards"
+          description={error}
+          onRetry={loadData}
+          onHome={() => router.push(routes.waitlist(waitlistId))}
+        />
+      </PageContainer>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <Link
-        href={routes.waitlist(waitlistId)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to waitlist details
-      </Link>
+  const columns = [
+    {
+      key: "milestone",
+      header: "Milestone",
+      render: (reward: Reward) => <div className="font-medium">{reward.milestone} Referrals</div>,
+    },
+    {
+      key: "type",
+      header: "Type",
+      render: (reward: Reward) => <Badge variant="info">{reward.type.replace('_', ' ')}</Badge>,
+    },
+    {
+      key: "title",
+      header: "Title",
+      render: (reward: Reward) => (
+        <div>
+          <div className="font-medium text-foreground">{reward.title}</div>
+          {reward.description && (
+            <div className="text-xs text-muted-foreground truncate max-w-xs">{reward.description}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "unlocks",
+      header: "Unlocks",
+      className: "text-muted-foreground",
+      render: (reward: Reward) => reward._count?.participantRewards || 0,
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      className: "text-right",
+      render: (reward: Reward) => (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => openEditDialog(reward)} className="h-8 w-8 p-0 mr-2">
+            <Edit2 className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(reward)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    }
+  ];
 
-      <SectionHeader
+  return (
+    <PageContainer>
+      <PageHeader
         title="Referral Rewards"
         description="Encourage participants to share by rewarding them at certain milestones."
-        action={
+        breadcrumbs={[
+          { label: "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Referral Rewards" },
+        ]}
+        primaryAction={
           <Button onClick={openNewDialog} leftIcon={<Plus className="h-4 w-4" />}>
             New Reward
           </Button>
@@ -228,85 +274,35 @@ export default function RewardsPage() {
 
       {analytics && (
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground">Total Rewards</p>
-              <p className="mt-2 text-3xl font-semibold">{analytics.totalCreated}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground">Total Unlocked</p>
-              <p className="mt-2 text-3xl font-semibold">{analytics.totalUnlocked}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground">Most Unlocked</p>
-              <p className="mt-2 text-lg font-semibold truncate">
-                {analytics.mostUnlocked ? analytics.mostUnlocked.title : "None yet"}
-              </p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            label="Total Rewards"
+            value={analytics.totalCreated}
+          />
+          <MetricCard
+            label="Total Unlocked"
+            value={analytics.totalUnlocked}
+          />
+          <MetricCard
+            label="Most Unlocked"
+            value={analytics.mostUnlocked ? analytics.mostUnlocked.title : "None yet"}
+          />
         </div>
       )}
 
-      {rewards.length === 0 ? (
-        <EmptyState
-          title="No rewards configured"
-          description="Create your first reward milestone to encourage referrals."
-          action={
+      <DataTable
+        data={rewards}
+        columns={columns}
+        rowKey={(row) => row.id}
+        empty={{
+          title: "No rewards configured",
+          description: "Create your first reward milestone to encourage referrals.",
+          action: (
             <Button onClick={openNewDialog} leftIcon={<Plus className="h-4 w-4" />}>
               Create Reward
             </Button>
-          }
-        />
-      ) : (
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-surface-muted/50 text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Milestone</th>
-                  <th className="px-4 py-3 font-medium">Type</th>
-                  <th className="px-4 py-3 font-medium">Title</th>
-                  <th className="px-4 py-3 font-medium">Unlocks</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {rewards.map((reward) => (
-                  <tr key={reward.id} className="transition-colors hover:bg-surface-muted/30">
-                    <td className="px-4 py-3 whitespace-nowrap font-medium">
-                      {reward.milestone} Referrals
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge variant="info">{reward.type.replace('_', ' ')}</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{reward.title}</div>
-                      {reward.description && (
-                        <div className="text-xs text-muted-foreground truncate max-w-xs">{reward.description}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-muted-foreground">
-                      {reward._count?.participantRewards || 0}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(reward)} className="h-8 w-8 p-0 mr-2">
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(reward)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+          ),
+        }}
+      />
 
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
         <DialogContent>
@@ -444,6 +440,6 @@ export default function RewardsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

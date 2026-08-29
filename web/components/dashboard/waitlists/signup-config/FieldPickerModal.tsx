@@ -95,7 +95,7 @@ export function FieldPickerModal({ isOpen, onClose, onSelect }: FieldPickerModal
                         className={`h-auto p-4 flex items-start justify-start text-left bg-card border-2 transition-colors relative ${
                           isSelected
                             ? 'border-primary bg-primary/5'
-                            : 'border-border hover:bg-gray-100 dark:hover:bg-gray-800'
+                            : 'border-border hover:bg-surface-muted'
                         }`}
                         onClick={() => toggleFieldSelection(field.type)}
                       >

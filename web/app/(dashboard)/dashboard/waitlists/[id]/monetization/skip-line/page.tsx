@@ -3,15 +3,19 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { ArrowLeft, Zap, TrendingUp, DollarSign, Users, CreditCard, CheckCircle, XCircle, Clock } from "lucide-react";
+import { Zap, TrendingUp, DollarSign, Users, CreditCard } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import { LoadingScreen } from "@/components/layouts/loading-screen";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHeadCell, TableRow } from "@/components/ui/table";
 import { getDashboardWaitlistDetail } from "@/services/dashboard";
 import { api } from "@/lib/axios";
@@ -240,95 +244,71 @@ export default function SkipLinePage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return <LoadingScreen />;
+    return (
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={1} />
+      </PageContainer>
+    );
   }
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-6xl">
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl font-semibold text-foreground">Loading...</h1>
-          </div>
-        </div>
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={5} />
+      </PageContainer>
     );
   }
 
   if (error && !analytics) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-6xl">
-          <Alert variant="error" title="Error">
-            {error}
-          </Alert>
-          <Button
-            onClick={() => router.push(routes.monetization)}
-            className="mt-4"
-          >
-            Back to Monetization
-          </Button>
-        </div>
-      </div>
+      <PageContainer>
+        <ErrorState
+          title="Failed to load analytics"
+          description={error}
+          onHome={() => router.push(routes.monetization)}
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(routes.monetization)}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Monetization
-          </Button>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-semibold text-foreground flex items-center gap-2">
-                <Zap className="h-8 w-8 text-primary" />
-                Skip the Line
-              </h1>
-              <p className="mt-2 text-muted-foreground">
-                Monetization analytics and configuration
-              </p>
-            </div>
-            <div className="flex gap-2 items-center">
-              <Button
-                onClick={() => setShowConfig(!showConfig)}
-                variant="outline"
-              >
-                {showConfig ? "Hide Config" : "Configure"}
-              </Button>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleToggleSkipLine}
-                  disabled={isUpdating}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    analytics?.skipLineEnabled ? 'bg-primary' : 'bg-surface-muted'
-                  } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      analytics?.skipLineEnabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-                <span className="text-sm text-muted-foreground">
-                  {isUpdating ? "Updating..." : analytics?.skipLineEnabled ? "Enabled" : "Disabled"}
-                </span>
-              </div>
+    <PageContainer>
+      <PageHeader
+        title="Skip the Line"
+        description="Monetization analytics and configuration"
+        breadcrumbs={[
+          { label: "Waitlists", href: routes.waitlists },
+          { label: "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Monetization", href: routes.waitlistMonetization(waitlistId) },
+          { label: "Skip the Line" },
+        ]}
+        primaryAction={
+          <div className="flex gap-2 items-center">
+            <Button
+              onClick={() => setShowConfig(!showConfig)}
+              variant="outline"
+            >
+              {showConfig ? "Hide Config" : "Configure"}
+            </Button>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={analytics?.skipLineEnabled}
+                onCheckedChange={handleToggleSkipLine}
+                disabled={isUpdating}
+              />
+              <span className="text-sm text-text-muted">
+                {isUpdating ? "Updating..." : analytics?.skipLineEnabled ? "Enabled" : "Disabled"}
+              </span>
             </div>
           </div>
-        </div>
+        }
+      />
 
-        {error && (
-          <Alert variant="error" title="Error" className="mb-6">
-            {error}
-          </Alert>
-        )}
+      {error && (
+        <Alert variant="error" title="Error" className="mb-6">
+          {error}
+        </Alert>
+      )}
 
         {showConfig && analytics && (
           <Card className="mb-6">
@@ -392,14 +372,14 @@ export default function SkipLinePage() {
               <CardContent className="p-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
-                    <div className={`p-2 rounded-full ${analytics.skipLineEnabled ? "bg-success/20" : "bg-muted"}`}>
-                      <Zap className={`h-5 w-5 ${analytics.skipLineEnabled ? "text-success" : "text-muted-foreground"}`} />
+                    <div className={`p-2 rounded-full ${analytics.skipLineEnabled ? "bg-success/20" : "bg-surface-muted"}`}>
+                      <Zap className={`h-5 w-5 ${analytics.skipLineEnabled ? "text-success" : "text-text-muted"}`} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-foreground">
+                      <h3 className="font-semibold text-text-primary">
                         {analytics.skipLineEnabled ? "Skip the Line is Enabled" : "Skip the Line is Disabled"}
                       </h3>
-                      <p className="text-sm text-muted-foreground">
+                      <p className="text-sm text-text-muted">
                         {analytics.skipLineEnabled
                           ? `Participants can pay ${analytics.currency === "USD" ? "$" : ""}${Number(analytics.skipLinePrice || 0).toFixed(2)} to move into the priority pool`
                           : "Enable Skip the Line to allow participants to pay for priority placement"}
@@ -407,10 +387,10 @@ export default function SkipLinePage() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-2xl font-bold text-foreground">
+                    <p className="text-2xl font-bold text-text-primary">
                       {analytics.currency === "USD" ? "$" : ""}{Number(analytics.skipLinePrice || 0).toFixed(2)}
                     </p>
-                    <p className="text-xs text-muted-foreground">Price per participant</p>
+                    <p className="text-xs text-text-muted">Price per participant</p>
                   </div>
                 </div>
               </CardContent>
@@ -422,9 +402,9 @@ export default function SkipLinePage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     <Users className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-medium text-muted-foreground">Paid Participants</p>
+                    <p className="text-sm font-medium text-text-muted">Paid Participants</p>
                   </div>
-                  <p className="text-3xl font-bold text-foreground">{analytics.paidParticipants}</p>
+                  <p className="text-3xl font-bold text-text-primary">{analytics.paidParticipants}</p>
                 </CardContent>
               </Card>
 
@@ -432,9 +412,9 @@ export default function SkipLinePage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     <DollarSign className="h-4 w-4 text-success" />
-                    <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
+                    <p className="text-sm font-medium text-text-muted">Total Revenue</p>
                   </div>
-                  <p className="text-3xl font-bold text-foreground">
+                  <p className="text-3xl font-bold text-text-primary">
                     {analytics.currency === "USD" ? "$" : ""}{Number(analytics.totalRevenue).toFixed(2)}
                   </p>
                 </CardContent>
@@ -444,9 +424,9 @@ export default function SkipLinePage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     <TrendingUp className="h-4 w-4 text-warning" />
-                    <p className="text-sm font-medium text-muted-foreground">Platform Fees</p>
+                    <p className="text-sm font-medium text-text-muted">Platform Fees</p>
                   </div>
-                  <p className="text-3xl font-bold text-foreground">
+                  <p className="text-3xl font-bold text-text-primary">
                     {analytics.currency === "USD" ? "$" : ""}{Number(analytics.platformFees).toFixed(2)}
                   </p>
                 </CardContent>
@@ -456,9 +436,9 @@ export default function SkipLinePage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     <CreditCard className="h-4 w-4 text-secondary" />
-                    <p className="text-sm font-medium text-muted-foreground">Provider Fees</p>
+                    <p className="text-sm font-medium text-text-muted">Provider Fees</p>
                   </div>
-                  <p className="text-3xl font-bold text-foreground">
+                  <p className="text-3xl font-bold text-text-primary">
                     {analytics.currency === "USD" ? "$" : ""}{Number(analytics.providerFees).toFixed(2)}
                   </p>
                 </CardContent>
@@ -468,9 +448,9 @@ export default function SkipLinePage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2">
                     <DollarSign className="h-4 w-4 text-primary" />
-                    <p className="text-sm font-medium text-muted-foreground">Founder Revenue</p>
+                    <p className="text-sm font-medium text-text-muted">Founder Revenue</p>
                   </div>
-                  <p className="text-3xl font-bold text-foreground">
+                  <p className="text-3xl font-bold text-text-primary">
                     {analytics.currency === "USD" ? "$" : ""}{Number(analytics.founderRevenue).toFixed(2)}
                   </p>
                 </CardContent>
@@ -485,69 +465,69 @@ export default function SkipLinePage() {
               <CardContent>
                 <div className="grid gap-6 md:grid-cols-2">
                   {analytics.byProvider.stripe && (
-                    <div className="p-4 border rounded-lg">
+                    <div className="p-4 border border-border rounded-lg">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-2xl">💳</span>
-                        <h4 className="font-semibold text-foreground">Stripe</h4>
+                        <h4 className="font-semibold text-text-primary">Stripe</h4>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Revenue</span>
+                          <span className="text-text-muted">Revenue</span>
                           <span className="font-medium">${Number(analytics.byProvider.stripe.totalRevenue).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Paid Skips</span>
+                          <span className="text-text-muted">Paid Skips</span>
                           <span className="font-medium">{analytics.byProvider.stripe.paidParticipants}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Platform Fees</span>
+                          <span className="text-text-muted">Platform Fees</span>
                           <span className="font-medium">${Number(analytics.byProvider.stripe.platformFees).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Provider Fees</span>
+                          <span className="text-text-muted">Provider Fees</span>
                           <span className="font-medium">${Number(analytics.byProvider.stripe.providerFees).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Founder Revenue</span>
+                          <span className="text-text-muted">Founder Revenue</span>
                           <span className="font-medium">${Number(analytics.byProvider.stripe.founderRevenue).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
                   )}
-                  
+
                   {analytics.byProvider.chapa && (
-                    <div className="p-4 border rounded-lg">
+                    <div className="p-4 border border-border rounded-lg">
                       <div className="flex items-center gap-2 mb-3">
                         <span className="text-2xl">🔵</span>
-                        <h4 className="font-semibold text-foreground">Chapa</h4>
+                        <h4 className="font-semibold text-text-primary">Chapa</h4>
                       </div>
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Revenue</span>
+                          <span className="text-text-muted">Revenue</span>
                           <span className="font-medium">{analytics.currency === "USD" ? "$" : ""}{Number(analytics.byProvider.chapa.totalRevenue).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Paid Skips</span>
+                          <span className="text-text-muted">Paid Skips</span>
                           <span className="font-medium">{analytics.byProvider.chapa.paidParticipants}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Platform Fees</span>
+                          <span className="text-text-muted">Platform Fees</span>
                           <span className="font-medium">{analytics.currency === "USD" ? "$" : ""}{Number(analytics.byProvider.chapa.platformFees).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Provider Fees</span>
+                          <span className="text-text-muted">Provider Fees</span>
                           <span className="font-medium">{analytics.currency === "USD" ? "$" : ""}{Number(analytics.byProvider.chapa.providerFees).toFixed(2)}</span>
                         </div>
                         <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Founder Revenue</span>
+                          <span className="text-text-muted">Founder Revenue</span>
                           <span className="font-medium">{analytics.currency === "USD" ? "$" : ""}{Number(analytics.byProvider.chapa.founderRevenue).toFixed(2)}</span>
                         </div>
                       </div>
                     </div>
                   )}
-                  
+
                   {!analytics.byProvider.stripe && !analytics.byProvider.chapa && (
-                    <div className="col-span-2 text-center py-8 text-muted-foreground">
+                    <div className="col-span-2 text-center py-8 text-text-muted">
                       No revenue data available yet
                     </div>
                   )}
@@ -640,9 +620,9 @@ export default function SkipLinePage() {
                   </>
                 ) : (
                   <div className="text-center py-12">
-                    <DollarSign className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                    <h3 className="text-lg font-semibold text-foreground mb-2">No Skip the Line purchases yet</h3>
-                    <p className="text-muted-foreground">
+                    <DollarSign className="h-12 w-12 mx-auto text-text-muted mb-4" />
+                    <h3 className="text-lg font-semibold text-text-primary mb-2">No Skip the Line purchases yet</h3>
+                    <p className="text-text-muted">
                       Revenue and transactions will appear here after participants complete payment.
                     </p>
                   </div>
@@ -652,12 +632,12 @@ export default function SkipLinePage() {
 
             <Card>
               <CardContent className="p-6">
-                <h3 className="font-semibold text-foreground mb-4">How Skip the Line Works</h3>
+                <h3 className="font-semibold text-text-primary mb-4">How Skip the Line Works</h3>
                 <div className="flex items-start gap-3">
                   <Zap className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
                   <div className="space-y-2">
-                    <h4 className="font-medium text-foreground">Paid Priority Pool</h4>
-                    <ul className="text-sm text-muted-foreground space-y-1">
+                    <h4 className="font-medium text-text-primary">Paid Priority Pool</h4>
+                    <ul className="text-sm text-text-muted space-y-1">
                       <li>• Participants who purchase Skip the Line enter the paid priority pool</li>
                       <li>• All paid participants appear above all normal participants</li>
                       <li>• Within the paid pool, ranking is still determined by referral score</li>
@@ -670,7 +650,6 @@ export default function SkipLinePage() {
             </Card>
           </div>
         )}
-      </div>
-    </div>
+    </PageContainer>
   );
 }

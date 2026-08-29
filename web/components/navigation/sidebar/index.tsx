@@ -53,7 +53,7 @@ export function DashboardSidebar({
                 "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                 isActive
                   ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-surface-muted hover:text-foreground",
+                  : "text-text-muted hover:bg-surface-muted hover:text-text-primary",
                 collapsed && "justify-center px-0"
               )}
             >
@@ -68,7 +68,7 @@ export function DashboardSidebar({
         <LogoutButton
           collapsed={collapsed}
           className={cn(
-            "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/5 hover:text-destructive disabled:cursor-wait disabled:opacity-70",
+            "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-text-muted transition-colors hover:bg-error/5 hover:text-error disabled:cursor-wait disabled:opacity-70",
             "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
             collapsed && "justify-center px-0"
           )}
@@ -79,7 +79,7 @@ export function DashboardSidebar({
             onClick={() => onCollapse(!collapsed)}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             className={cn(
-              "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground",
+              "flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-text-muted transition-colors hover:bg-surface-muted hover:text-text-primary",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
               collapsed && "justify-center px-0"
             )}

@@ -2,7 +2,7 @@
 
 import { Suspense } from "react";
 import { AuthLayout } from "@/components/features/auth/layout/auth-layout";
-import { Spinner } from "@/components/ui/loader";
+import { LoadingState } from "@/components/patterns/loading-state";
 import PaymentFailedContent from "./failed-content";
 
 export default function PaymentFailedPage() {
@@ -10,9 +10,7 @@ export default function PaymentFailedPage() {
     <Suspense
       fallback={
         <AuthLayout title="Payment failed" description="Loading…">
-          <div className="flex justify-center py-8">
-            <Spinner className="h-8 w-8 text-primary" />
-          </div>
+          <LoadingState variant="inline" message="Loading..." />
         </AuthLayout>
       }
     >

@@ -12,6 +12,9 @@ import { Alert } from "@/components/ui/alert";
 import { LoadingScreen } from "@/components/layouts/loading-screen";
 import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/axios";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
 import { useSetBreadcrumbs } from "@/components/navigation/breadcrumbs";
 
 interface PaymentDetails {
@@ -123,19 +126,15 @@ export default function TransactionDetailPage() {
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-4xl">
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl font-semibold text-foreground">Loading...</h1>
-          </div>
-        </div>
-      </div>
+      <PageContainer>
+        <LoadingState message="Loading payment details..." />
+      </PageContainer>
     );
   }
 
   if (error && !payment) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
+      <PageContainer>
         <div className="mx-auto max-w-4xl">
           <Alert variant="error" title="Error">
             {error}
@@ -147,29 +146,26 @@ export default function TransactionDetailPage() {
             Back to Skip the Line
           </Button>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
-      <div className="mx-auto max-w-4xl">
-        <div className="mb-8">
-          <Button
-            variant="ghost"
-            onClick={() => router.push(`/dashboard/waitlists/${waitlistId}/monetization/skip-line`)}
-            className="mb-4"
-          >
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Skip the Line
-          </Button>
-          <div>
-            <h1 className="text-3xl font-semibold text-foreground">Transaction Details</h1>
-            <p className="mt-2 text-muted-foreground">
-              Payment information and participant details
-            </p>
-          </div>
-        </div>
+    <PageContainer>
+      <div className="mx-auto max-w-4xl space-y-6">
+        <PageHeader
+          title="Transaction Details"
+          description="Payment information and participant details"
+          primaryAction={
+            <Button
+              variant="ghost"
+              onClick={() => router.push(`/dashboard/waitlists/${waitlistId}/monetization/skip-line`)}
+            >
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back to Skip the Line
+            </Button>
+          }
+        />
 
         {error && (
           <Alert variant="error" title="Error" className="mb-6">
@@ -375,6 +371,6 @@ export default function TransactionDetailPage() {
           </div>
         )}
       </div>
-    </div>
+    </PageContainer>
   );
 }

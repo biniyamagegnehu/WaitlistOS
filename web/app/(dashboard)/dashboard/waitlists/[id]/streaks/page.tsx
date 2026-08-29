@@ -1,12 +1,15 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, Plus, Edit2, Trash2 } from "lucide-react";
-import { SectionHeader } from "@/components/ui/section-header";
+import { useParams, useRouter } from "next/navigation";
+import { Plus, Edit2, Trash2 } from "lucide-react";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { MetricCard } from "@/components/patterns/metric-card";
+import { DataTable } from "@/components/patterns/data-table";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +42,7 @@ type StreakMilestoneFormData = z.infer<typeof streakMilestoneSchema>;
 
 export default function StreakMilestonesPage() {
   const params = useParams();
+  const router = useRouter();
   const waitlistId = params?.id as string;
 
   const [milestones, setMilestones] = React.useState<StreakMilestoneDto[]>([]);
@@ -185,39 +189,75 @@ export default function StreakMilestonesPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-10 w-72" />
-        <Skeleton variant="rectangular" className="h-40" />
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={4} />
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <EmptyState
-        title="Error loading streak milestones"
-        description={error}
-        action={
-          <Button onClick={loadData} variant="secondary">Try Again</Button>
-        }
-      />
+      <PageContainer>
+        <ErrorState
+          title="Error loading streak milestones"
+          description={error}
+          onRetry={loadData}
+          onHome={() => router.push(routes.waitlist(waitlistId))}
+        />
+      </PageContainer>
     );
   }
 
-  return (
-    <div className="space-y-6">
-      <Link
-        href={routes.waitlist(waitlistId)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to waitlist details
-      </Link>
+  const columns = [
+    {
+      key: "days",
+      header: "Days (Streak)",
+      render: (milestone: StreakMilestoneDto) => <div className="font-medium">{milestone.days} Days</div>,
+    },
+    {
+      key: "reward",
+      header: "Reward",
+      render: (milestone: StreakMilestoneDto) => <Badge variant="info">+{milestone.value} Places</Badge>,
+    },
+    {
+      key: "title",
+      header: "Title",
+      render: (milestone: StreakMilestoneDto) => (
+        <div>
+          <div className="font-medium text-foreground">{milestone.title}</div>
+          {milestone.description && (
+            <div className="text-xs text-muted-foreground truncate max-w-xs">{milestone.description}</div>
+          )}
+        </div>
+      ),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      className: "text-right",
+      render: (milestone: StreakMilestoneDto) => (
+        <div className="flex justify-end">
+          <Button variant="ghost" size="sm" onClick={() => openEditDialog(milestone)} className="h-8 w-8 p-0 mr-2">
+            <Edit2 className="h-4 w-4" />
+          </Button>
+          <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(milestone)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        </div>
+      ),
+    }
+  ];
 
-      <SectionHeader
+  return (
+    <PageContainer>
+      <PageHeader
         title="Streak Milestones"
         description="Reward participants for consistently sharing their referral link every day."
-        action={
+        breadcrumbs={[
+          { label: "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Streak Milestones" },
+        ]}
+        primaryAction={
           <Button onClick={openNewDialog} leftIcon={<Plus className="h-4 w-4" />}>
             New Milestone
           </Button>
@@ -226,79 +266,35 @@ export default function StreakMilestonesPage() {
 
       {analytics && (
         <div className="grid gap-4 sm:grid-cols-3">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground">Active Streakers</p>
-              <p className="mt-2 text-3xl font-semibold">{analytics.activeStreakers}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground">Longest Active Streak</p>
-              <p className="mt-2 text-3xl font-semibold">{analytics.longestCurrentStreak} days</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm font-medium text-muted-foreground">Total Rewards Unlocked</p>
-              <p className="mt-2 text-3xl font-semibold">{analytics.totalRewardsUnlocked}</p>
-            </CardContent>
-          </Card>
+          <MetricCard
+            label="Active Streakers"
+            value={analytics.activeStreakers}
+          />
+          <MetricCard
+            label="Longest Active Streak"
+            value={`${analytics.longestCurrentStreak} days`}
+          />
+          <MetricCard
+            label="Total Rewards Unlocked"
+            value={analytics.totalRewardsUnlocked}
+          />
         </div>
       )}
 
-      {milestones.length === 0 ? (
-        <EmptyState
-          title="No streak milestones configured"
-          description="Create your first streak milestone to encourage daily habits."
-          action={
+      <DataTable
+        data={[...milestones].sort((a, b) => a.days - b.days)}
+        columns={columns}
+        rowKey={(row) => row.id}
+        empty={{
+          title: "No streak milestones configured",
+          description: "Create your first streak milestone to encourage daily habits.",
+          action: (
             <Button onClick={openNewDialog} leftIcon={<Plus className="h-4 w-4" />}>
               Create Milestone
             </Button>
-          }
-        />
-      ) : (
-        <Card>
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead className="border-b border-border bg-surface-muted/50 text-muted-foreground">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Days (Streak)</th>
-                  <th className="px-4 py-3 font-medium">Reward</th>
-                  <th className="px-4 py-3 font-medium">Title</th>
-                  <th className="px-4 py-3 font-medium text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {[...milestones].sort((a, b) => a.days - b.days).map((milestone) => (
-                  <tr key={milestone.id} className="transition-colors hover:bg-surface-muted/30">
-                    <td className="px-4 py-3 whitespace-nowrap font-medium">
-                      {milestone.days} Days
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <Badge variant="info">+{milestone.value} Places</Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium text-foreground">{milestone.title}</div>
-                      {milestone.description && (
-                        <div className="text-xs text-muted-foreground truncate max-w-xs">{milestone.description}</div>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-right">
-                      <Button variant="ghost" size="sm" onClick={() => openEditDialog(milestone)} className="h-8 w-8 p-0 mr-2">
-                        <Edit2 className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => openDeleteDialog(milestone)} className="h-8 w-8 p-0 text-destructive hover:text-destructive">
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
-      )}
+          ),
+        }}
+      />
 
       <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
         <DialogContent>
@@ -406,6 +402,6 @@ export default function StreakMilestonesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageContainer>
   );
 }

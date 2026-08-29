@@ -201,19 +201,19 @@ export function WaitlistForm({
                 </p>
               </div>
               <div className="grid grid-cols-3 gap-3">
-                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-accent hover:text-accent-foreground">
+                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-surface-muted">
                   <input type="radio" value="SYSTEM" className="peer sr-only" {...register("themeMode")} />
                   <div className="pointer-events-none absolute inset-0 rounded-md border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5" />
                   <Monitor className="z-10 mb-2 h-5 w-5 text-muted-foreground peer-checked:text-primary" />
                   <span className="z-10 text-sm font-medium text-foreground">System</span>
                 </label>
-                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-accent hover:text-accent-foreground">
+                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-surface-muted">
                   <input type="radio" value="LIGHT" className="peer sr-only" {...register("themeMode")} />
                   <div className="pointer-events-none absolute inset-0 rounded-md border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5" />
                   <Sun className="z-10 mb-2 h-5 w-5 text-muted-foreground peer-checked:text-primary" />
                   <span className="z-10 text-sm font-medium text-foreground">Light</span>
                 </label>
-                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-accent hover:text-accent-foreground">
+                <label className="relative flex cursor-pointer flex-col items-center justify-center rounded-md border border-border bg-background p-4 text-center transition-colors hover:bg-surface-muted">
                   <input type="radio" value="DARK" className="peer sr-only" {...register("themeMode")} />
                   <div className="pointer-events-none absolute inset-0 rounded-md border-2 border-transparent peer-checked:border-primary peer-checked:bg-primary/5" />
                   <Moon className="z-10 mb-2 h-5 w-5 text-muted-foreground peer-checked:text-primary" />

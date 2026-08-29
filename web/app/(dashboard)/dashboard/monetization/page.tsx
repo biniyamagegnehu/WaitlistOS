@@ -4,9 +4,10 @@ import * as React from "react";
 import { Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Zap, Package, Network } from "lucide-react";
-import { SectionHeader } from "@/components/ui/section-header";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
 import { routes } from "@/lib/routes";
 import { SkipLineSection } from "@/components/dashboard/monetization/skip-line-section";
 import { PreOrderSection } from "@/components/dashboard/monetization/pre-order-section";
@@ -35,35 +36,37 @@ function MonetizationPageContent() {
   };
 
   return (
-    <div className="space-y-6">
-      <SectionHeader
-        title="Monetization"
-        description="Manage all your revenue streams — Skip the Line, Pre-Order deposits, and Affiliate earnings"
-      />
+    <PageContainer>
+      <div className="space-y-6">
+        <PageHeader
+          title="Monetization"
+          description="Manage all your revenue streams — Skip the Line, Pre-Order deposits, and Affiliate earnings"
+        />
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="w-full max-w-2xl">
-          {tabs.map((tab) => (
-            <TabsTrigger key={tab.value} value={tab.value} className="gap-2">
-              {tab.icon}
-              {tab.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <Tabs value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="w-full max-w-2xl">
+            {tabs.map((tab) => (
+              <TabsTrigger key={tab.value} value={tab.value} className="gap-2">
+                {tab.icon}
+                {tab.label}
+              </TabsTrigger>
+            ))}
+          </TabsList>
 
-        <TabsContent value="skip-line">
-          <SkipLineSection />
-        </TabsContent>
+          <TabsContent value="skip-line">
+            <SkipLineSection />
+          </TabsContent>
 
-        <TabsContent value="pre-order">
-          <PreOrderSection />
-        </TabsContent>
+          <TabsContent value="pre-order">
+            <PreOrderSection />
+          </TabsContent>
 
-        <TabsContent value="affiliate">
-          <AffiliateSection />
-        </TabsContent>
-      </Tabs>
-    </div>
+          <TabsContent value="affiliate">
+            <AffiliateSection />
+          </TabsContent>
+        </Tabs>
+      </div>
+    </PageContainer>
   );
 }
 
@@ -71,11 +74,9 @@ export default function MonetizationPage() {
   return (
     <Suspense
       fallback={
-        <div className="space-y-6">
-          <Skeleton variant="rectangular" className="h-10 w-48" />
-          <Skeleton variant="rectangular" className="h-12 w-full max-w-xl" />
-          <Skeleton variant="rectangular" className="h-64" />
-        </div>
+        <PageContainer>
+          <LoadingState variant="skeleton" skeletonCount={3} />
+        </PageContainer>
       }
     >
       <MonetizationPageContent />

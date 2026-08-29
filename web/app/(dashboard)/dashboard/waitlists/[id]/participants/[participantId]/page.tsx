@@ -6,9 +6,13 @@ import { getParticipantDetail } from "@/services/dashboard";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
 import { ArrowLeft, User, Trophy, Share2, Award, Zap, Users, Info } from "lucide-react";
 import { getCountryName, getLanguageName } from "@/lib/locale-data";
+import { routes } from "@/lib/routes";
 
 function getStatusBadgeVariant(status: string) {
   switch (status) {
@@ -123,31 +127,21 @@ export default function ParticipantDetailPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 max-w-5xl mx-auto">
-        <div>
-          <Button variant="ghost" disabled className="mb-4 -ml-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Participants
-          </Button>
-          <Skeleton className="h-10 w-64 mb-2" />
-          <Skeleton className="h-5 w-48" />
-        </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Skeleton className="h-64 rounded-xl" />
-          <Skeleton className="h-64 rounded-xl lg:col-span-2" />
-        </div>
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={3} />
+      </PageContainer>
     );
   }
 
   if (error || !data?.participant) {
     return (
-      <div className="space-y-4 max-w-lg mx-auto mt-12 text-center">
-        <h2 className="text-xl font-semibold">Participant not found</h2>
-        <p className="text-muted-foreground">{error}</p>
-        <Button onClick={() => router.back()} className="mt-4">
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Participants
-        </Button>
-      </div>
+      <PageContainer>
+        <ErrorState
+          title="Participant not found"
+          description={error || "This participant could not be loaded."}
+          onHome={() => router.back()}
+        />
+      </PageContainer>
     );
   }
 
@@ -165,30 +159,21 @@ export default function ParticipantDetailPage() {
   }
 
   return (
-    <div className="space-y-8 pb-12 max-w-5xl mx-auto">
-      {/* Header */}
-      <div>
-        <Button 
-          variant="ghost" 
-          onClick={() => router.back()} 
-          className="mb-4 -ml-4 text-muted-foreground hover:text-foreground"
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" /> Back to Participants
-        </Button>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              {participant.email}
-            </h1>
-            <div className="flex items-center gap-3 mt-2 text-muted-foreground">
-              <Badge variant={getStatusBadgeVariant(participant.status) as any}>
-                {participant.status}
-              </Badge>
-              <span className="text-sm">Joined {formatDate(participant.createdAt)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title={participant.email}
+        description={`Joined ${formatDate(participant.createdAt)}`}
+        breadcrumbs={[
+          { label: "Waitlists", href: routes.waitlists },
+          { label: "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Participant" },
+        ]}
+        primaryAction={
+          <Badge variant={getStatusBadgeVariant(participant.status) as any}>
+            {participant.status}
+          </Badge>
+        }
+      />
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
@@ -414,6 +399,6 @@ export default function ParticipantDetailPage() {
 
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }

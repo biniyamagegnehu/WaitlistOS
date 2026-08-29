@@ -3,14 +3,15 @@
 import * as React from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
 import { useAuth } from "@/contexts/auth-context";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import type { CreateWaitlistFormData } from "@/lib/validations/waitlist";
 import { Button } from "@/components/ui/button";
-import { Alert } from "@/components/ui/alert";
-import { LoadingScreen } from "@/components/layouts/loading-screen";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
 import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
 import { getDashboardWaitlistDetail, updateWaitlist } from "@/services/dashboard";
 import type { DashboardWaitlistDetail } from "@/types/dashboard";
@@ -80,43 +81,48 @@ export default function EditWaitlistPage() {
   };
 
   if (isLoading || !isAuthenticated) {
-    return <LoadingScreen />;
+    return (
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={1} />
+      </PageContainer>
+    );
   }
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-xl">
-          <div className="mb-8 text-center">
-            <h1 className="text-3xl font-semibold text-foreground">Loading...</h1>
-          </div>
-        </div>
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={3} />
+      </PageContainer>
     );
   }
 
   if (serverError && !waitlistData) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-xl">
-          <Alert variant="error" title="Error">
-            {serverError}
-          </Alert>
-          <Link href={routes.waitlists} className="mt-4 inline-block">
-            <Button variant="secondary">Back to waitlists</Button>
-          </Link>
-        </div>
-      </div>
+      <PageContainer>
+        <ErrorState
+          title="Failed to load waitlist"
+          description={serverError}
+          onHome={() => router.push(routes.waitlists)}
+        />
+      </PageContainer>
     );
   }
 
   if (success) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-xl">
-          <Alert variant="success" title="Success">
-            Waitlist updated successfully!
-          </Alert>
+      <PageContainer>
+        <div className="rounded-lg border border-success/20 bg-success/5 p-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-success/20">
+              <svg className="h-6 w-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-text-primary">Success</h3>
+              <p className="text-sm text-text-muted">Waitlist updated successfully!</p>
+            </div>
+          </div>
           <div className="mt-6 flex gap-3">
             <Link href={routes.waitlist(waitlistId)} className="flex-1">
               <Button className="w-full">View waitlist</Button>
@@ -128,42 +134,36 @@ export default function EditWaitlistPage() {
             </Link>
           </div>
         </div>
-      </div>
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
-      <div className="mx-auto max-w-xl">
-        <div className="mb-8">
-          <Link href={routes.waitlist(waitlistId)} className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to waitlist
-          </Link>
-        </div>
+    <PageContainer>
+      <PageHeader
+        title="Edit waitlist"
+        description="Update your waitlist information."
+        breadcrumbs={[
+          { label: "Waitlists", href: routes.waitlists },
+          { label: waitlistData?.waitlist.name || "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Edit" },
+        ]}
+      />
 
-        <div className="mb-8 text-center">
-          <h1 className="text-3xl font-semibold text-foreground">Edit waitlist</h1>
-          <p className="mt-2 text-muted-foreground">
-            Update your waitlist information.
-          </p>
-        </div>
-
-        <WaitlistForm
-          mode="edit"
-          initialValues={{
-            name: waitlistData?.waitlist.name,
-            tagline: waitlistData?.waitlist.tagline,
-            description: waitlistData?.waitlist.description || "",
-            logoUrl: waitlistData?.waitlist.logoUrl || null,
-            slug: waitlistData?.waitlist.slug,
-            themeMode: waitlistData?.waitlist.themeMode || "SYSTEM",
-          }}
-          onSubmit={onSubmit}
-          submitButtonText="Save changes"
-          serverError={serverError}
-        />
-      </div>
-    </div>
+      <WaitlistForm
+        mode="edit"
+        initialValues={{
+          name: waitlistData?.waitlist.name,
+          tagline: waitlistData?.waitlist.tagline,
+          description: waitlistData?.waitlist.description || "",
+          logoUrl: waitlistData?.waitlist.logoUrl || null,
+          slug: waitlistData?.waitlist.slug,
+          themeMode: waitlistData?.waitlist.themeMode || "SYSTEM",
+        }}
+        onSubmit={onSubmit}
+        submitButtonText="Save changes"
+        serverError={serverError}
+      />
+    </PageContainer>
   );
 }

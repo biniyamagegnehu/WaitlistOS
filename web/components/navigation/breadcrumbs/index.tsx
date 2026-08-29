@@ -124,7 +124,7 @@ export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
     >
       <Link
         href={routes.dashboard}
-        className="flex items-center rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="flex items-center rounded-md text-text-muted transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
         aria-label="Dashboard home"
       >
         <Home className="h-3.5 w-3.5" />
@@ -137,11 +137,11 @@ export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
             key={`${crumb.label}-${crumb.href ?? "current"}`}
             className="flex items-center gap-1"
           >
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+            <ChevronRight className="h-3.5 w-3.5 text-text-muted" aria-hidden="true" />
             {isLast || !crumb.href ? (
               <span
                 className={cn(
-                  isLast ? "font-medium text-foreground" : "text-muted-foreground"
+                  isLast ? "font-medium text-text-primary" : "text-text-muted"
                 )}
                 aria-current={isLast ? "page" : undefined}
               >
@@ -150,7 +150,7 @@ export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
             ) : (
               <Link
                 href={crumb.href}
-                className="rounded-md text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+                className="rounded-md text-text-muted transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
               >
                 {crumb.label}
               </Link>

@@ -2,18 +2,19 @@
 
 import * as React from "react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, ExternalLink, Share2, ChevronDown, ChevronUp, Activity, AlertTriangle } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { ExternalLink, Share2, ChevronDown, ChevronUp, Activity, AlertTriangle } from "lucide-react";
 import { ParticipantTable } from "@/components/dashboard/ParticipantTable";
 import { AiCopywriter } from "@/components/dashboard/AiCopywriter";
 import { ExportButton } from "@/components/dashboard/ExportButton";
-import { SectionHeader } from "@/components/ui/section-header";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { getDashboardWaitlistDetail, updateWaitlist } from "@/services/dashboard";
 import type { DashboardWaitlistDetail, DashboardParticipant, DashboardWaitlist, PaginationMetadata } from "@/types/dashboard";
 import { getApiErrorMessage } from "@/lib/errors";
@@ -21,6 +22,7 @@ import { routes } from "@/lib/routes";
 import { GrowthSummaryCard } from "@/components/dashboard/growth/GrowthSummaryCard";
 export default function WaitlistDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const waitlistId = params?.id as string;
 
   const [detail, setDetail] = React.useState<DashboardWaitlistDetail | null>(null);
@@ -56,76 +58,72 @@ export default function WaitlistDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-10 w-72" />
-        <Skeleton variant="rectangular" className="h-64" />
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={5} />
+      </PageContainer>
     );
   }
 
   if (error || !detail) {
     return (
-      <EmptyState
-        title="Waitlist not found"
-        description={error ?? "This waitlist could not be loaded."}
-        action={
-          <Link href={routes.waitlists}>
-            <Button variant="secondary">Back to waitlists</Button>
-          </Link>
-        }
-      />
+      <PageContainer>
+        <ErrorState
+          title="Waitlist not found"
+          description={error ?? "This waitlist could not be loaded."}
+          onHome={() => router.push(routes.waitlists)}
+        />
+      </PageContainer>
     );
   }
 
   const { waitlist, participants, pagination } = detail;
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={routes.waitlists}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to waitlists
-      </Link>
-
-      <SectionHeader
-        title={waitlist.name}
-        description={`/${waitlist.slug}`}
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <Badge variant="success">
-              {waitlist.totalParticipants}{" "}
-              {waitlist.totalParticipants === 1 ? "signup" : "signups"}
-            </Badge>
-            <Link href={routes.waitlistShare(waitlist.id)}>
-              <Button variant="secondary" size="sm" leftIcon={<Share2 className="h-3.5 w-3.5" />}>
-                Share
-              </Button>
-            </Link>
-            <Link href={routes.waitlistBuilder(waitlist.id)}>
-              <Button variant="secondary" size="sm">
-                Page builder
-              </Button>
-            </Link>
-            <Link
-              href={routes.waitlistPublic(waitlist.slug)}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="secondary" size="sm" leftIcon={<ExternalLink className="h-3.5 w-3.5" />}>
-                View page
-              </Button>
-            </Link>
-            <ExportButton waitlistId={waitlist.id} />
-          </div>
-        }
-      />
+    <PageContainer>
+      <div className="space-y-6">
+        <PageHeader
+          title={waitlist.name}
+          description={`/${waitlist.slug}`}
+          breadcrumbs={[
+            { label: "Waitlists", href: routes.waitlists },
+            { label: waitlist.name },
+          ]}
+          primaryAction={
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="success">
+                {waitlist.totalParticipants}{" "}
+                {waitlist.totalParticipants === 1 ? "signup" : "signups"}
+              </Badge>
+              <Link href={routes.waitlistShare(waitlist.id)}>
+                <Button variant="secondary" size="sm">
+                  <Share2 className="h-3.5 w-3.5 mr-2" />
+                  Share
+                </Button>
+              </Link>
+              <Link href={routes.waitlistBuilder(waitlist.id)}>
+                <Button variant="secondary" size="sm">
+                  Page builder
+                </Button>
+              </Link>
+              <Link
+                href={routes.waitlistPublic(waitlist.slug)}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="secondary" size="sm">
+                  <ExternalLink className="h-3.5 w-3.5 mr-2" />
+                  View page
+                </Button>
+              </Link>
+              <ExportButton waitlistId={waitlist.id} />
+            </div>
+          }
+        />
 
       <Card>
         <CardContent className="p-6">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-foreground">Waitlist Information</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Waitlist Information</h3>
             <Button
               variant="ghost"
               size="sm"
@@ -140,30 +138,30 @@ export default function WaitlistDetailPage() {
             <div className="mt-4 space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Name</p>
-                  <p className="text-base text-foreground">{waitlist.name}</p>
+                  <p className="text-sm font-medium text-text-muted">Name</p>
+                  <p className="text-base text-text-primary">{waitlist.name}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Tagline</p>
-                  <p className="text-base text-foreground">{waitlist.tagline}</p>
+                  <p className="text-sm font-medium text-text-muted">Tagline</p>
+                  <p className="text-base text-text-primary">{waitlist.tagline}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Slug</p>
-                  <p className="text-base text-foreground">/{waitlist.slug}</p>
+                  <p className="text-sm font-medium text-text-muted">Slug</p>
+                  <p className="text-base text-text-primary">/{waitlist.slug}</p>
                 </div>
 
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Total Signups</p>
-                  <p className="text-base text-foreground">{waitlist.totalParticipants}</p>
+                  <p className="text-sm font-medium text-text-muted">Total Signups</p>
+                  <p className="text-base text-text-primary">{waitlist.totalParticipants}</p>
                 </div>
               </div>
 
               {waitlist.description && (
                 <div>
-                  <p className="text-sm font-medium text-muted-foreground">Description</p>
-                  <p className="text-base text-foreground">{waitlist.description}</p>
+                  <p className="text-sm font-medium text-text-muted">Description</p>
+                  <p className="text-base text-text-primary">{waitlist.description}</p>
                 </div>
               )}
 
@@ -216,7 +214,8 @@ export default function WaitlistDetailPage() {
         initialPagination={pagination}
         onLoadPage={loadPage}
       />
-    </div>
+      </div>
+    </PageContainer>
   );
 }
 
@@ -257,12 +256,12 @@ function WaitlistHealthCard({
                 title={`Medium Risk: ${mediumPct}%`}
               />
               <div
-                className="bg-destructive transition-all"
+                className="bg-error transition-all"
                 style={{ width: `${highPct}%` }}
                 title={`High Risk: ${highPct}%`}
               />
             </div>
-            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+            <div className="flex items-center gap-4 text-xs text-text-muted">
               <span className="flex items-center gap-1">
                 <span className="inline-block w-2 h-2 rounded-full bg-success" />
                 Healthy {healthyPct}%
@@ -272,7 +271,7 @@ function WaitlistHealthCard({
                 Medium {mediumPct}%
               </span>
               <span className="flex items-center gap-1">
-                <span className="inline-block w-2 h-2 rounded-full bg-destructive" />
+                <span className="inline-block w-2 h-2 rounded-full bg-error" />
                 High Risk {highPct}%
               </span>
             </div>
@@ -296,25 +295,25 @@ function WaitlistHealthCard({
           <HealthStat
             label="High Risk"
             value={health.highRisk}
-            color="text-destructive"
-            dot="bg-destructive"
+            color="text-error"
+            dot="bg-error"
           />
-          <div className="rounded-lg border border-border bg-background p-4">
+          <div className="rounded-lg border border-border bg-surface p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertTriangle className="h-3.5 w-3.5 text-warning" />
-              <p className="text-xs font-medium text-muted-foreground">At Risk</p>
+              <p className="text-xs font-medium text-text-muted">At Risk</p>
             </div>
-            <p className={`text-2xl font-bold ${atRisk > 0 ? 'text-warning' : 'text-foreground'}`}>
+            <p className={`text-2xl font-bold ${atRisk > 0 ? 'text-warning' : 'text-text-primary'}`}>
               {atRisk}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-text-muted mt-1">
               {atRisk > 0 ? 'need re-engagement' : 'all good!'}
             </p>
           </div>
         </div>
 
         {atRisk > 0 && (
-          <p className="text-xs text-muted-foreground border-t border-border pt-3">
+          <p className="text-xs text-text-muted border-t border-border pt-3">
             Re-engagement emails are automatically queued for high-risk participants once per week.
           </p>
         )}
@@ -335,10 +334,10 @@ function HealthStat({
   dot: string;
 }) {
   return (
-    <div className="rounded-lg border border-border bg-background p-4">
+    <div className="rounded-lg border border-border bg-surface p-4">
       <div className="flex items-center gap-2 mb-2">
         <span className={`inline-block w-2 h-2 rounded-full ${dot}`} />
-        <p className="text-xs font-medium text-muted-foreground">{label}</p>
+        <p className="text-xs font-medium text-text-muted">{label}</p>
       </div>
       <p className={`text-2xl font-bold ${color}`}>{value}</p>
     </div>

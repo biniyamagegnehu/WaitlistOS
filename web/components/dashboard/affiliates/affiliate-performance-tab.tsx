@@ -25,11 +25,11 @@ export function AffiliatePerformanceTab({
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'PENDING':
-        return <Badge variant="outline" className="text-amber-500 border-amber-200 bg-amber-50">Pending</Badge>;
+        return <Badge variant="warning">Pending</Badge>;
       case 'ELIGIBLE':
-        return <Badge variant="outline" className="text-blue-500 border-blue-200 bg-blue-50">Eligible</Badge>;
+        return <Badge variant="info">Eligible</Badge>;
       case 'PAID':
-        return <Badge variant="outline" className="text-emerald-500 border-emerald-200 bg-emerald-50">Paid</Badge>;
+        return <Badge variant="success">Paid</Badge>;
       default:
         return <Badge variant="outline">{status}</Badge>;
     }

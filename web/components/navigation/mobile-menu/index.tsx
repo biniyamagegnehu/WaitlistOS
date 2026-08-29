@@ -81,7 +81,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
                   "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
                   isActive
                     ? "bg-primary/10 text-primary"
-                    : "text-muted-foreground hover:bg-surface-muted hover:text-foreground"
+                    : "text-text-muted hover:bg-surface-muted hover:text-text-primary"
                 )}
               >
                 <span className="shrink-0">{link.icon}</span>
@@ -91,14 +91,14 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
           })}
         </nav>
 
-        <div className="shrink-0 space-y-2 border-t border-divider p-3">
+        <div className="shrink-0 space-y-2 border-t border-border p-3">
           <div className="flex items-center justify-between rounded-md px-3 py-2">
-            <span className="text-sm text-muted-foreground">Theme</span>
+            <span className="text-sm text-text-muted">Theme</span>
             <ThemeToggle size="sm" />
           </div>
           <LogoutButton
             onLogout={onClose}
-            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-destructive/5 hover:text-destructive disabled:cursor-wait disabled:opacity-70"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2.5 text-sm font-medium text-text-muted transition-colors hover:bg-error/5 hover:text-error disabled:cursor-wait disabled:opacity-70"
           />
         </div>
       </div>

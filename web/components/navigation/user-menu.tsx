@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { ChevronDown, Settings, User } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { useCurrentUser } from "@/contexts/auth-context";
@@ -11,6 +12,7 @@ import { cn } from "@/lib/cn";
 
 export function UserMenu() {
   const { user } = useCurrentUser();
+  const router = useRouter();
   const [open, setOpen] = React.useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
 
@@ -61,7 +63,7 @@ export function UserMenu() {
         )}
         <ChevronDown
           className={cn(
-            "h-4 w-4 text-muted-foreground transition-transform",
+            "h-4 w-4 text-text-muted transition-transform",
             open && "rotate-180"
           )}
         />
@@ -72,12 +74,12 @@ export function UserMenu() {
           role="menu"
           className="absolute right-0 top-full z-50 mt-2 w-56 rounded-md border border-border bg-surface py-1 shadow-md"
         >
-          <div className="border-b border-divider px-3 py-2">
-            <p className="truncate text-sm font-medium text-foreground">
+          <div className="border-b border-border px-3 py-2">
+            <p className="truncate text-sm font-medium text-text-primary">
               {displayName}
             </p>
             {user?.email && (
-              <p className="truncate text-xs text-muted-foreground">
+              <p className="truncate text-xs text-text-muted">
                 {user.email}
               </p>
             )}
@@ -86,24 +88,24 @@ export function UserMenu() {
             href={routes.settings}
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-surface-muted"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-surface-muted"
           >
-            <User className="h-4 w-4 text-muted-foreground" />
+            <User className="h-4 w-4 text-text-muted" />
             Profile
           </Link>
           <Link
             href={routes.settingsTab("security")}
             role="menuitem"
             onClick={() => setOpen(false)}
-            className="flex items-center gap-2 px-3 py-2 text-sm text-foreground hover:bg-surface-muted"
+            className="flex items-center gap-2 px-3 py-2 text-sm text-text-primary hover:bg-surface-muted"
           >
-            <Settings className="h-4 w-4 text-muted-foreground" />
+            <Settings className="h-4 w-4 text-text-muted" />
             Security
           </Link>
-          <div className="border-t border-divider p-1">
+          <div className="border-t border-border p-1">
             <LogoutButton
               onLogout={() => setOpen(false)}
-              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-destructive hover:bg-destructive/5 disabled:cursor-wait disabled:opacity-70"
+              className="flex w-full items-center gap-2 rounded-md px-2 py-2 text-sm text-error hover:bg-error/5 disabled:cursor-wait disabled:opacity-70"
             />
           </div>
         </div>

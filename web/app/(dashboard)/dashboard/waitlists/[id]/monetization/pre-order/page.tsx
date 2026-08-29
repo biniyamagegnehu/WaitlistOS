@@ -3,15 +3,19 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { ArrowLeft, ShoppingCart, TrendingUp, DollarSign, Users, CreditCard, Zap } from "lucide-react";
+import { ShoppingCart, DollarSign, Users } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Alert } from "@/components/ui/alert";
-import { LoadingScreen } from "@/components/layouts/loading-screen";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Switch } from "@/components/ui/switch";
 import { Table, TableBody, TableCell, TableHeadCell, TableRow } from "@/components/ui/table";
 import { api } from "@/lib/axios";
 import { useForm } from "react-hook-form";
@@ -173,60 +177,53 @@ export default function PreOrderPage() {
     return <Badge variant={variant}>{label}</Badge>;
   };
 
-  if (isLoading || !isAuthenticated) return <LoadingScreen />;
+  if (isLoading || !isAuthenticated) {
+    return (
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={1} />
+      </PageContainer>
+    );
+  }
 
   if (isLoadingData) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-6xl text-center">
-          <h1 className="text-3xl font-semibold text-foreground">Loading...</h1>
-        </div>
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={3} />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
-      <div className="mx-auto max-w-7xl">
-        <div className="mb-8">
-          <Button variant="ghost" onClick={() => router.push(routes.monetization)} className="mb-4">
-            <ArrowLeft className="mr-2 h-4 w-4" /> Back to Monetization
-          </Button>
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-semibold text-foreground flex items-center gap-2">
-                <ShoppingCart className="h-8 w-8 text-primary" />
-                Pre-Order Deposits
-              </h1>
-              <p className="mt-2 text-muted-foreground">Manage deposits and waitlist reservations</p>
-            </div>
-            <div className="flex gap-2 items-center">
-              <Button onClick={() => setShowConfig(!showConfig)} variant="outline">
-                {showConfig ? "Hide Config" : "Configure"}
-              </Button>
-              <div className="flex items-center gap-2">
-                <button
-                  onClick={handleToggleFeature}
-                  disabled={isUpdating}
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                    config?.preOrderDepositEnabled ? 'bg-primary' : 'bg-surface-muted'
-                  } ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
-                >
-                  <span
-                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                      config?.preOrderDepositEnabled ? 'translate-x-6' : 'translate-x-1'
-                    }`}
-                  />
-                </button>
-                <span className="text-sm text-muted-foreground">
-                  {isUpdating ? "Updating..." : config?.preOrderDepositEnabled ? "Enabled" : "Disabled"}
-                </span>
-              </div>
+    <PageContainer>
+      <PageHeader
+        title="Pre-Order Deposits"
+        description="Manage deposits and waitlist reservations"
+        breadcrumbs={[
+          { label: "Waitlists", href: routes.waitlists },
+          { label: "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Monetization", href: routes.waitlistMonetization(waitlistId) },
+          { label: "Pre-Order Deposits" },
+        ]}
+        primaryAction={
+          <div className="flex gap-2 items-center">
+            <Button onClick={() => setShowConfig(!showConfig)} variant="outline">
+              {showConfig ? "Hide Config" : "Configure"}
+            </Button>
+            <div className="flex items-center gap-2">
+              <Switch
+                checked={config?.preOrderDepositEnabled}
+                onCheckedChange={handleToggleFeature}
+                disabled={isUpdating}
+              />
+              <span className="text-sm text-text-muted">
+                {isUpdating ? "Updating..." : config?.preOrderDepositEnabled ? "Enabled" : "Disabled"}
+              </span>
             </div>
           </div>
-        </div>
+        }
+      />
 
-        {error && <Alert variant="error" title="Error" className="mb-6">{error}</Alert>}
+      {error && <Alert variant="error" title="Error" className="mb-6">{error}</Alert>}
 
         {showConfig && config && (
           <Card className="mb-6">
@@ -234,37 +231,37 @@ export default function PreOrderPage() {
             <CardContent>
               <form onSubmit={handleSubmit(handleSaveConfig)} className="grid gap-4 md:grid-cols-2">
                 <div>
-                  <label className="text-sm font-medium text-foreground">Deposit Amount</label>
-                  <Input 
-                    type="number" 
-                    step="0.01" 
-                    min="0" 
-                    placeholder="50.00" 
-                    className="mt-1" 
+                  <label className="text-sm font-medium text-text-primary">Deposit Amount</label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    placeholder="50.00"
+                    className="mt-1"
                     {...register("amount")}
                   />
-                  {errors.amount && <p className="text-xs text-destructive mt-1">{errors.amount.message}</p>}
+                  {errors.amount && <p className="text-xs text-error mt-1">{errors.amount.message}</p>}
                 </div>
                 <div>
-                  <label className="text-sm font-medium text-foreground">Currency</label>
-                  <select 
-                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                  <label className="text-sm font-medium text-text-primary">Currency</label>
+                  <select
+                    className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
                     {...register("currency")}
                   >
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
                   </select>
-                  {errors.currency && <p className="text-xs text-destructive mt-1">{errors.currency.message}</p>}
+                  {errors.currency && <p className="text-xs text-error mt-1">{errors.currency.message}</p>}
                 </div>
                 <div className="md:col-span-2">
-                  <label className="text-sm font-medium text-foreground">Product Description (Optional)</label>
-                  <Input 
-                    placeholder="A short description of the product (max 500 characters)" 
-                    className="mt-1" 
+                  <label className="text-sm font-medium text-text-primary">Product Description (Optional)</label>
+                  <Input
+                    placeholder="A short description of the product (max 500 characters)"
+                    className="mt-1"
                     {...register("description")}
                   />
-                  {errors.description && <p className="text-xs text-destructive mt-1">{errors.description.message}</p>}
+                  {errors.description && <p className="text-xs text-error mt-1">{errors.description.message}</p>}
                 </div>
                 <div className="md:col-span-2 flex justify-end gap-2 mt-2">
                   <Button variant="outline" type="button" onClick={() => setShowConfig(false)}>Cancel</Button>
@@ -282,14 +279,14 @@ export default function PreOrderPage() {
             <Card className={config?.preOrderDepositEnabled ? "border-success/20 bg-success/5" : "border-border"}>
               <CardContent className="p-6 flex items-center justify-between">
                 <div>
-                  <h3 className="font-semibold text-foreground">{config?.preOrderDepositEnabled ? "Deposits are Enabled" : "Deposits are Disabled"}</h3>
-                  <p className="text-sm text-muted-foreground">Charge participants an upfront deposit to secure their spot.</p>
+                  <h3 className="font-semibold text-text-primary">{config?.preOrderDepositEnabled ? "Deposits are Enabled" : "Deposits are Disabled"}</h3>
+                  <p className="text-sm text-text-muted">Charge participants an upfront deposit to secure their spot.</p>
                 </div>
                 <div className="text-right">
-                  <p className="text-2xl font-bold text-foreground">
+                  <p className="text-2xl font-bold text-text-primary">
                     {config?.preOrderDepositCurrency === "USD" ? "$" : ""}{Number(config?.preOrderDepositAmount || 0).toFixed(2)}
                   </p>
-                  <p className="text-xs text-muted-foreground">{config?.preOrderDepositCurrency || "USD"}</p>
+                  <p className="text-xs text-text-muted">{config?.preOrderDepositCurrency || "USD"}</p>
                 </div>
               </CardContent>
             </Card>
@@ -297,18 +294,18 @@ export default function PreOrderPage() {
             <div className="grid gap-6 md:grid-cols-2">
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-2"><Users className="h-4 w-4 text-primary" /><p className="text-sm font-medium text-muted-foreground">Total Deposits</p></div>
-                  <p className="text-3xl font-bold text-foreground">{analytics.totalDeposits}</p>
-                  <p className="text-xs text-muted-foreground mt-1">Paid deposits</p>
+                  <div className="flex items-center gap-2 mb-2"><Users className="h-4 w-4 text-primary" /><p className="text-sm font-medium text-text-muted">Total Deposits</p></div>
+                  <p className="text-3xl font-bold text-text-primary">{analytics.totalDeposits}</p>
+                  <p className="text-xs text-text-muted mt-1">Paid deposits</p>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-6">
-                  <div className="flex items-center gap-2 mb-2"><DollarSign className="h-4 w-4 text-success" /><p className="text-sm font-medium text-muted-foreground">Gross Revenue</p></div>
-                  <p className="text-3xl font-bold text-foreground">
+                  <div className="flex items-center gap-2 mb-2"><DollarSign className="h-4 w-4 text-success" /><p className="text-sm font-medium text-text-muted">Gross Revenue</p></div>
+                  <p className="text-3xl font-bold text-text-primary">
                     {config?.preOrderDepositCurrency === "USD" ? "$" : ""}{Number(analytics.grossRevenue).toFixed(2)}
                   </p>
-                  <p className="text-xs text-muted-foreground mt-1">{config?.preOrderDepositCurrency || "USD"}</p>
+                  <p className="text-xs text-text-muted mt-1">{config?.preOrderDepositCurrency || "USD"}</p>
                 </CardContent>
               </Card>
             </div>
@@ -344,13 +341,12 @@ export default function PreOrderPage() {
                     </TableBody>
                   </Table>
                 ) : (
-                  <p className="text-muted-foreground text-center py-4">No deposits yet.</p>
+                  <p className="text-text-muted text-center py-4">No deposits yet.</p>
                 )}
               </CardContent>
             </Card>
           </div>
         )}
-      </div>
-    </div>
+    </PageContainer>
   );
 }

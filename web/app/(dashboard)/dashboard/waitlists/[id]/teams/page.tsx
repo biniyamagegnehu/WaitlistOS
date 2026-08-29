@@ -1,12 +1,14 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
-import { useParams } from "next/navigation";
-import { ArrowLeft, Plus, Edit2, Trash2, Trophy, Users, TrendingUp, Gift, Target } from "lucide-react";
-import { SectionHeader } from "@/components/ui/section-header";
+import { useParams, useRouter } from "next/navigation";
+import { Plus, Edit2, Trash2, Trophy, Users, TrendingUp, Gift, Target } from "lucide-react";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { MetricCard } from "@/components/patterns/metric-card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -44,6 +46,7 @@ type MilestoneFormData = z.infer<typeof milestoneSchema>;
 
 export default function TeamMilestonesPage() {
   const params = useParams();
+  const router = useRouter();
   const waitlistId = params?.id as string;
 
   const [milestones, setMilestones] = React.useState<TeamMilestoneDto[]>([]);
@@ -174,41 +177,35 @@ export default function TeamMilestonesPage() {
 
   if (isLoading) {
     return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-10 w-72" />
-        <Skeleton variant="rectangular" className="h-48" />
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={4} />
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <EmptyState
-        title="Failed to load"
-        description={error}
-        action={
-          <Link href={routes.waitlist(waitlistId)}>
-            <Button variant="secondary">Back to Waitlist</Button>
-          </Link>
-        }
-      />
+      <PageContainer>
+        <ErrorState
+          title="Failed to load"
+          description={error}
+          onRetry={loadData}
+          onHome={() => router.push(routes.waitlist(waitlistId))}
+        />
+      </PageContainer>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={routes.waitlist(waitlistId)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Waitlist
-      </Link>
-
-      <SectionHeader
+    <PageContainer>
+      <PageHeader
         title="Team Referral Milestones"
         description="Configure shared rewards that unlock when a team's combined referrals reach a milestone."
-        action={
+        breadcrumbs={[
+          { label: "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Team Milestones" },
+        ]}
+        primaryAction={
           <Button onClick={openCreate} leftIcon={<Plus className="h-4 w-4" />}>
             Add Milestone
           </Button>
@@ -218,10 +215,26 @@ export default function TeamMilestonesPage() {
       {/* Analytics */}
       {analytics && (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <AnalyticStat icon={<Users className="h-4 w-4" />} label="Total Teams" value={analytics.totalTeams} />
-          <AnalyticStat icon={<TrendingUp className="h-4 w-4" />} label="Active Teams" value={analytics.activeTeams} />
-          <AnalyticStat icon={<Trophy className="h-4 w-4" />} label="Team Referrals" value={analytics.totalTeamReferrals} />
-          <AnalyticStat icon={<Gift className="h-4 w-4" />} label="Rewards Granted" value={analytics.totalRewardsGranted} />
+          <MetricCard
+            label="Total Teams"
+            value={analytics.totalTeams}
+            icon={<Users className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Active Teams"
+            value={analytics.activeTeams}
+            icon={<TrendingUp className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Team Referrals"
+            value={analytics.totalTeamReferrals}
+            icon={<Trophy className="h-4 w-4" />}
+          />
+          <MetricCard
+            label="Rewards Granted"
+            value={analytics.totalRewardsGranted}
+            icon={<Gift className="h-4 w-4" />}
+          />
         </div>
       )}
 
@@ -424,15 +437,6 @@ export default function TeamMilestonesPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
-  );
-}
-
-function AnalyticStat({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <div className="rounded-lg border border-border bg-surface p-3 space-y-1">
-      <div className="flex items-center gap-1.5 text-muted-foreground">{icon}<span className="text-xs">{label}</span></div>
-      <p className="text-2xl font-bold text-foreground">{value}</p>
-    </div>
+    </PageContainer>
   );
 }

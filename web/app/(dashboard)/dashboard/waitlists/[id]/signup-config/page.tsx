@@ -5,7 +5,13 @@ import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { getSignupConfig, updateSignupConfig } from "@/services/dashboard";
 import { Button } from "@/components/ui/button";
-import { Loader2, Plus, GripVertical, Trash2, AlertTriangle, AlertCircle } from "lucide-react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { Loader2, Plus, GripVertical, Trash2, AlertCircle } from "lucide-react";
 import { CustomFieldConfig, FieldRegistryEntry } from "@/types/custom-fields";
 import { FieldPickerModal } from "@/components/dashboard/waitlists/signup-config/FieldPickerModal";
 import { FieldConfigEditor } from "@/components/dashboard/waitlists/signup-config/FieldConfigEditor";
@@ -137,74 +143,66 @@ export default function SignupConfigPage() {
 
   if (loading) {
     return (
-      <div className="flex h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-      </div>
+      <PageContainer>
+        <LoadingState variant="skeleton" skeletonCount={3} />
+      </PageContainer>
     );
   }
 
   const errorCount = validationResult.errors.length;
 
   return (
-    <div className="mx-auto max-w-4xl p-6">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold tracking-tight">Multi-Step Signup</h1>
-          <p className="text-muted-foreground mt-2">
-            Configure additional qualification steps and referrals.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {enabled && !validationResult.valid && (
-            <span className="flex items-center gap-1.5 text-sm font-medium text-amber-600 dark:text-amber-400">
-              <AlertCircle className="h-4 w-4" />
-              {errorCount} {errorCount === 1 ? "issue" : "issues"} to fix
-            </span>
-          )}
-          <Button onClick={handleSave} disabled={saving || (enabled && !validationResult.valid)}>
-            {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Save Changes
-          </Button>
-        </div>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Multi-Step Signup"
+        description="Configure additional qualification steps and referrals."
+        primaryAction={
+          <div className="flex items-center gap-3">
+            {enabled && !validationResult.valid && (
+              <span className="flex items-center gap-1.5 text-sm font-medium text-warning">
+                <AlertCircle className="h-4 w-4" />
+                {errorCount} {errorCount === 1 ? "issue" : "issues"} to fix
+              </span>
+            )}
+            <Button onClick={handleSave} disabled={saving || (enabled && !validationResult.valid)}>
+              {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </div>
+        }
+      />
 
       {/* Validation Summary Alert Banner */}
       {enabled && !validationResult.valid && errorCount > 0 && (
-        <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 p-4 dark:border-amber-800 dark:bg-amber-950/30">
-          <div className="flex items-start gap-3">
-            <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" />
-            <div className="space-y-1">
-              <h4 className="text-sm font-semibold text-amber-800 dark:text-amber-300">
-                Please fix {errorCount} configuration error{errorCount > 1 ? "s" : ""} before saving
-              </h4>
-              <ul className="text-xs text-amber-700 dark:text-amber-400 space-y-1 list-disc list-inside">
-                {validationResult.fieldTypeErrors.map((fieldTypeErr, i) => (
-                  <li key={i}>
-                    {fieldTypeErr.errors.length} error{fieldTypeErr.errors.length > 1 ? "s" : ""} in {fieldTypeErr.fieldTypeName}
-                  </li>
-                ))}
-              </ul>
-            </div>
+        <Alert variant="warning" title={`Please fix ${errorCount} configuration error${errorCount > 1 ? "s" : ""} before saving`}>
+          <div className="space-y-1">
+            {validationResult.fieldTypeErrors.map((fieldTypeErr, i) => (
+              <div key={i} className="text-xs">
+                {fieldTypeErr.errors.length} error{fieldTypeErr.errors.length > 1 ? "s" : ""} in {fieldTypeErr.fieldTypeName}
+              </div>
+            ))}
           </div>
-        </div>
+        </Alert>
       )}
 
-      <div className="mb-8 rounded-lg border bg-card p-6 shadow-sm">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold">Enable Multi-Step Signup</h3>
-            <p className="text-sm text-muted-foreground">
-              Turn on to show the configured steps after signup.
-            </p>
+      <Card>
+        <CardContent className="p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold">Enable Multi-Step Signup</h3>
+              <p className="text-sm text-text-muted">
+                Turn on to show the configured steps after signup.
+              </p>
+            </div>
+            <input
+              type="checkbox"
+              checked={enabled}
+              onChange={(e) => setEnabled(e.target.checked)}
+              className="h-5 w-5 rounded border-border text-primary focus:ring-primary"
+            />
           </div>
-          <input 
-            type="checkbox" 
-            checked={enabled} 
-            onChange={(e) => setEnabled(e.target.checked)} 
-            className="h-5 w-5 rounded border-gray-300 text-primary focus:ring-primary"
-          />
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {enabled && (
         <div className="space-y-6">
@@ -220,132 +218,131 @@ export default function SignupConfigPage() {
           <DragDropContext onDragEnd={handleDragEnd}>
             <div className="space-y-6">
               {steps.map((step, stepIndex) => (
-                <div
-                  key={step.id}
-                  className="rounded-lg border bg-card p-6 shadow-sm flex flex-col gap-4"
-                >
-                  {/* STEP HEADER */}
-                  <div className="flex items-center justify-between mb-4 border-b pb-4">
-                    <div className="flex items-center gap-2">
-                      <GripVertical className="h-5 w-5 text-muted-foreground cursor-grab" />
-                      <h3 className="font-semibold text-xl">
-                        {step.type === "QUESTIONS" ? "Questions Step" : "Referral Step"}
-                      </h3>
-                    </div>
-                    <div className="flex items-center gap-4">
-                      <label className="flex items-center gap-2 text-sm font-medium">
-                        <input
-                          type="checkbox"
-                          checked={step.enabled}
-                          onChange={(e) => {
+                <Card key={step.id}>
+                  <CardContent className="p-6 flex flex-col gap-4">
+                    {/* STEP HEADER */}
+                    <div className="flex items-center justify-between border-b border-border pb-4">
+                      <div className="flex items-center gap-2">
+                        <GripVertical className="h-5 w-5 text-text-muted cursor-grab" />
+                        <h3 className="font-semibold text-xl">
+                          {step.type === "QUESTIONS" ? "Questions Step" : "Referral Step"}
+                        </h3>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 text-sm font-medium">
+                          <input
+                            type="checkbox"
+                            checked={step.enabled}
+                            onChange={(e) => {
+                              const newSteps = [...steps];
+                              newSteps[stepIndex].enabled = e.target.checked;
+                              setSteps(newSteps);
+                            }}
+                            className="h-4 w-4 rounded border-border text-primary focus:ring-primary"
+                          />
+                          Enabled
+                        </label>
+                        <Button
+                          variant="ghost"
+                          onClick={() => {
                             const newSteps = [...steps];
-                            newSteps[stepIndex].enabled = e.target.checked;
+                            newSteps.splice(stepIndex, 1);
                             setSteps(newSteps);
                           }}
-                          className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
-                        />
-                        Enabled
-                      </label>
-                      <Button
-                        variant="ghost"
-                        onClick={() => {
-                          const newSteps = [...steps];
-                          newSteps.splice(stepIndex, 1);
-                          setSteps(newSteps);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  {/* QUESTIONS FIELDS */}
-                  {step.type === "QUESTIONS" && step.enabled && (
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <div>
-                          <h4 className="font-medium text-foreground">Form Fields</h4>
-                          <p className="text-sm text-muted-foreground">Add questions to qualify your waitlist.</p>
-                        </div>
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            setActiveStepIndex(stepIndex);
-                            setIsFieldPickerOpen(true);
-                          }}
                         >
-                          <Plus className="mr-2 h-4 w-4" /> Add Field
+                          <Trash2 className="h-4 w-4 text-error" />
                         </Button>
                       </div>
-
-                      <Droppable droppableId={stepIndex.toString()}>
-                        {(provided) => (
-                          <div
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                            className="space-y-4"
-                          >
-                            {step.fields?.map((field, fIndex) => (
-                              <Draggable key={field.id} draggableId={field.id} index={fIndex}>
-                                {(provided, snapshot) => (
-                                  <div
-                                    ref={provided.innerRef}
-                                    {...provided.draggableProps}
-                                    className={snapshot.isDragging ? "opacity-50" : ""}
-                                  >
-                                    <FieldConfigEditor
-                                      field={field}
-                                      errors={validationResult.fieldErrorsMap[field.id]}
-                                      dragHandleProps={provided.dragHandleProps}
-                                      onChange={(updated) => {
-                                        const newSteps = [...steps];
-                                        newSteps[stepIndex].fields![fIndex] = updated;
-                                        setSteps(newSteps);
-                                      }}
-                                      onDelete={() => {
-                                        const newSteps = [...steps];
-                                        newSteps[stepIndex].fields!.splice(fIndex, 1);
-                                        setSteps(newSteps);
-                                      }}
-                                    />
-                                  </div>
-                                )}
-                              </Draggable>
-                            ))}
-                            {provided.placeholder}
-                            {step.fields?.length === 0 && (
-                              <div className="text-center p-8 border border-dashed rounded-lg bg-accent/20">
-                                <p className="text-sm text-muted-foreground mb-4">
-                                  No fields added yet.
-                                </p>
-                                <Button
-                                  variant="outline"
-                                  onClick={() => {
-                                    setActiveStepIndex(stepIndex);
-                                    setIsFieldPickerOpen(true);
-                                  }}
-                                >
-                                  <Plus className="mr-2 h-4 w-4" /> Add your first field
-                                </Button>
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </Droppable>
                     </div>
-                  )}
-                </div>
+
+                    {/* QUESTIONS FIELDS */}
+                    {step.type === "QUESTIONS" && step.enabled && (
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h4 className="font-medium text-text-primary">Form Fields</h4>
+                            <p className="text-sm text-text-muted">Add questions to qualify your waitlist.</p>
+                          </div>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              setActiveStepIndex(stepIndex);
+                              setIsFieldPickerOpen(true);
+                            }}
+                          >
+                            <Plus className="mr-2 h-4 w-4" /> Add Field
+                          </Button>
+                        </div>
+
+                        <Droppable droppableId={stepIndex.toString()}>
+                          {(provided) => (
+                            <div
+                              {...provided.droppableProps}
+                              ref={provided.innerRef}
+                              className="space-y-4"
+                            >
+                              {step.fields?.map((field, fIndex) => (
+                                <Draggable key={field.id} draggableId={field.id} index={fIndex}>
+                                  {(provided, snapshot) => (
+                                    <div
+                                      ref={provided.innerRef}
+                                      {...provided.draggableProps}
+                                      className={snapshot.isDragging ? "opacity-50" : ""}
+                                    >
+                                      <FieldConfigEditor
+                                        field={field}
+                                        errors={validationResult.fieldErrorsMap[field.id]}
+                                        dragHandleProps={provided.dragHandleProps}
+                                        onChange={(updated) => {
+                                          const newSteps = [...steps];
+                                          newSteps[stepIndex].fields![fIndex] = updated;
+                                          setSteps(newSteps);
+                                        }}
+                                        onDelete={() => {
+                                          const newSteps = [...steps];
+                                          newSteps[stepIndex].fields!.splice(fIndex, 1);
+                                          setSteps(newSteps);
+                                        }}
+                                      />
+                                    </div>
+                                  )}
+                                </Draggable>
+                              ))}
+                              {provided.placeholder}
+                              {step.fields?.length === 0 && (
+                                <div className="text-center p-8 border border-dashed rounded-lg bg-surface-muted">
+                                  <p className="text-sm text-text-muted mb-4">
+                                    No fields added yet.
+                                  </p>
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      setActiveStepIndex(stepIndex);
+                                      setIsFieldPickerOpen(true);
+                                    }}
+                                  >
+                                    <Plus className="mr-2 h-4 w-4" /> Add your first field
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </Droppable>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
               ))}
             </div>
           </DragDropContext>
         </div>
       )}
 
-      <FieldPickerModal 
-        isOpen={isFieldPickerOpen} 
-        onClose={() => setIsFieldPickerOpen(false)} 
-        onSelect={handleAddField} 
+      <FieldPickerModal
+        isOpen={isFieldPickerOpen}
+        onClose={() => setIsFieldPickerOpen(false)}
+        onSelect={handleAddField}
       />
-    </div>
+    </PageContainer>
   );
 }
