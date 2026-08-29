@@ -86,7 +86,7 @@ export function GrowthVelocityChart({ data, spikes, viewMode }: GrowthVelocityCh
               x={point.timestamp}
               y={point.signups}
               r={5}
-              fill="#f97316"
+              fill="var(--destructive)"
               stroke="var(--surface)"
               strokeWidth={2}
             />

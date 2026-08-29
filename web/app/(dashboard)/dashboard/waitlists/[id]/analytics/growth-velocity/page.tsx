@@ -1,14 +1,18 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
-import Link from "next/link";
-import { ArrowLeft, TrendingUp, Flame, Clock, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Flame, Clock, Users } from "lucide-react";
 
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { MetricCard } from "@/components/patterns/metric-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SectionHeader } from "@/components/ui/section-header";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select } from "@/components/ui/select";
 import { GrowthVelocityChart } from "@/components/analytics/GrowthVelocityChart";
 
 import { getGrowthVelocity, GrowthVelocityResponse } from "@/services/analytics";
@@ -18,6 +22,7 @@ import { routes } from "@/lib/routes";
 
 export default function AnalyticsGrowthVelocityPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: waitlistId } = use(params);
+  const router = useRouter();
 
   const [growth, setGrowth] = useState<GrowthVelocityResponse | null>(null);
   const [waitlistName, setWaitlistName] = useState("");
@@ -57,29 +62,16 @@ export default function AnalyticsGrowthVelocityPage({ params }: { params: Promis
   }, [waitlistId, dateRange]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-20 w-full" />
-        <div className="grid gap-4 md:grid-cols-3">
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-        </div>
-        <Skeleton variant="rectangular" className="h-96 w-full" />
-      </div>
-    );
+    return <LoadingState variant="skeleton" skeletonCount={5} />;
   }
 
   if (error) {
     return (
-      <EmptyState
+      <ErrorState
         title="Error loading analytics"
         description={error}
-        action={
-          <Button variant="secondary" onClick={() => window.location.reload()}>
-            Try again
-          </Button>
-        }
+        onRetry={() => window.location.reload()}
+        onHome={() => router.push(routes.waitlist(waitlistId))}
       />
     );
   }
@@ -90,57 +82,41 @@ export default function AnalyticsGrowthVelocityPage({ params }: { params: Promis
   const currentData = viewMode === "hourly" ? growth.hourly : growth.daily;
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={routes.waitlist(waitlistId)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to {waitlistName || "Waitlist"}
-      </Link>
+    <PageContainer>
+      <PageHeader
+        title="Growth Velocity"
+        description="See how quickly your waitlist is growing and identify viral referral moments."
+        breadcrumbs={[
+          { label: waitlistName || "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Analytics" },
+          { label: "Growth Velocity" },
+        ]}
+        secondaryActions={
+          <div className="flex flex-wrap gap-2 sm:items-center">
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-medium text-foreground hidden sm:inline">Period</span>
+              <Select
+                value={dateRange}
+                onChange={(e) => setDateRange(e.target.value)}
+                size="sm"
+                aria-label="Select date range"
+              >
+                <option value="7">Last 7 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="90">Last 90 days</option>
+                <option value="all">All time</option>
+              </Select>
+            </div>
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <SectionHeader
-          title="Growth Velocity"
-          description="See how quickly your waitlist is growing and identify viral referral moments."
-        />
-        
-        <div className="flex gap-2">
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value)}
-            className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-          >
-            <option value="7">Last 7 days</option>
-            <option value="30">Last 30 days</option>
-            <option value="90">Last 90 days</option>
-            <option value="all">All time</option>
-          </select>
-
-          <div className="flex rounded-md border border-input bg-background">
-            <button
-              onClick={() => setViewMode("hourly")}
-              className={`px-3 py-2 text-sm font-medium transition-colors ${
-                viewMode === "hourly"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Hourly
-            </button>
-            <button
-              onClick={() => setViewMode("daily")}
-              className={`px-3 py-2 text-sm font-medium transition-colors ${
-                viewMode === "daily"
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              Daily
-            </button>
+            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "hourly" | "daily")}>
+              <TabsList>
+                <TabsTrigger value="hourly">Hourly</TabsTrigger>
+                <TabsTrigger value="daily">Daily</TabsTrigger>
+              </TabsList>
+            </Tabs>
           </div>
-        </div>
-      </div>
+        }
+      />
 
       {!hasData ? (
         <EmptyState
@@ -150,46 +126,22 @@ export default function AnalyticsGrowthVelocityPage({ params }: { params: Promis
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-3">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span className="text-sm font-medium">Total Signups</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{growth.summary.totalSignups.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4" />
-                  <span className="text-sm font-medium">Peak Hour</span>
-                </div>
-                <div className="mt-4">
-                  {growth.summary.peakHour ? (
-                    <div>
-                      <div className="text-3xl font-bold">{growth.summary.peakHour.signupCount.toLocaleString()}</div>
-                      <div className="text-sm text-muted-foreground mt-1">
-                        {new Date(growth.summary.peakHour.timestamp).toLocaleString()}
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-muted-foreground">No data available</div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Flame className="h-4 w-4" />
-                  <span className="text-sm font-medium">Referral Spikes</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{growth.summary.spikeCount}</div>
-              </CardContent>
-            </Card>
+            <MetricCard
+              label="Total Signups"
+              value={growth.summary.totalSignups.toLocaleString()}
+              icon={<Users className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Peak Hour"
+              value={growth.summary.peakHour ? growth.summary.peakHour.signupCount.toLocaleString() : "—"}
+              description={growth.summary.peakHour ? new Date(growth.summary.peakHour.timestamp).toLocaleString() : "No data available"}
+              icon={<Clock className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Referral Spikes"
+              value={growth.summary.spikeCount}
+              icon={<Flame className="h-4 w-4" />}
+            />
           </div>
 
           <Card>
@@ -223,8 +175,8 @@ export default function AnalyticsGrowthVelocityPage({ params }: { params: Promis
                       key={spike.id}
                       className="flex items-start gap-4 p-4 rounded-lg border border-border bg-surface"
                     >
-                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500/10">
-                        <Flame className="h-5 w-5 text-orange-500" />
+                      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-destructive/10">
+                        <Flame className="h-5 w-5 text-destructive" />
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -260,6 +212,6 @@ export default function AnalyticsGrowthVelocityPage({ params }: { params: Promis
           )}
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

@@ -1,14 +1,17 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
-import Link from "next/link";
-import { ArrowLeft, MapPin, Smartphone, Globe } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { MapPin, Smartphone, Globe } from "lucide-react";
 
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { MetricCard } from "@/components/patterns/metric-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SectionHeader } from "@/components/ui/section-header";
+import { Select } from "@/components/ui/select";
 
 import { getAudienceAnalytics, AudienceAnalyticsResponse } from "@/services/analytics";
 import { getDashboardWaitlistDetail } from "@/services/dashboard";
@@ -22,6 +25,7 @@ import { BrowserChart } from "@/components/analytics/BrowserChart";
 
 export default function AudienceAnalyticsPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: waitlistId } = use(params);
+  const router = useRouter();
 
   const [analytics, setAnalytics] = useState<AudienceAnalyticsResponse | null>(null);
   const [waitlistName, setWaitlistName] = useState("");
@@ -60,30 +64,16 @@ export default function AudienceAnalyticsPage({ params }: { params: Promise<{ id
   }, [waitlistId, dateRange]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-20 w-full" />
-        <div className="grid gap-4 md:grid-cols-4">
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-        </div>
-        <Skeleton variant="rectangular" className="h-96 w-full" />
-      </div>
-    );
+    return <LoadingState variant="skeleton" skeletonCount={6} />;
   }
 
   if (error) {
     return (
-      <EmptyState
+      <ErrorState
         title="Error loading analytics"
         description={error}
-        action={
-          <Button variant="secondary" onClick={() => window.location.reload()}>
-            Try again
-          </Button>
-        }
+        onRetry={() => window.location.reload()}
+        onHome={() => router.push(routes.waitlist(waitlistId))}
       />
     );
   }
@@ -97,32 +87,32 @@ export default function AudienceAnalyticsPage({ params }: { params: Promise<{ id
   const topBrowser = analytics.browsers.filter(b => b.name !== 'Unknown')[0];
 
   return (
-    <div className="space-y-6 pb-20">
-      <Link
-        href={routes.waitlist(waitlistId)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to {waitlistName || "Waitlist"}
-      </Link>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <SectionHeader
-          title="Geo & Device"
-          description="Understand where your audience is from and how they access your waitlist."
-        />
-        
-        <select
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="90">Last 90 days</option>
-          <option value="all">All time</option>
-        </select>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Geo & Device"
+        description="Understand where your audience is from and how they access your waitlist."
+        breadcrumbs={[
+          { label: waitlistName || "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Analytics" },
+          { label: "Geo & Device" },
+        ]}
+        primaryAction={
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground hidden sm:inline">Period</span>
+            <Select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              size="sm"
+              aria-label="Select date range"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All time</option>
+            </Select>
+          </div>
+        }
+      />
 
       {!hasData ? (
         <EmptyState
@@ -132,53 +122,26 @@ export default function AudienceAnalyticsPage({ params }: { params: Promise<{ id
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <span className="text-sm font-medium">Total Signups</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{analytics.totalSignups.toLocaleString()}</div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  {analytics.geoAnalyzedSignups} analyzed for location
-                </p>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  <span className="text-sm font-medium">Top Country</span>
-                </div>
-                <div className="mt-4 text-2xl font-bold truncate">
-                  {topCountry ? topCountry.name : "Unknown"}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Smartphone className="h-4 w-4" />
-                  <span className="text-sm font-medium">Top Device</span>
-                </div>
-                <div className="mt-4 text-2xl font-bold truncate">
-                  {topDevice ? topDevice.label : "Unknown"}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Globe className="h-4 w-4" />
-                  <span className="text-sm font-medium">Top Browser</span>
-                </div>
-                <div className="mt-4 text-2xl font-bold truncate">
-                  {topBrowser ? topBrowser.name : "Unknown"}
-                </div>
-              </CardContent>
-            </Card>
+            <MetricCard
+              label="Total Signups"
+              value={analytics.totalSignups.toLocaleString()}
+              description={`${analytics.geoAnalyzedSignups} analyzed for location`}
+            />
+            <MetricCard
+              label="Top Country"
+              value={topCountry ? topCountry.name : "Unknown"}
+              icon={<MapPin className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Top Device"
+              value={topDevice ? topDevice.label : "Unknown"}
+              icon={<Smartphone className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Top Browser"
+              value={topBrowser ? topBrowser.name : "Unknown"}
+              icon={<Globe className="h-4 w-4" />}
+            />
           </div>
 
           <div className="grid gap-6 lg:grid-cols-3">
@@ -223,6 +186,6 @@ export default function AudienceAnalyticsPage({ params }: { params: Promise<{ id
           </div>
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

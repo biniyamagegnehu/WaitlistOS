@@ -70,7 +70,7 @@ export function GeoMap({ data }: GeoMapProps) {
 
   const colorScale = scaleLinear<string>()
     .domain([0, maxSignups])
-    .range(["#eff6ff", "#3b82f6"]);
+    .range(["var(--chart-1)", "var(--primary)"]);
 
   const handleMouseMove = useCallback(
     (e: React.MouseEvent, d: { name: string; signups: number; percentage: number }) => {
@@ -92,7 +92,7 @@ export function GeoMap({ data }: GeoMapProps) {
   const handleMouseLeave = useCallback(() => setTooltip(null), []);
 
   return (
-    <div className="geo-map-container relative w-full h-full min-h-[400px]">
+    <div className="geo-map-container relative w-full h-full min-h-[400px]" role="img" aria-label="World map showing signup distribution by country">
       <ComposableMap projectionConfig={{ scale: 140 }}>
         <Geographies geography={geoUrl}>
           {({ geographies }) =>
@@ -115,7 +115,7 @@ export function GeoMap({ data }: GeoMapProps) {
                   style={{
                     default: { outline: "none" },
                     hover: {
-                      fill: hasData ? "#2563eb" : "var(--muted-foreground)",
+                      fill: hasData ? "var(--primary)" : "var(--muted-foreground)",
                       outline: "none",
                       cursor: hasData ? "pointer" : "default",
                     },
@@ -136,6 +136,7 @@ export function GeoMap({ data }: GeoMapProps) {
         <div
           className="pointer-events-none absolute z-10 rounded-md border border-border bg-popover px-3 py-2 text-sm text-popover-foreground shadow-md"
           style={{ left: tooltip.x, top: tooltip.y, maxWidth: 200 }}
+          role="tooltip"
         >
           <p className="font-semibold">{tooltip.name}</p>
           <p className="text-muted-foreground">

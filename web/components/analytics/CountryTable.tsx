@@ -1,6 +1,14 @@
 "use client";
 
 import React from "react";
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableHeadCell,
+  TableRow,
+} from "@/components/ui/table";
 
 interface CountryTableProps {
   data: {
@@ -12,8 +20,6 @@ interface CountryTableProps {
 }
 
 export function CountryTable({ data }: CountryTableProps) {
-  // Show top 10 for table, others grouped if necessary, or just show all with pagination. 
-  // Let's just show top 10 for simplicity in the table.
   const displayData = data.slice(0, 10);
 
   if (displayData.length === 0) {
@@ -25,32 +31,32 @@ export function CountryTable({ data }: CountryTableProps) {
   }
 
   return (
-    <div className="rounded-md border overflow-hidden">
-      <table className="w-full text-sm text-left">
-        <thead className="bg-muted/50 text-muted-foreground border-b">
-          <tr>
-            <th className="px-4 py-3 font-medium">Country</th>
-            <th className="px-4 py-3 font-medium text-right">Signups</th>
-            <th className="px-4 py-3 font-medium text-right">Share</th>
-          </tr>
-        </thead>
-        <tbody>
+    <div className="overflow-x-auto rounded-lg border border-border">
+      <Table>
+        <TableHead>
+          <TableRow>
+            <TableHeadCell>Country</TableHeadCell>
+            <TableHeadCell className="text-right">Signups</TableHeadCell>
+            <TableHeadCell className="text-right">Share</TableHeadCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
           {displayData.map((row) => (
-            <tr key={row.code} className="border-b last:border-0 hover:bg-muted/30">
-              <td className="px-4 py-3 font-medium">
+            <TableRow key={row.code}>
+              <TableCell>
                 {row.code !== "Unknown" && <span className="mr-2 text-muted-foreground text-xs">{row.code}</span>}
                 {row.name}
-              </td>
-              <td className="px-4 py-3 text-right font-medium">
+              </TableCell>
+              <TableCell className="text-right font-medium">
                 {row.signups.toLocaleString()}
-              </td>
-              <td className="px-4 py-3 text-right text-muted-foreground">
+              </TableCell>
+              <TableCell className="text-right text-muted-foreground">
                 {row.percentage}%
-              </td>
-            </tr>
+              </TableCell>
+            </TableRow>
           ))}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
     </div>
   );
 }

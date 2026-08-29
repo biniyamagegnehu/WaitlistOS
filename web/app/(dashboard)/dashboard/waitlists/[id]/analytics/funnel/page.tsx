@@ -1,14 +1,18 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
-import Link from "next/link";
-import { ArrowLeft, TrendingUp, Users, MousePointer2, Send, Share2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { TrendingUp, Users, MousePointer2, Send, Share2 } from "lucide-react";
 
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { MetricCard } from "@/components/patterns/metric-card";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SectionHeader } from "@/components/ui/section-header";
+import { Select } from "@/components/ui/select";
 import { FunnelVisualization } from "@/components/analytics/FunnelVisualization";
 
 import { getConversionFunnel, ConversionFunnelResponse } from "@/services/analytics";
@@ -18,6 +22,7 @@ import { routes } from "@/lib/routes";
 
 export default function AnalyticsFunnelPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: waitlistId } = use(params);
+  const router = useRouter();
 
   const [funnel, setFunnel] = useState<ConversionFunnelResponse | null>(null);
   const [waitlistName, setWaitlistName] = useState("");
@@ -56,30 +61,16 @@ export default function AnalyticsFunnelPage({ params }: { params: Promise<{ id: 
   }, [waitlistId, dateRange]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-20 w-full" />
-        <div className="grid gap-4 md:grid-cols-4">
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-        </div>
-        <Skeleton variant="rectangular" className="h-96 w-full" />
-      </div>
-    );
+    return <LoadingState variant="skeleton" skeletonCount={6} />;
   }
 
   if (error) {
     return (
-      <EmptyState
+      <ErrorState
         title="Error loading analytics"
         description={error}
-        action={
-          <Button variant="secondary" onClick={() => window.location.reload()}>
-            Try again
-          </Button>
-        }
+        onRetry={() => window.location.reload()}
+        onHome={() => router.push(routes.waitlist(waitlistId))}
       />
     );
   }
@@ -89,85 +80,64 @@ export default function AnalyticsFunnelPage({ params }: { params: Promise<{ id: 
   const hasData = funnel.pageVisits > 0 || funnel.formFocus > 0 || funnel.signupSubmitted > 0 || funnel.referralShared > 0;
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={routes.waitlist(waitlistId)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to {waitlistName || "Waitlist"}
-      </Link>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <SectionHeader
-          title="Conversion Funnel"
-          description="Track how visitors move through your waitlist signup process."
-        />
-        
-        <select
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="90">Last 90 days</option>
-          <option value="all">All time</option>
-        </select>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Conversion Funnel"
+        description="Track how visitors move through your waitlist signup process."
+        breadcrumbs={[
+          { label: waitlistName || "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Analytics" },
+          { label: "Conversion Funnel" },
+        ]}
+        primaryAction={
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground hidden sm:inline">Period</span>
+            <Select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              size="sm"
+              aria-label="Select date range"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All time</option>
+            </Select>
+          </div>
+        }
+      />
 
       {!hasData ? (
         <EmptyState
           title="No funnel data yet."
           description="Share your waitlist link with your audience and your conversion funnel data will appear here."
           action={
-            <Link href={routes.waitlistShare(waitlistId)}>
-              <Button leftIcon={<Share2 className="h-4 w-4" />}>Share Waitlist</Button>
-            </Link>
+            <Button onClick={() => router.push(routes.waitlistShare(waitlistId))} leftIcon={<Share2 className="h-4 w-4" />}>Share Waitlist</Button>
           }
         />
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span className="text-sm font-medium">Page Visits</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{funnel.pageVisits.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <MousePointer2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">Form Focus</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{funnel.formFocus.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Send className="h-4 w-4" />
-                  <span className="text-sm font-medium">Signups</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{funnel.signupSubmitted.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Share2 className="h-4 w-4" />
-                  <span className="text-sm font-medium">Referrals Shared</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{funnel.referralShared.toLocaleString()}</div>
-              </CardContent>
-            </Card>
+            <MetricCard
+              label="Page Visits"
+              value={funnel.pageVisits.toLocaleString()}
+              icon={<Users className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Form Focus"
+              value={funnel.formFocus.toLocaleString()}
+              icon={<MousePointer2 className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Signups"
+              value={funnel.signupSubmitted.toLocaleString()}
+              icon={<Send className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Referrals Shared"
+              value={funnel.referralShared.toLocaleString()}
+              icon={<Share2 className="h-4 w-4" />}
+            />
           </div>
 
           <Card>
@@ -229,6 +199,6 @@ export default function AnalyticsFunnelPage({ params }: { params: Promise<{ id: 
           </div>
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

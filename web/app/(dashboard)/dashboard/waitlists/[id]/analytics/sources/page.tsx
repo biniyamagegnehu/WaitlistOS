@@ -1,16 +1,20 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
-import Link from "next/link";
-import { ArrowLeft, ExternalLink, Activity, Target, Users } from "lucide-react";
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer, Legend } from "recharts";
+import { useRouter } from "next/navigation";
+import { ExternalLink, Activity, Target, Users } from "lucide-react";
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
 
+import { PageContainer } from "@/components/patterns/page-container";
+import { PageHeader } from "@/components/patterns/page-header";
+import { LoadingState } from "@/components/patterns/loading-state";
+import { ErrorState } from "@/components/patterns/error-state";
+import { MetricCard } from "@/components/patterns/metric-card";
+import { DataTable, type Column } from "@/components/patterns/data-table";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
-import { SectionHeader } from "@/components/ui/section-header";
+import { Select } from "@/components/ui/select";
 
 import { getWaitlistAnalytics, AnalyticsResponse } from "@/services/analytics";
 import { getDashboardWaitlistDetail } from "@/services/dashboard";
@@ -31,6 +35,7 @@ const SOURCE_LABELS: Record<string, string> = {
   UNKNOWN: "Unknown",
 };
 
+// Data visualization colors - intentionally hardcoded for consistent chart rendering
 const COLORS = [
   "#3b82f6", // blue-500
   "#10b981", // emerald-500
@@ -46,6 +51,7 @@ const COLORS = [
 
 export default function AnalyticsSourcesPage({ params }: { params: Promise<{ id: string }> }) {
   const { id: waitlistId } = use(params);
+  const router = useRouter();
 
   const [analytics, setAnalytics] = useState<AnalyticsResponse | null>(null);
   const [waitlistName, setWaitlistName] = useState("");
@@ -84,29 +90,16 @@ export default function AnalyticsSourcesPage({ params }: { params: Promise<{ id:
   }, [waitlistId, dateRange]);
 
   if (isLoading) {
-    return (
-      <div className="space-y-6">
-        <Skeleton variant="rectangular" className="h-20 w-full" />
-        <div className="grid gap-4 md:grid-cols-3">
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-          <Skeleton variant="rectangular" className="h-32" />
-        </div>
-        <Skeleton variant="rectangular" className="h-96 w-full" />
-      </div>
-    );
+    return <LoadingState variant="skeleton" skeletonCount={5} />;
   }
 
   if (error) {
     return (
-      <EmptyState
+      <ErrorState
         title="Error loading analytics"
         description={error}
-        action={
-          <Button variant="secondary" onClick={() => window.location.reload()}>
-            Try again
-          </Button>
-        }
+        onRetry={() => window.location.reload()}
+        onHome={() => router.push(routes.waitlist(waitlistId))}
       />
     );
   }
@@ -126,112 +119,67 @@ export default function AnalyticsSourcesPage({ params }: { params: Promise<{ id:
     }));
 
   return (
-    <div className="space-y-6">
-      <Link
-        href={routes.waitlist(waitlistId)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to {waitlistName || "Waitlist"}
-      </Link>
-
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <SectionHeader
-          title="Acquisition"
-          description="See where your waitlist visitors and signups are coming from."
-        />
-        
-        <select
-          value={dateRange}
-          onChange={(e) => setDateRange(e.target.value)}
-          className="rounded-md border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-        >
-          <option value="7">Last 7 days</option>
-          <option value="30">Last 30 days</option>
-          <option value="90">Last 90 days</option>
-          <option value="all">All time</option>
-        </select>
-      </div>
+    <PageContainer>
+      <PageHeader
+        title="Acquisition"
+        description="See where your waitlist visitors and signups are coming from."
+        breadcrumbs={[
+          { label: waitlistName || "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Analytics" },
+          { label: "Acquisition" },
+        ]}
+        primaryAction={
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-foreground hidden sm:inline">Period</span>
+            <Select
+              value={dateRange}
+              onChange={(e) => setDateRange(e.target.value)}
+              size="sm"
+              aria-label="Select date range"
+            >
+              <option value="7">Last 7 days</option>
+              <option value="30">Last 30 days</option>
+              <option value="90">Last 90 days</option>
+              <option value="all">All time</option>
+            </Select>
+          </div>
+        }
+      />
 
       {!hasData ? (
         <EmptyState
           title="No traffic data yet."
           description="Share your waitlist link with your audience and your traffic sources will appear here."
           action={
-            <Link href={routes.waitlistShare(waitlistId)}>
-              <Button leftIcon={<ExternalLink className="h-4 w-4" />}>Share Waitlist</Button>
-            </Link>
+            <Button onClick={() => router.push(routes.waitlistShare(waitlistId))} leftIcon={<ExternalLink className="h-4 w-4" />}>Share Waitlist</Button>
           }
         />
       ) : (
         <>
           <div className="grid gap-4 md:grid-cols-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Users className="h-4 w-4" />
-                  <span className="text-sm font-medium">Visitors</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{analytics.totalVisitors.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Target className="h-4 w-4" />
-                  <span className="text-sm font-medium">Signups</span>
-                </div>
-                <div className="mt-4 text-3xl font-bold">{analytics.totalSignups.toLocaleString()}</div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Activity className="h-4 w-4" />
-                  <span className="text-sm font-medium">Conversion Rate</span>
-                </div>
-                {analytics.totalVisitors === 0 ? (
-                  <>
-                    <div className="mt-4 text-3xl font-bold text-muted-foreground">—</div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      Needs visitor tracking data
-                    </p>
-                  </>
-                ) : (
-                  <>
-                    <div
-                      className={`mt-4 text-3xl font-bold ${
-                        analytics.overallConversionRate >= 10
-                          ? "text-emerald-500"
-                          : analytics.overallConversionRate >= 3
-                          ? "text-amber-500"
-                          : "text-foreground"
-                      }`}
-                    >
-                      {analytics.overallConversionRate}%
-                    </div>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {analytics.totalSignups} of {analytics.totalVisitors} visitors
-                    </p>
-                  </>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <span className="text-sm font-medium">Top Source</span>
-                </div>
-                <div className="mt-4 text-xl font-bold truncate">
-                  {analytics.sources.length > 0 && analytics.sources[0].signups > 0
-                    ? SOURCE_LABELS[analytics.sources[0].source] || analytics.sources[0].source
-                    : "-"}
-                </div>
-              </CardContent>
-            </Card>
+            <MetricCard
+              label="Visitors"
+              value={analytics.totalVisitors.toLocaleString()}
+              icon={<Users className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Signups"
+              value={analytics.totalSignups.toLocaleString()}
+              icon={<Target className="h-4 w-4" />}
+            />
+            <MetricCard
+              label="Conversion Rate"
+              value={analytics.totalVisitors === 0 ? "—" : `${analytics.overallConversionRate}%`}
+              description={analytics.totalVisitors === 0 ? "Needs visitor tracking data" : `${analytics.totalSignups} of ${analytics.totalVisitors} visitors`}
+              icon={<Activity className="h-4 w-4" />}
+              status={analytics.totalVisitors > 0 && analytics.overallConversionRate >= 10 ? "success" : analytics.totalVisitors > 0 && analytics.overallConversionRate >= 3 ? "warning" : "neutral"}
+            />
+            <MetricCard
+              label="Top Source"
+              value={analytics.sources.length > 0 && analytics.sources[0].signups > 0
+                ? SOURCE_LABELS[analytics.sources[0].source] || analytics.sources[0].source
+                : "-"}
+            />
           </div>
 
           <div className="grid gap-6 md:grid-cols-3">
@@ -244,7 +192,7 @@ export default function AnalyticsSourcesPage({ params }: { params: Promise<{ id:
                 {chartData.length > 0 ? (
                   <div className="h-64 w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
+                      <PieChart aria-label="Pie chart showing signup distribution by source">
                         <Pie
                           data={chartData}
                           cx="50%"
@@ -259,7 +207,7 @@ export default function AnalyticsSourcesPage({ params }: { params: Promise<{ id:
                             <Cell key={`cell-${index}`} fill={entry.color} />
                           ))}
                         </Pie>
-                        <RechartsTooltip 
+                        <RechartsTooltip
                           formatter={(value: any, name: any, props: any) => [`${value} (${props.payload.percentage}%)`, name]}
                         />
                       </PieChart>
@@ -276,57 +224,58 @@ export default function AnalyticsSourcesPage({ params }: { params: Promise<{ id:
             <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle>Source Performance</CardTitle>
+                <CardDescription>Conversion rates and performance by traffic source.</CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="rounded-md border">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-muted/50 text-muted-foreground border-b">
-                      <tr>
-                        <th className="px-4 py-3 font-medium">Source</th>
-                        <th className="px-4 py-3 font-medium text-right">Visitors</th>
-                        <th className="px-4 py-3 font-medium text-right">Signups</th>
-                        <th className="px-4 py-3 font-medium text-right">Conversion</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {analytics.sources.map((source) => (
-                        <tr key={source.source} className="border-b last:border-0 hover:bg-muted/30">
-                          <td className="px-4 py-3 font-medium">
-                            {SOURCE_LABELS[source.source] || source.source}
-                          </td>
-                          <td className="px-4 py-3 text-right text-muted-foreground">
-                            {source.visitors.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-3 text-right font-medium">
-                            {source.signups.toLocaleString()}
-                          </td>
-                          <td className="px-4 py-3 text-right">
-                            {source.visitors === 0 ? (
-                              <span className="text-muted-foreground" title="No visit tracking data for this source">—</span>
-                            ) : (
-                              <span
-                                className={
-                                  source.conversionRate >= 10
-                                    ? "text-emerald-500 font-medium"
-                                    : source.conversionRate >= 3
-                                    ? "text-amber-500"
-                                    : "text-muted-foreground"
-                                }
-                              >
-                                {source.conversionRate}%
-                              </span>
-                            )}
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                <DataTable
+                  data={analytics.sources}
+                  columns={[
+                    {
+                      key: "source",
+                      header: "Source",
+                      render: (row) => SOURCE_LABELS[row.source] || row.source,
+                    },
+                    {
+                      key: "visitors",
+                      header: "Visitors",
+                      render: (row) => row.visitors.toLocaleString(),
+                      className: "text-right",
+                    },
+                    {
+                      key: "signups",
+                      header: "Signups",
+                      render: (row) => row.signups.toLocaleString(),
+                      className: "text-right font-medium",
+                    },
+                    {
+                      key: "conversionRate",
+                      header: "Conversion",
+                      render: (row) =>
+                        row.visitors === 0 ? (
+                          <span className="text-muted-foreground" title="No visit tracking data for this source">—</span>
+                        ) : (
+                          <span
+                            className={
+                              row.conversionRate >= 10
+                                ? "text-success font-medium"
+                                : row.conversionRate >= 3
+                                ? "text-warning"
+                                : "text-muted-foreground"
+                            }
+                          >
+                            {row.conversionRate}%
+                          </span>
+                        ),
+                      className: "text-right",
+                    },
+                  ]}
+                  rowKey={(row) => row.source}
+                />
               </CardContent>
             </Card>
           </div>
         </>
       )}
-    </div>
+    </PageContainer>
   );
 }

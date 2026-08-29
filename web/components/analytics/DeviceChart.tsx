@@ -2,7 +2,16 @@
 
 import React from "react";
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts";
+import {
+  Table,
+  TableHead,
+  TableBody,
+  TableCell,
+  TableHeadCell,
+  TableRow,
+} from "@/components/ui/table";
 
+// Data visualization colors - intentionally hardcoded for consistent chart rendering
 const COLORS = [
   "#3b82f6", // blue-500
   "#10b981", // emerald-500
@@ -34,7 +43,7 @@ export function DeviceChart({ data }: DeviceChartProps) {
     <div className="flex flex-col h-full">
       <div className="h-48 w-full relative">
         <ResponsiveContainer width="100%" height="100%">
-          <PieChart>
+          <PieChart aria-label="Pie chart showing device distribution">
             <Pie
               data={chartData}
               cx="50%"
@@ -57,26 +66,35 @@ export function DeviceChart({ data }: DeviceChartProps) {
           </PieChart>
         </ResponsiveContainer>
       </div>
-      
-      <div className="mt-4">
-        <table className="w-full text-sm">
-          <tbody>
+
+      <div className="mt-4 overflow-x-auto rounded-lg border border-border">
+        <Table>
+          <TableHead>
+            <TableRow>
+              <TableHeadCell>Device</TableHeadCell>
+              <TableHeadCell className="text-right">Signups</TableHeadCell>
+              <TableHeadCell className="text-right">Share</TableHeadCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
             {chartData.map((row, index) => {
               let color = COLORS[index % (COLORS.length - 1)];
               if (row.type === "UNKNOWN") color = COLORS[3];
               return (
-                <tr key={row.type} className="border-b last:border-0 hover:bg-muted/10">
-                  <td className="py-2 flex items-center gap-2">
-                    <span className="w-3 h-3 rounded-full" style={{ backgroundColor: color }} />
-                    <span className="font-medium">{row.label}</span>
-                  </td>
-                  <td className="py-2 text-right font-medium">{row.signups.toLocaleString()}</td>
-                  <td className="py-2 text-right text-muted-foreground w-16">{row.percentage}%</td>
-                </tr>
+                <TableRow key={row.type}>
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                      <span className="font-medium">{row.label}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="text-right font-medium">{row.signups.toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-muted-foreground">{row.percentage}%</TableCell>
+                </TableRow>
               );
             })}
-          </tbody>
-        </table>
+          </TableBody>
+        </Table>
       </div>
     </div>
   );
