@@ -22,9 +22,9 @@ export function ThemeToggle({ className, size = "md" }: ThemeToggleProps) {
       onClick={toggleTheme}
       aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
       className={cn(
-        "inline-flex items-center justify-center rounded-md text-muted-foreground transition-colors",
-        "hover:bg-surface-muted hover:text-foreground",
-        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30",
+        "inline-flex items-center justify-center rounded-md text-text-muted transition-colors",
+        "hover:bg-surface-muted hover:text-text-primary",
+        "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
         buttonSize,
         className
       )}

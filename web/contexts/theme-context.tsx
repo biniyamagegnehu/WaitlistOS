@@ -32,8 +32,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
           ? "dark"
           : "light";
 
-    setThemeState(initial);
     applyTheme(initial);
+    setThemeState(initial);
   }, []);
 
   const setTheme = React.useCallback((next: Theme) => {
@@ -67,6 +67,8 @@ export function useTheme() {
 /** Avoid hydration mismatch for theme-dependent UI */
 export function useThemeMounted() {
   const [mounted, setMounted] = React.useState(false);
-  React.useEffect(() => setMounted(true), []);
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
   return mounted;
 }

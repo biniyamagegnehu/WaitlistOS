@@ -3,14 +3,22 @@ import { cn } from "@/lib/cn";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
   hover?: boolean;
+  variant?: "default" | "muted" | "elevated";
 }
 
-export function Card({ className, hover = false, ...props }: CardProps) {
+export function Card({ className, hover = false, variant = "default", ...props }: CardProps) {
+  const variantClasses = {
+    default: "bg-surface border border-border",
+    muted: "bg-surface-muted border border-border-subtle",
+    elevated: "bg-surface-elevated border border-border shadow-md",
+  };
+
   return (
     <div
       className={cn(
-        "rounded-xl border border-border/50 bg-surface text-foreground shadow-sm",
-        hover && "transition-all hover:shadow-md hover:border-border",
+        "rounded-lg text-text-primary",
+        variantClasses[variant],
+        hover && "transition-all hover:shadow-md hover:border-border-strong",
         className
       )}
       {...props}
@@ -39,7 +47,7 @@ export function CardTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h3
-      className={cn("text-base font-semibold leading-tight text-foreground", className)}
+      className={cn("text-base font-semibold leading-tight text-text-primary", className)}
       {...props}
     />
   );
@@ -50,7 +58,7 @@ export function CardDescription({
   ...props
 }: React.HTMLAttributes<HTMLParagraphElement>) {
   return (
-    <p className={cn("text-sm text-muted-foreground", className)} {...props} />
+    <p className={cn("text-sm text-text-muted", className)} {...props} />
   );
 }
 

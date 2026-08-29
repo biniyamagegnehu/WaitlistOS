@@ -48,7 +48,7 @@ export function PageLoader({ label = "Loading…" }: PageLoaderProps) {
   return (
     <div className="flex flex-1 flex-col items-center justify-center gap-4 py-32">
       <Spinner size="lg" />
-      <p className="text-sm text-muted-foreground">{label}</p>
+      <p className="text-sm text-text-muted">{label}</p>
     </div>
   );
 }

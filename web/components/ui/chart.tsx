@@ -56,7 +56,7 @@ export function ChartTooltipContent({
   return (
     <div className="min-w-36 rounded-lg border border-border bg-surface px-3 py-2 text-sm shadow-md">
       {!hideLabel && label !== undefined && (
-        <p className="mb-1 font-medium text-foreground">
+        <p className="mb-1 font-medium text-text-primary">
           {labelFormatter ? labelFormatter(label) : label}
         </p>
       )}
@@ -64,9 +64,9 @@ export function ChartTooltipContent({
         const key = String(item.dataKey);
         const itemLabel = config?.[key]?.label ?? item.name ?? key;
         return (
-          <div key={key} className="flex items-center justify-between gap-4 text-muted-foreground">
+          <div key={key} className="flex items-center justify-between gap-4 text-text-muted">
             <span>{itemLabel}</span>
-            <span className="font-medium text-foreground">{Number(item.value ?? 0).toLocaleString()}</span>
+            <span className="font-medium text-text-primary">{Number(item.value ?? 0).toLocaleString()}</span>
           </div>
         );
       })}

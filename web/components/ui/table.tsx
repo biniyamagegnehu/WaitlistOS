@@ -31,7 +31,7 @@ export function TableBody({
   className,
   ...props
 }: React.HTMLAttributes<HTMLTableSectionElement>) {
-  return <tbody className={cn("divide-y", className)} {...props} />;
+  return <tbody className={cn("divide-y divide-border", className)} {...props} />;
 }
 
 interface TableRowProps extends React.HTMLAttributes<HTMLTableRowElement> {
@@ -50,7 +50,7 @@ export function TableRow({
       className={cn(
         "transition-colors duration-100",
         clickable && "cursor-pointer hover:bg-surface-muted",
-        selected && "bg-primary/5",
+        selected && "bg-selected",
         className
       )}
       {...props}
@@ -65,7 +65,7 @@ export function TableHeadCell({
   return (
     <th
       className={cn(
-        "px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-muted-foreground",
+        "px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-text-muted",
         className
       )}
       {...props}
@@ -78,7 +78,7 @@ export function TableCell({
   ...props
 }: React.TdHTMLAttributes<HTMLTableCellElement>) {
   return (
-    <td className={cn("px-4 py-3.5 text-foreground", className)} {...props} />
+    <td className={cn("px-4 py-3.5 text-text-primary", className)} {...props} />
   );
 }
 

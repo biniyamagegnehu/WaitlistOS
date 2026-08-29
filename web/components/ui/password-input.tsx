@@ -71,6 +71,7 @@ export function PasswordInput({
         <Input
           {...props}
           type={showPassword ? "text" : "password"}
+          size="md"
           leftIcon={<Lock className="h-4 w-4" />}
           rightIcon={
             <button
@@ -87,7 +88,7 @@ export function PasswordInput({
             </button>
           }
           onChange={handlePasswordChange}
-          className={cn("pr-10", className)}
+          className={className}
         />
       </div>
       {error && (

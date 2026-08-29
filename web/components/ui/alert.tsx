@@ -23,16 +23,16 @@ export interface AlertProps {
 
 const icons: Record<AlertVariant, React.ReactNode> = {
   success: <CheckCircle className="h-4 w-4 shrink-0 text-success" />,
-  error: <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />,
+  error: <AlertCircle className="h-4 w-4 shrink-0 text-error" />,
   warning: <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />,
   info: <Info className="h-4 w-4 shrink-0 text-info" />,
 };
 
 const variantStyles: Record<AlertVariant, string> = {
-  success: "bg-success/5",
-  error: "bg-destructive/5",
-  warning: "bg-warning/5",
-  info: "bg-info/5",
+  success: "bg-success-muted text-success",
+  error: "bg-error-muted text-error",
+  warning: "bg-warning-muted text-warning",
+  info: "bg-info-muted text-info",
 };
 
 export function Alert({
@@ -47,7 +47,7 @@ export function Alert({
     <div
       role="alert"
       className={cn(
-        "flex items-start gap-3 px-4 py-3",
+        "flex items-start gap-3 px-4 py-3 rounded-md border",
         variantStyles[variant],
         className
       )}
@@ -55,14 +55,14 @@ export function Alert({
       {icons[variant]}
       <div className="min-w-0 flex-1">
         {title && (
-          <p className="mb-1 text-sm font-semibold text-foreground">{title}</p>
+          <p className="mb-1 text-sm font-semibold text-text-primary">{title}</p>
         )}
-        <div className="text-sm text-muted-foreground">{children}</div>
+        <div className="text-sm text-text-primary">{children}</div>
       </div>
       {dismissible && onDismiss && (
         <button
           onClick={onDismiss}
-          className="rounded-md p-1 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+          className="rounded-md p-1 text-text-muted transition-colors hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
           aria-label="Dismiss"
         >
           <X className="h-4 w-4" />

@@ -82,12 +82,13 @@ export function OTPInput({
             onPaste={handlePaste}
             disabled={disabled}
             className={cn(
-              "h-12 w-12 rounded-md border bg-surface text-center text-lg font-semibold text-foreground transition-colors",
-              "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20",
+              "h-12 w-12 rounded-md border bg-surface text-center text-lg font-semibold text-text-primary transition-all duration-200",
+              "focus:border-border-focus focus:outline-none focus:ring-2 focus:ring-focus-ring focus:ring-offset-2",
+              "hover:border-border-strong",
+              "disabled:cursor-not-allowed disabled:opacity-50 disabled:text-text-disabled disabled:bg-surface-muted",
               error
-                ? "border-destructive focus:ring-destructive/20"
-                : "border-border",
-              disabled && "cursor-not-allowed opacity-50"
+                ? "border-border-error focus:ring-border-error focus:border-border-error"
+                : "border-border"
             )}
             aria-label={`OTP digit ${index + 1}`}
             aria-invalid={!!error}
@@ -95,7 +96,7 @@ export function OTPInput({
         ))}
       </div>
       {error && (
-        <p className="mt-2 text-xs text-destructive" role="alert">
+        <p className="mt-2 text-xs text-error" role="alert">
           {error}
         </p>
       )}

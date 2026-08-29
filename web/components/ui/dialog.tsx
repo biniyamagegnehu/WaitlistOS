@@ -67,14 +67,14 @@ export function DialogContent({
   return (
     <div
       className={cn(
-        "relative z-10 w-full max-w-lg bg-surface rounded-xl border border-border/50 shadow-md overflow-hidden",
+        "relative z-10 w-full max-w-lg bg-surface rounded-lg border border-border shadow-md overflow-hidden",
         className
       )}
       {...props}
     >
       <button
         onClick={onClose}
-        className="absolute right-4 top-4 rounded-md p-1.5 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+        className="absolute right-4 top-4 rounded-md p-1.5 text-text-muted transition-colors hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2"
         aria-label="Close dialog"
       >
         <X className="h-4 w-4" />
@@ -102,7 +102,7 @@ export function DialogTitle({
 }: React.HTMLAttributes<HTMLHeadingElement>) {
   return (
     <h2
-      className={cn("text-lg font-semibold text-foreground", className)}
+      className={cn("text-lg font-semibold text-text-primary", className)}
       {...props}
     />
   );

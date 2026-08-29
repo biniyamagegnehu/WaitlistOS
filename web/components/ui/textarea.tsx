@@ -19,21 +19,22 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         {label && (
           <label
             htmlFor={textareaId}
-            className="block text-sm font-medium text-foreground"
+            className="block text-sm font-medium text-text-primary"
           >
             {label}
-            {required && <span className="ml-1 text-destructive">*</span>}
+            {required && <span className="ml-1 text-error">*</span>}
           </label>
         )}
         <textarea
           ref={ref}
           id={textareaId}
           className={cn(
-            "flex min-h-[80px] w-full rounded-xl border border-input bg-background/80 px-3 py-2 text-sm ring-offset-background",
-            "placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
-            "disabled:cursor-not-allowed disabled:opacity-50",
+            "flex min-h-[80px] w-full rounded-md border border-border bg-surface px-3 py-2 text-sm ring-offset-background shadow-sm transition-all duration-200",
+            "placeholder:text-text-placeholder focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:border-border-focus",
+            "disabled:cursor-not-allowed disabled:opacity-50 disabled:text-text-disabled disabled:bg-surface-muted",
+            "hover:border-border-strong",
             "resize-y",
-            error && "border-destructive focus-visible:ring-destructive",
+            error && "border-border-error focus-visible:ring-border-error focus-visible:border-border-error",
             className
           )}
           aria-invalid={!!error}
@@ -43,12 +44,12 @@ export const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
           {...props}
         />
         {error && (
-          <p id={`${textareaId}-error`} className="text-xs text-destructive" role="alert">
+          <p id={`${textareaId}-error`} className="text-xs text-error" role="alert">
             {error}
           </p>
         )}
         {helper && !error && (
-          <p id={`${textareaId}-helper`} className="text-xs text-muted-foreground">
+          <p id={`${textareaId}-helper`} className="text-xs text-text-muted">
             {helper}
           </p>
         )}

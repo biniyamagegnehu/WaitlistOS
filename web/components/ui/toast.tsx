@@ -55,16 +55,16 @@ export function useToast() {
 
 const icons: Record<ToastVariant, React.ReactNode> = {
   success: <CheckCircle className="h-4 w-4 shrink-0 text-success" />,
-  error: <AlertCircle className="h-4 w-4 shrink-0 text-destructive" />,
+  error: <AlertCircle className="h-4 w-4 shrink-0 text-error" />,
   warning: <AlertTriangle className="h-4 w-4 shrink-0 text-warning" />,
   info: <Info className="h-4 w-4 shrink-0 text-info" />,
 };
 
 const variantStyles: Record<ToastVariant, string> = {
-  success: "border-success/25 bg-surface",
-  error: "border-destructive/25 bg-surface",
-  warning: "border-warning/25 bg-surface",
-  info: "border-info/25 bg-surface",
+  success: "border-success-muted bg-surface",
+  error: "border-error-muted bg-surface",
+  warning: "border-warning-muted bg-surface",
+  info: "border-info-muted bg-surface",
 };
 
 function ToastViewport({
@@ -91,16 +91,16 @@ function ToastViewport({
         >
           {icons[t.variant ?? "info"]}
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-medium text-foreground">{t.title}</p>
+            <p className="text-sm font-medium text-text-primary">{t.title}</p>
             {t.description && (
-              <p className="mt-0.5 text-xs text-muted-foreground">
+              <p className="mt-0.5 text-xs text-text-muted">
                 {t.description}
               </p>
             )}
           </div>
           <button
             onClick={() => dismiss(t.id)}
-            className="ml-1 rounded-md p-1 text-muted-foreground transition-colors hover:bg-surface-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30"
+            className="ml-1 rounded-md p-1 text-text-muted transition-colors hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             aria-label="Dismiss"
           >
             <X className="h-3.5 w-3.5" />

@@ -25,7 +25,7 @@ export function EmptyState({
       {...props}
     >
       {icon ? (
-        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-md bg-surface-muted text-muted-foreground">
+        <div className="mb-5 flex h-16 w-16 items-center justify-center rounded-md bg-surface-muted text-text-muted">
           {icon}
         </div>
       ) : (
@@ -34,7 +34,7 @@ export function EmptyState({
           className="mb-5 flex h-16 w-16 items-center justify-center rounded-md bg-surface-muted"
         >
           <svg
-            className="h-8 w-8 text-muted-foreground"
+            className="h-8 w-8 text-text-muted"
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
             viewBox="0 0 24 24"
@@ -50,9 +50,9 @@ export function EmptyState({
         </div>
       )}
 
-      <h3 className="text-base font-semibold text-foreground">{title}</h3>
+      <h3 className="text-base font-semibold text-text-primary">{title}</h3>
       {description && (
-        <p className="mt-2 max-w-xs text-sm text-muted-foreground">
+        <p className="mt-2 max-w-xs text-sm text-text-muted">
           {description}
         </p>
       )}

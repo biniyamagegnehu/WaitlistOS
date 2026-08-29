@@ -22,11 +22,11 @@ export function SectionHeader({
       )}
     >
       <div className="space-y-1">
-        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+        <h1 className="text-2xl font-semibold tracking-tight text-text-primary">
           {title}
         </h1>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm text-text-muted">{description}</p>
         )}
       </div>
       {action && <div className="shrink-0">{action}</div>}
