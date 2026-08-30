@@ -49,7 +49,7 @@ export function PageHeader({
           {secondaryActions && (
             <div className="flex flex-wrap gap-2">{secondaryActions}</div>
           )}
-          {primaryAction && <div className="flex shrink-0">{primaryAction}</div>}
+          {primaryAction && <div className="flex shrink-0 relative">{primaryAction}</div>}
         </div>
       </div>
     </div>

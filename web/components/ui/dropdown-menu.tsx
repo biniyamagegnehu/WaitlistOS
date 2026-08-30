@@ -121,7 +121,7 @@ export function DropdownMenuContent({ className, align = "left", ...props }: Rea
   return (
     <div
       className={cn(
-        "absolute top-full z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-surface shadow-md p-1",
+        "absolute top-full z-50 min-w-[8rem] overflow-hidden rounded-md border border-border bg-surface shadow-lg p-1",
         alignClasses[align],
         "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2",
         className

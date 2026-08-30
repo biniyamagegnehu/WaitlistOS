@@ -148,24 +148,26 @@ export default function WaitlistsPage() {
           description="Manage your waitlists and view participants"
           primaryAction={
             <div className="flex items-center gap-2">
-              <DropdownMenu open={showExportDropdown} onOpenChange={setShowExportDropdown}>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    loading={exporting}
-                    leftIcon={<Download className="h-4 w-4" />}
-                  >
-                    Export
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="right">
-                  <DropdownMenuItem onClick={() => handleExport('csv')}>CSV</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('xlsx')}>XLSX</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('doc')}>DOC</DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => handleExport('pdf')}>PDF</DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+              <div className="relative">
+                <DropdownMenu open={showExportDropdown} onOpenChange={setShowExportDropdown}>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      loading={exporting}
+                      leftIcon={<Download className="h-4 w-4" />}
+                    >
+                      Export
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="right">
+                    <DropdownMenuItem onClick={() => handleExport('csv')}>CSV</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport('xlsx')}>XLSX</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport('doc')}>DOC</DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleExport('pdf')}>PDF</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
               <Link href={routes.create}>
                 <Button leftIcon={<Plus className="h-4 w-4" />}>New waitlist</Button>
               </Link>
