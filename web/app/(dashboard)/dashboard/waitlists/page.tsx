@@ -189,7 +189,7 @@ export default function WaitlistsPage() {
           <DataToolbarSection align="end">
             <div className="relative">
               <DropdownMenu open={showSortDropdown} onOpenChange={setShowSortDropdown}>
-                <DropdownMenuTrigger>
+                <DropdownMenuTrigger asChild>
                   <Button
                     variant="outline"
                     size="sm"
