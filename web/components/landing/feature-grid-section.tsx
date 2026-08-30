@@ -66,7 +66,7 @@ export function FeatureGridSection({ className = "" }: FeatureGridProps) {
   return (
     <section
       ref={sectionRef}
-      className={cn("bg-[#f2f1ec] py-20 sm:py-28 relative", className)}
+      className={cn("bg-surface-muted py-20 sm:py-28 relative", className)}
     >
       <div className="mx-auto max-w-6xl px-6 sm:px-8 lg:px-12">
         <div className="grid lg:grid-cols-12 gap-8 lg:gap-12 items-start">
@@ -91,8 +91,8 @@ export function FeatureGridSection({ className = "" }: FeatureGridProps) {
                     className={cn(
                       "text-[22px] sm:text-[24px] leading-tight tracking-[-0.01em] transition-all duration-300",
                       isActive
-                        ? "font-bold text-[#1a1a1a]"
-                        : "font-normal text-[#a8a89a] hover:text-[#6e6e60]"
+                        ? "font-bold text-foreground"
+                        : "font-normal text-muted-foreground/40 hover:text-muted-foreground"
                     )}
                   >
                     {item.navTitle}
@@ -115,17 +115,17 @@ export function FeatureGridSection({ className = "" }: FeatureGridProps) {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.45, ease: "easeOut" }}
-                className="bg-[#e8e7e1] rounded-[20px] overflow-hidden"
+                className="bg-surface rounded-[20px] overflow-hidden border border-border"
               >
                 {/* Inner grid: text left, image right */}
                 <div className="grid grid-cols-12 min-h-[300px] sm:min-h-[320px]">
 
                   {/* Text area */}
                   <div className="col-span-12 sm:col-span-5 flex flex-col justify-start p-7 sm:p-8">
-                    <p className="text-[13px] sm:text-[14px] font-semibold text-[#1a1a1a] leading-snug mb-1.5">
+                    <p className="text-[13px] sm:text-[14px] font-semibold text-foreground leading-snug mb-1.5">
                       {item.subtitle}
                     </p>
-                    <p className="text-[13px] sm:text-[14px] text-[#6e6e60] leading-[1.6] max-w-[260px]">
+                    <p className="text-[13px] sm:text-[14px] text-muted-foreground leading-[1.6] max-w-[260px]">
                       {item.description}
                     </p>
                   </div>

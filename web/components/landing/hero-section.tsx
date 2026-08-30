@@ -2,7 +2,8 @@
 
 import Link from "next/link";
 import { routes } from "@/lib/routes";
-import { Check, Layers } from "lucide-react";
+import { Layers } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { FadeIn, SlideUp } from "./scroll-animations";
 
 export function HeroSection() {
@@ -16,13 +17,15 @@ export function HeroSection() {
           {/* Top Announcement */}
           <SlideUp>
             <FadeIn delay={0.2}>
-              <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-primary/10 px-4 py-2 text-sm font-medium text-primary">
+              <Badge
+                className="mb-8 inline-flex items-center gap-2 rounded-full bg-primary-soft text-primary-soft-foreground border border-primary-border px-4 py-2 text-sm font-medium"
+              >
                 <div className="h-2 w-2 rounded-full bg-primary animate-pulse" />
                 WaitlistOS includes powerful tools to help you launch in style.{" "}
-                <Link href="#how-it-works" className="ml-1 underline underline-offset-2 hover:text-primary/80">
+                <Link href="#how-it-works" className="ml-1 underline underline-offset-2 hover:text-primary">
                   Explore Features
                 </Link>
-              </div>
+              </Badge>
             </FadeIn>
           </SlideUp>
 
@@ -39,7 +42,7 @@ export function HeroSection() {
           <SlideUp delay={0.2}>
             <Link
               href={routes.register}
-              className="inline-flex h-14 items-center justify-center rounded-full bg-primary px-8 text-base font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:scale-105 mb-20 shadow-lg shadow-primary/25"
+              className="inline-flex h-14 items-center justify-center rounded-md bg-primary px-8 text-base font-medium text-primary-foreground transition-all hover:bg-primary/90 hover:scale-105 mb-20 shadow-lg shadow-primary/25"
             >
               Get started now
             </Link>
