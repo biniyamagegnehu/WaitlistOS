@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Menu, Plus, Bell } from "lucide-react";
+import { Menu, Plus } from "lucide-react";
 import Link from "next/link";
 import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { UserMenu } from "@/components/navigation/user-menu";
@@ -32,12 +32,7 @@ export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
       <div className="flex shrink-0 items-center gap-1">
         <ThemeToggle size="sm" />
 
-        <button
-          aria-label="Notifications"
-          className="inline-flex items-center justify-center p-2 text-text-muted transition-colors hover:bg-surface-muted hover:text-text-primary focus-visible:outline-none"
-        >
-          <Bell className="h-4 w-4" />
-        </button>
+
 
         <Link href={routes.create} className="hidden sm:inline-flex">
           <Button size="sm">
