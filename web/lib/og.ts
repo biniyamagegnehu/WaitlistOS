@@ -6,8 +6,8 @@ export const OG_SIZE = {
 export const OG_COLORS = {
   background: "#FAF8F2",
   card: "#FFFFFF",
-  primary: "#1F5C42",
-  primaryHover: "#174B36",
+  primary: "#FE4A15",
+  primaryHover: "#E8410E",
   accent: "#D8A75B",
   text: "#1F2937",
   secondary: "#6B7280",
@@ -23,7 +23,7 @@ export const DEFAULT_WAITLISTOS_LOGO_DATA_URI =
   "data:image/svg+xml;charset=utf-8," +
   encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" fill="none">
-      <rect width="64" height="64" rx="12" fill="#1F5C42"/>
+      <rect width="64" height="64" rx="12" fill="#FE4A15"/>
       <path d="M34 14L22 34H30L28 50L42 28H34V14Z" fill="#FAF8F2"/>
     </svg>`
   );

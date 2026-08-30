@@ -21,14 +21,17 @@
   --border: #e5e5e5;
   --border-subtle: #f0f0f0;
   --border-strong: #d4d4d4;
-  --border-focus: #1f5c42;
+  --border-focus: #fe4a15;
   --border-error: #dc2626;
-  --border-selected: #1f5c42;
+  --border-selected: #fe4a15;
 
   /* Brand Colors */
-  --primary: #1f5c42;
-  --primary-hover: #174b36;
-  --primary-active: #0f3828;
+  --primary: #fe4a15;
+  --primary-hover: #e8410e;
+  --primary-active: #cc390a;
+  --primary-soft: #fff0eb;
+  --primary-soft-foreground: #cc390a;
+  --primary-border: #fca58f;
   --primary-foreground: #ffffff;
   --accent: #d8a75b;
   --accent-foreground: #171717;
@@ -51,8 +54,8 @@
   /* Interactive States */
   --hover: rgba(0, 0, 0, 0.04);
   --active: rgba(0, 0, 0, 0.08);
-  --selected: rgba(31, 92, 66, 0.1);
-  --focus-ring: rgba(31, 92, 66, 0.3);
+  --selected: rgba(254, 74, 21, 0.1);
+  --focus-ring: rgba(254, 74, 21, 0.3);
   --disabled: rgba(0, 0, 0, 0.38);
 
   /* Legacy Tokens (for backwards compatibility) */
@@ -119,15 +122,18 @@
   --border: #2a2a2a;
   --border-subtle: #333333;
   --border-strong: #404040;
-  --border-focus: #5fa57f;
+  --border-focus: #fe4a15;
   --border-error: #f87171;
-  --border-selected: #5fa57f;
+  --border-selected: #fe4a15;
 
   /* Brand Colors */
-  --primary: #5fa57f;
-  --primary-hover: #74b892;
-  --primary-active: #8acca5;
-  --primary-foreground: #0a0a0a;
+  --primary: #fe4a15;
+  --primary-hover: #ff6538;
+  --primary-active: #ff815c;
+  --primary-soft: #38150a;
+  --primary-soft-foreground: #ff815c;
+  --primary-border: #752611;
+  --primary-foreground: #ffffff;
   --accent: #d8a75b;
   --accent-foreground: #0a0a0a;
 
@@ -149,8 +155,8 @@
   /* Interactive States */
   --hover: rgba(255, 255, 255, 0.04);
   --active: rgba(255, 255, 255, 0.08);
-  --selected: rgba(95, 165, 127, 0.15);
-  --focus-ring: rgba(95, 165, 127, 0.4);
+  --selected: rgba(254, 74, 21, 0.15);
+  --focus-ring: rgba(254, 74, 21, 0.4);
   --disabled: rgba(255, 255, 255, 0.38);
 
   /* Legacy Tokens (for backwards compatibility) */
@@ -195,6 +201,9 @@
   --color-primary: var(--primary);
   --color-primary-hover: var(--primary-hover);
   --color-primary-active: var(--primary-active);
+  --color-primary-soft: var(--primary-soft);
+  --color-primary-soft-foreground: var(--primary-soft-foreground);
+  --color-primary-border: var(--primary-border);
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
