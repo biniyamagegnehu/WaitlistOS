@@ -141,6 +141,20 @@ export default function SignupConfigPage() {
     }
   };
 
+  // Prevent body scroll when multiple fields are present
+  useEffect(() => {
+    const hasMultipleFields = steps.some(step => step.fields && step.fields.length > 1);
+    if (hasMultipleFields) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [steps]);
+
   if (loading) {
     return (
       <PageContainer>
@@ -205,7 +219,7 @@ export default function SignupConfigPage() {
       </Card>
 
       {enabled && (
-        <div className="space-y-6">
+        <div className="space-y-6 min-h-0">
           <div className="flex gap-4">
             <Button variant="outline" onClick={addQuestionsStep}>
               <Plus className="mr-2 h-4 w-4" /> Add Questions Step
@@ -279,7 +293,7 @@ export default function SignupConfigPage() {
                             <div
                               {...provided.droppableProps}
                               ref={provided.innerRef}
-                              className="space-y-4"
+                              className="space-y-4 overflow-visible"
                             >
                               {step.fields?.map((field, fIndex) => (
                                 <Draggable key={field.id} draggableId={field.id} index={fIndex}>
