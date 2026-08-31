@@ -19,6 +19,8 @@ import { AnalyticsService } from '../analytics/analytics.service';
 import { WaitlistsService } from '../waitlists/waitlists.service';
 import { CustomFieldValidator } from './validators/custom-field.validator';
 import { resolveTrafficSource, sanitizeAttributionValue } from './source-attribution.util';
+import { ParticipantAccessService } from './participant-access.service';
+import { EmailsService } from '../emails/emails.service';
 
 type TransactionClient = Prisma.TransactionClient;
 
@@ -34,7 +36,9 @@ export class ParticipantsService {
     private readonly geoLocationService: GeoLocationService,
     private readonly deviceDetectionService: DeviceDetectionService,
     private readonly analyticsService: AnalyticsService,
-  ) {}
+    private readonly participantAccessService: ParticipantAccessService,
+    private readonly emailsService: EmailsService,
+  ) { }
 
   // ── Referral code generator ──────────────────────────────
   private async generateUniqueCode(): Promise<string> {
@@ -59,7 +63,7 @@ export class ParticipantsService {
     tx: TransactionClient,
   ): Promise<void> {
     this.logger.log(`Starting rerank for waitlist ${waitlistId}`);
-    
+
     await tx.$executeRaw(
       Prisma.sql`
         UPDATE "participants"
@@ -78,7 +82,7 @@ export class ParticipantsService {
           AND "participants".position IS DISTINCT FROM ranked.new_pos;
       `
     );
-    
+
     this.logger.log(`Rerank completed for waitlist ${waitlistId}`);
   }
 
@@ -147,6 +151,10 @@ export class ParticipantsService {
     if (existing) {
       if (existing.signupStatus === 'PARTIAL') {
         const referralLink = `/r/${existing.referralCode}`;
+        // Resend access email for partial (unverified) participants
+        if (existing.accessTokenHash) {
+          this.logger.debug(`Participant ${existing.id} already exists (PARTIAL), not regenerating token.`);
+        }
         return {
           success: true,
           id: existing.id,
@@ -156,6 +164,7 @@ export class ParticipantsService {
           referralCount: existing.referralCount,
           referralLink,
           signupStatus: existing.signupStatus,
+          requireEmailVerification: true,
         };
       }
       throw new ConflictException('EMAIL_ALREADY_JOINED');
@@ -481,23 +490,41 @@ export class ParticipantsService {
     // 5. Build referral link
     const referralLink = `/r/${participant.referralCode}`;
 
-    // 6. Queue Welcome Email
-    await this.emailsQueue.add(
-      'send-welcome-email',
-      {
-        email: participant.email,
-        waitlist: waitlist.name,
-        position: participant.position,
-        referralLink,
-      },
-      {
-        attempts: 1,
-        removeOnComplete: true,
-        removeOnFail: true,
-      },
-    );
+    // 6. Generate permanent access token and save to DB (hash only)
+    // Email verification is always required for all participants.
+    let rawAccessToken: string | undefined;
+    try {
+      rawAccessToken = this.participantAccessService.generateRawToken();
+      const tokenHash = this.participantAccessService.hashToken(rawAccessToken);
+      await this.prisma.participant.update({
+        where: { id: participant.id },
+        data: {
+          accessTokenHash: tokenHash,
+          accessTokenCreatedAt: new Date(),
+          emailVerified: false, // Always requires verification via magic URL click
+        },
+      });
+    } catch (err) {
+      this.logger.error(`Failed to generate/save access token for participant ${participant.id}: ${(err as Error).message}`);
+      // Non-fatal: participant is created; token can be regenerated later
+    }
 
-    // 7. Queue AI Referral Messages
+    // 7. Build magic URL and queue participant access email (if token generated)
+    const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+    if (rawAccessToken) {
+      const magicUrl = this.participantAccessService.buildMagicUrl(
+        frontendUrl,
+        waitlist.slug,
+        rawAccessToken,
+      );
+      this.emailsService.queueParticipantAccessEmail(
+        participant.email,
+        waitlist.name,
+        magicUrl,
+      );
+    }
+
+    // 9. Queue AI Referral Messages
     await this.aiTasksQueue.add(
       'generate-referral-messages',
       { participantId: participant.id },
@@ -508,7 +535,7 @@ export class ParticipantsService {
       },
     );
 
-    // 8. Track SIGNUP_SUBMITTED (and EMAIL_SUBMITTED) funnel events if sessionId provided
+    // 10. Track SIGNUP_SUBMITTED (and EMAIL_SUBMITTED) funnel events if sessionId provided
     if (sessionId) {
       try {
         await this.analyticsService.recordFunnelEvent(
@@ -536,6 +563,7 @@ export class ParticipantsService {
       referralCount: participant.referralCount,
       referralLink,
       signupStatus: participant.signupStatus,
+      requireEmailVerification: true, // Always required
     };
   }
 

@@ -20,6 +20,7 @@ import { getSubscriptionRenewedTemplate } from './templates/subscription-renewed
 import { getSubscriptionExpiredTemplate } from './templates/subscription-expired';
 import { getInvitationTemplate } from './templates/invitation';
 import { getReengagementEmailTemplate } from './templates/reengagement';
+import { getParticipantAccessEmailTemplate } from './templates/participant-access';
 import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
@@ -287,6 +288,16 @@ export class EmailsService implements OnModuleInit {
       .catch((e) => this.logger.error('Failed to queue re-engagement email: ' + e.message));
   }
 
+  queueParticipantAccessEmail(
+    email: string,
+    waitlistName: string,
+    magicUrl: string,
+  ) {
+    this.emailsQueue
+      .add('send-participant-access-email', { email, waitlistName, magicUrl })
+      .catch((e) => this.logger.error('Failed to queue participant access email: ' + e.message));
+  }
+
   // ── Direct Sending Methods (Called by Processor) ────────────────────────────
 
   private async executeSend(email: string, subject: string, html: string) {
@@ -462,6 +473,19 @@ export class EmailsService implements OnModuleInit {
 
   async sendReengagementEmail(data: { email: string; templateId: number; position: number; referralLink: string }) {
     const { subject, html } = getReengagementEmailTemplate(data.templateId, data.position, data.referralLink);
+    await this.executeSend(data.email, subject, html);
+  }
+
+  async sendParticipantAccessEmail(data: {
+    email: string;
+    waitlistName: string;
+    magicUrl: string;
+  }) {
+    const html = getParticipantAccessEmailTemplate(
+      data.waitlistName,
+      data.magicUrl,
+    );
+    const subject = `Confirm your email and access ${data.waitlistName}`;
     await this.executeSend(data.email, subject, html);
   }
 

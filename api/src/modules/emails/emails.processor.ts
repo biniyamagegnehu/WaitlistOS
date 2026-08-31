@@ -98,4 +98,11 @@ export class EmailsProcessor {
     this.logger.debug(`Processing send-reengagement-email job for ${job.data.email}...`);
     await this.emailsService.sendReengagementEmail(job.data);
   }
+
+  @Process('send-participant-access-email')
+  async handleSendParticipantAccessEmail(job: Job<any>) {
+    this.logger.debug(`Processing send-participant-access-email job for ${job.data.email}...`);
+    await this.emailsService.sendParticipantAccessEmail(job.data);
+  }
 }
+

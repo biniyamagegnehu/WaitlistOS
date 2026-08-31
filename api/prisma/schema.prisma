@@ -534,9 +534,9 @@ model WaitlistPageConfig {
 model WaitlistSignupConfig {
   id         String   @id @default(uuid())
   waitlistId String   @unique
-  enabled    Boolean  @default(false)
-  steps      Json     @default("[]")
-  createdAt  DateTime @default(now())
+  enabled                  Boolean  @default(false)
+  steps                    Json     @default("[]")
+  createdAt                DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   waitlist Waitlist @relation(fields: [waitlistId], references: [id], onDelete: Cascade)
@@ -641,6 +641,11 @@ model Participant {
   invitedAt DateTime?
 
   accessedAt DateTime?
+
+  emailVerified        Boolean   @default(false)
+  accessTokenHash      String?
+  accessTokenCreatedAt DateTime?
+  accessTokenRevokedAt DateTime?
 
   signupStatus SignupStatus @default(COMPLETED)
 
