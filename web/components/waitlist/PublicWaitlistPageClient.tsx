@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from "react";
 import Image from "next/image";
-import { CheckCircle, Users, Trophy, TrendingUp, Zap } from "lucide-react";
+import { Users, Trophy, TrendingUp } from "lucide-react";
 import { useParams, useSearchParams } from "next/navigation";
 import MultiStepSignupForm from "@/components/waitlist/MultiStepSignupForm";
 import { getPublicWaitlistBySlug } from "@/services/api";
@@ -12,16 +12,10 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/loader";
-import { ReferralSharePreview } from "@/components/waitlist/ReferralSharePreview";
-import { getShareableReferralUrl } from "@/lib/referral";
-import { ReferralMessages } from "@/components/waitlist/ReferralMessages";
-import { TeamSection } from "@/components/waitlist/TeamSection";
 import { UrgencyWidget } from "@/components/public/UrgencyWidget";
 import { trackFunnelEvent } from "./AnalyticsTracker";
 import { WaitlistPageRenderer } from "./WaitlistPageRenderer";
-import { SocialShareButtons } from "@/components/waitlist/SocialShareButtons";
-import { SkipLineCard } from "@/components/waitlist/SkipLineCard";
-import { PreOrderDepositCard } from "@/components/waitlist/PreOrderDepositCard";
+
 
 export default function PublicWaitlistPageClient() {
   const params = useParams();
@@ -125,215 +119,96 @@ export default function PublicWaitlistPageClient() {
   const isBuilderActive = !!waitlistData.pageConfig;
 
   if (joined) {
-    const fullReferralLink = getShareableReferralUrl(joined.referralCode, window.location.origin);
-
+    // Email verification is always required — show the improved "Check your email" page
     return (
-      <div className="w-full space-y-6 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
-          <CheckCircle className="h-8 w-8 text-success" />
-        </div>
-
-        <div>
-          <h1 className="mb-1 text-2xl font-semibold text-foreground">
-            You joined {waitlist.name}!
-          </h1>
-          <p className="text-sm text-muted-foreground">{joined.email}</p>
-        </div>
-
-        <div className="flex gap-4">
-          <Card className="flex-1">
-            <CardContent className="py-6 text-center">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Your Position
-              </p>
-              <p className="text-4xl font-semibold text-foreground">#{joined.position}</p>
-            </CardContent>
-          </Card>
-          <Card className="flex-1">
-            <CardContent className="py-6 text-center">
-              <p className="mb-1 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Referrals
-              </p>
-              <p className="text-4xl font-semibold text-foreground">{joined.referralCount}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Skip the Line Card */}
-        <SkipLineCard
-          participantId={joined.id}
-          waitlistId={waitlist.id}
-          current_position={joined.position}
-          hasPriority={false}
-        />
-        
-        {/* Pre-Order Deposit Card */}
-        <PreOrderDepositCard
-          participantId={joined.id}
-          waitlistId={waitlist.id}
-        />
-
-        <Card>
-          <CardContent className="space-y-3 p-5 text-left">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Share preview
-            </p>
-            <ReferralSharePreview
-              referralCode={joined.referralCode}
-              productName={waitlist.name}
-            />
-          </CardContent>
-        </Card>
-
-        {waitlist.rewards && waitlist.rewards.length > 0 && (
-          <Card>
-            <CardContent className="space-y-4 p-5 text-left">
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Rewards
-              </p>
-              
-              <div className="space-y-3">
-                {waitlist.rewards.map(reward => {
-                  const isUnlocked = joined.referralCount >= reward.milestone;
-                  return (
-                    <div key={reward.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-surface">
-                      <div className="mt-0.5">
-                        <CheckCircle className={`h-5 w-5 ${isUnlocked ? 'text-success' : 'text-muted-foreground/30'}`} />
-                      </div>
-                      <div>
-                        <p className={`font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
-                          {reward.title}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
-                          Refer {reward.milestone} people
-                        </p>
-                        {reward.description && (
-                          <p className="mt-1 text-sm text-muted-foreground/80">{reward.description}</p>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {(() => {
-                const unachieved = waitlist.rewards.filter(r => r.milestone > joined.referralCount);
-                const nextTarget = unachieved.length > 0 ? unachieved[0].milestone : waitlist.rewards[waitlist.rewards.length - 1].milestone;
-                const percent = Math.min(Math.round((joined.referralCount / nextTarget) * 100), 100);
-                
-                return (
-                  <div className="pt-2">
-                    <div className="flex justify-between text-xs mb-1">
-                      <span className="text-muted-foreground">Progress to next reward</span>
-                      <span className="font-medium text-foreground">{joined.referralCount} / {nextTarget}</span>
-                    </div>
-                    <div className="h-2 w-full bg-surface-muted rounded-full overflow-hidden">
-                      <div 
-                        className="h-full rounded-full transition-all duration-500"
-                        style={{ width: `${percent}%`, backgroundColor: primaryColor }}
-                      />
-                    </div>
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
-        )}
-
-        {waitlist.streakBonusesEnabled && joined.streak && (
-          <Card>
-            <CardContent className="space-y-4 p-5 text-left">
-              <div className="flex justify-between items-center">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  Streak Bonuses
-                </p>
-                <div className="flex items-center gap-1.5 text-sm font-medium">
-                  <span className="text-xl">🔥</span>
-                  <span className={joined.streak.active ? "text-orange-500" : "text-muted-foreground"}>
-                    {joined.streak.current} Day{joined.streak.current !== 1 ? 's' : ''}
-                  </span>
-                </div>
-              </div>
-
-              {joined.streak.referredToday ? (
-                <div className="rounded-lg border border-success/20 bg-success/10 p-3 text-sm text-success-foreground flex items-start gap-2">
-                  <CheckCircle className="h-4 w-4 mt-0.5 text-success" />
-                  <p>You've referred someone today! Keep it up tomorrow to maintain your streak.</p>
-                </div>
-              ) : (
-                <div className="rounded-lg border border-warning/20 bg-warning/10 p-3 text-sm text-warning-foreground">
-                  <p>⚠️ Refer one friend today to {joined.streak.active ? 'keep your streak alive' : 'start your streak'}!</p>
-                </div>
-              )}
-
-              {waitlist.streakMilestones && waitlist.streakMilestones.length > 0 && (
-                <div className="space-y-3 mt-4">
-                  <p className="text-xs font-medium text-muted-foreground">Milestones</p>
-                  {waitlist.streakMilestones.map(milestone => {
-                    const isUnlocked = joined.streak!.unlockedRewards?.some(r => r.days === milestone.days);
-                    return (
-                      <div key={milestone.id} className="flex items-start gap-3 p-3 rounded-lg border border-border bg-surface">
-                        <div className="mt-0.5">
-                          <CheckCircle className={`h-5 w-5 ${isUnlocked ? 'text-success' : 'text-muted-foreground/30'}`} />
-                        </div>
-                        <div>
-                          <p className={`font-medium ${isUnlocked ? 'text-foreground' : 'text-muted-foreground'}`}>
-                            {milestone.title}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            {milestone.days} Day Streak
-                          </p>
-                          {milestone.description && (
-                            <p className="mt-1 text-sm text-muted-foreground/80">{milestone.description}</p>
-                          )}
-                        </div>
-                        <div className="ml-auto text-right">
-                           <Badge variant="info">+{milestone.value} Boost</Badge>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {waitlist.teamReferralsEnabled && (
-          <TeamSection
-            participantId={joined.id}
-            waitlistId={waitlist.id}
-            primaryColor={primaryColor}
-          />
-        )}
-
-        <Card>
-          <CardContent className="space-y-3 p-5 text-left">
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-              Share to move up
-            </p>
-            <p className="break-all font-mono text-sm text-foreground">{fullReferralLink}</p>
-            <SocialShareButtons
-              waitlistSlug={waitlist.slug}
-              referralCode={joined.referralCode}
-              title={`Join ${waitlist.name}`}
-              onShare={trackReferralShare}
-            />
-            <Button
-              onClick={() => handleCopy(fullReferralLink)}
-              className="w-full"
-              style={{ backgroundColor: primaryColor }}
+      <div className="w-full max-w-md mx-auto">
+        {/* Animated envelope icon */}
+        <div className="flex flex-col items-center text-center space-y-5">
+          <div className="relative flex h-24 w-24 items-center justify-center rounded-full bg-primary/10">
+            {/* Outer pulse ring */}
+            <span className="absolute inset-0 animate-ping rounded-full opacity-20 bg-primary" />
+            <svg
+              className="h-12 w-12 text-primary"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.4}
             >
-              {copied ? "Copied!" : "Copy referral link"}
-            </Button>
-          </CardContent>
-        </Card>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21.75 9v.906a2.25 2.25 0 01-1.183 1.981l-6.478 3.488M2.25 9v.906a2.25 2.25 0 001.183 1.981l6.478 3.488m8.839 2.51l-4.66-2.51m0 0l-1.023-.55a2.25 2.25 0 00-2.134 0l-1.023.55m0 0l-4.661 2.51m16.5 1.615a2.25 2.25 0 01-2.25 2.25h-15a2.25 2.25 0 01-2.25-2.25V8.844a2.25 2.25 0 011.183-1.98l7.5-4.04a2.25 2.25 0 012.134 0l7.5 4.04a2.25 2.25 0 011.183 1.98V19.5z"
+              />
+            </svg>
+          </div>
 
-        {/* AI Referral Messages */}
-        <ReferralMessages participantId={joined.id} primaryColor={primaryColor} />
+          <div className="space-y-2">
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">
+              Check your inbox
+            </h1>
+            <p className="text-sm text-muted-foreground leading-relaxed max-w-xs mx-auto">
+              We sent a verification link to{" "}
+              <span className="font-semibold text-foreground">{joined.email}</span>.
+              Click it to access your personal waitlist page.
+            </p>
+          </div>
+        </div>
+
+        {/* Steps */}
+        <div className="mt-8 space-y-3">
+          {[
+            {
+              step: "1",
+              title: "Open the email we sent you",
+              detail: `Subject: "Confirm your email and access ${waitlist.name}"`,
+              done: false,
+            },
+            {
+              step: "2",
+              title: "Click \"Verify Email & View My Spot\"",
+              detail: "You'll be taken directly to your personal waitlist dashboard.",
+              done: false,
+            },
+            {
+              step: "3",
+              title: "Bookmark your personal link",
+              detail: "Your link is permanent — return anytime, no password needed.",
+              done: false,
+            },
+          ].map(({ step, title, detail }) => (
+            <div
+              key={step}
+              className="flex items-start gap-4 rounded-xl border border-border bg-surface p-4 text-left"
+            >
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-bold bg-primary text-primary-foreground">
+                {step}
+              </div>
+              <div className="min-w-0">
+                <p className="text-sm font-semibold text-foreground">{title}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{detail}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Didn't receive it nudge */}
+        <p className="mt-6 text-center text-xs text-muted-foreground">
+          Didn&apos;t get it? Check your spam folder.
+        </p>
+
+        {/* Security note */}
+        <div className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-surface-muted/60 p-3 text-left">
+          <svg className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+          </svg>
+          <p className="text-xs text-muted-foreground">
+            Your personal link is a secure bearer credential. Keep it private — anyone with it can view your waitlist status.
+          </p>
+        </div>
       </div>
     );
   }
+
 
   if (isBuilderActive) {
     return (

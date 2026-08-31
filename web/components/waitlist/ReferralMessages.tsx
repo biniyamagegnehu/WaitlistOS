@@ -36,14 +36,17 @@ export function ReferralMessages({ participantId, primaryColor = "var(--primary)
   };
 
   useEffect(() => {
+    let pollCount = 0;
     let intervalId: NodeJS.Timeout;
 
     const poll = async () => {
       const success = await fetchMessages();
       if (success) {
         setLoading(false);
+      } else if (pollCount > 15) { // 30 seconds timeout
+        setLoading(false);
       } else {
-        // If not ready, poll every 2 seconds
+        pollCount++;
         intervalId = setTimeout(poll, 2000);
       }
     };

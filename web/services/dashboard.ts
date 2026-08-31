@@ -18,8 +18,9 @@ export async function getSignupConfig(waitlistId: string) {
 
 export async function updateSignupConfig(waitlistId: string, enabled: boolean, steps: any[]) {
   const response = await api.patch<{ success: boolean; data: any }>(`/waitlists/${waitlistId}/signup-config`, { enabled, steps });
-  return response.data.data;
+  return response.data;
 }
+
 
 export async function savePageBuilder(waitlistId: string, config: PageConfig, version: number): Promise<PageBuilderResponse> {
   const response = await api.patch<{ success: boolean; data: PageBuilderResponse }>(`/waitlists/${waitlistId}/page-builder`, { config, version });

@@ -55,7 +55,9 @@ export interface JoinResponse {
   unlockedRewards?: UnlockedReward[];
   streak?: ParticipantStreak;
   signupStatus?: 'PARTIAL' | 'COMPLETED';
+  requireEmailVerification?: boolean;
 }
+
 
 export interface JoinWaitlistInput {
   waitlistSlug: string;

@@ -40,6 +40,26 @@ export async function updateSignupProgress(
   return response.data;
 }
 
+export async function getParticipantByToken(
+  waitlistSlug: string,
+  token: string,
+): Promise<{ success: boolean; data: any } | null> {
+  try {
+    const response = await api.get<{ success: boolean; data: any }>(
+      `/participants/access/${waitlistSlug}/${token}`,
+    );
+    return response.data;
+  } catch (error: unknown) {
+    if (axios.isAxiosError(error)) {
+      const status = error.response?.status;
+      if (status === 404 || status === 403) {
+        return null;
+      }
+    }
+    throw error;
+  }
+}
+
 function isJoinErrorCode(value: unknown): value is JoinErrorCode {
   return (
     value === "WAITLIST_NOT_FOUND" ||
@@ -49,3 +69,4 @@ function isJoinErrorCode(value: unknown): value is JoinErrorCode {
     value === "SERVER_ERROR"
   );
 }
+
