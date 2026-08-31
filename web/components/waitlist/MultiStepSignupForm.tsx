@@ -196,7 +196,26 @@ export default function MultiStepSignupForm({
     );
     setCustomFieldErrors(result.errors);
     if (!result.valid) {
-      toast.error("Please correct the errors in the form.");
+      // Find the first field with an error to scroll to and show exact error
+      const firstErrorFieldId = (questionsStep.fields as CustomFieldConfig[]).find((f: CustomFieldConfig) => result.errors[f.id])?.id;
+      
+      if (firstErrorFieldId) {
+        toast.error(result.errors[firstErrorFieldId]);
+        
+        // Use timeout to allow React to render any error states before scrolling/focusing
+        setTimeout(() => {
+          const el = document.getElementById(`field_wrapper_${firstErrorFieldId}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+            const focusable = el.querySelector("input, textarea, select, button") as HTMLElement;
+            if (focusable) {
+              focusable.focus({ preventScroll: true });
+            }
+          }
+        }, 50);
+      } else {
+        toast.error("Please correct the errors in the form.");
+      }
     }
     return result.valid;
   };
@@ -329,7 +348,7 @@ export default function MultiStepSignupForm({
             
             <div className="space-y-8">
               {(questionsStep.fields || []).map((field: any) => (
-                <div key={field.id} className="animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both" style={{ animationDelay: '100ms' }}>
+                <div key={field.id} id={`field_wrapper_${field.id}`} className="animate-in fade-in slide-in-from-bottom-2 duration-500 fill-mode-both" style={{ animationDelay: '100ms' }}>
                   <SignupFieldRenderer
                     field={field}
                     value={customFieldValues[field.id]}
