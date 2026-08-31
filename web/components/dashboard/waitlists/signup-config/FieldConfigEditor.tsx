@@ -160,10 +160,12 @@ export function FieldConfigEditor({ field, onChange, onDelete, errors = {}, drag
 
         <div className="flex items-center gap-4 shrink-0">
           <div className="flex items-center gap-2">
-            <label htmlFor={requiredSwitchId} className="text-xs font-medium cursor-pointer text-muted-foreground hover:text-foreground transition-colors">
+            <label htmlFor={requiredSwitchId} className={cn("text-xs font-medium transition-colors", field.type === "CONSENT" ? "text-muted-foreground/50 cursor-not-allowed" : "cursor-pointer text-muted-foreground hover:text-foreground")}>
               Required
             </label>
-            <Switch id={requiredSwitchId} checked={field.required} onChange={(c) => updateField({ required: c })} />
+            <div className={cn(field.type === "CONSENT" && "pointer-events-none opacity-50")}>
+              <Switch id={requiredSwitchId} checked={field.type === "CONSENT" ? true : field.required} onChange={(c) => updateField({ required: c })} />
+            </div>
           </div>
           <Button
             variant="ghost"

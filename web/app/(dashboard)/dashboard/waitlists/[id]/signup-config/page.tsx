@@ -114,7 +114,7 @@ export default function SignupConfigPage() {
       id: crypto.randomUUID(), // stable ID
       type: fieldReg.type,
       label: fieldReg.name,
-      required: false,
+      required: fieldReg.type === "CONSENT" ? true : false,
       ...fieldReg.defaultConfig,
     } as CustomFieldConfig));
 
