@@ -223,7 +223,7 @@ export default function PublicWaitlistPageClient() {
 
   // Render original default logic
   return (
-    <div className="mx-auto w-full max-w-3xl space-y-8 pb-16">
+    <div className="mx-auto w-full max-w-4xl space-y-10 pb-16">
       {/* Section 1: Hero Card */}
       <Card className="overflow-hidden shadow-sm">
         <CardContent className="p-8 text-center space-y-6">
@@ -258,8 +258,7 @@ export default function PublicWaitlistPageClient() {
           <p className="mx-auto max-w-2xl text-lg text-muted-foreground">{copy.subheadline}</p>
           <Button 
             size="lg" 
-            className="mt-4 rounded-full px-8 font-semibold shadow-sm hover:opacity-90"
-            style={{ backgroundColor: primaryColor }}
+            className="mt-4 rounded-full px-8 font-semibold shadow-sm hover:bg-primary/90"
             onClick={() => document.getElementById("join-form")?.scrollIntoView({ behavior: "smooth" })}
           >
             {copy.cta}

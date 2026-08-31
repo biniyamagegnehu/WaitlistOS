@@ -12,7 +12,7 @@ export default function WaitlistLayout({
       </header>
 
       <main className="flex flex-1 flex-col items-center px-4 py-10 sm:py-16">
-        <div className="w-full max-w-lg">{children}</div>
+        <div className="w-full max-w-5xl">{children}</div>
       </main>
     </div>
   );

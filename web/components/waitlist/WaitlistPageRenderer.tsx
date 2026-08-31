@@ -54,7 +54,7 @@ export function WaitlistPageRenderer({
   const configuredFaqs = parseItems<any>(getSectionContent("FAQ").items) || [];
   const featuresContent = getSectionContent("FEATURES");
   const featureColumns = Math.min(Math.max(Number(featuresContent.columns) || 3, 1), 4);
-  const featureGridClass = { 1: "sm:grid-cols-1", 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-4" }[featureColumns as 1|2|3|4];
+  const featureGridClass = { 1: "sm:grid-cols-1", 2: "sm:grid-cols-2", 3: "sm:grid-cols-3", 4: "sm:grid-cols-4" }[featureColumns as 1 | 2 | 3 | 4];
 
   const renderSection = (type: string) => {
     switch (type) {
