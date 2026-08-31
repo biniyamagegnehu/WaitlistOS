@@ -117,7 +117,7 @@ export function FieldPickerModal({ isOpen, onClose, onSelect }: FieldPickerModal
             );
           })}
         </DialogBody>
-        <div className="flex justify-end gap-3 pt-4 border-t">
+        <div className="flex justify-end gap-3 pt-6 pb-6 pr-6 border-t">
           <Button variant="outline" onClick={handleClose}>
             Cancel
           </Button>
