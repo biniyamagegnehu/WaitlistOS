@@ -2,9 +2,9 @@
 
 import React from "react";
 import { useRouter } from "next/navigation";
-import { XCircle, ArrowLeft } from "lucide-react";
+import { XCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { BackButton } from "@/components/navigation/back-button";
 
 export default function PreOrderCancelContent() {
   const router = useRouter();
@@ -41,10 +41,12 @@ export default function PreOrderCancelContent() {
             </p>
           </div>
 
-          <Button onClick={handleReturn} variant="outline" className="w-full">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Return to Waitlist
-          </Button>
+          <BackButton 
+            onClick={handleReturn} 
+            variant="outline" 
+            label="Return to Waitlist"
+            className="w-full justify-center" 
+          />
         </CardContent>
       </Card>
     </div>

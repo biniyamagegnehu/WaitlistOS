@@ -14,6 +14,7 @@ import { Alert } from "@/components/ui/alert";
 import { getApiErrorMessage } from "@/lib/errors";
 import { useAuth } from "@/contexts/auth-context";
 import { routes } from "@/lib/routes";
+import { BackButton } from "@/components/navigation/back-button";
 
 export default function TwoFactorSetupPage() {
   const router = useRouter();
@@ -174,13 +175,7 @@ export default function TwoFactorSetupPage() {
             )}
           </AuthForm>
 
-          <Button
-            variant="ghost"
-            onClick={() => setStep("setup")}
-            className="w-full"
-          >
-            Back
-          </Button>
+          <BackButton onClick={() => setStep("setup")} label="Back" className="w-full justify-center" />
         </div>
       )}
     </AuthLayout>

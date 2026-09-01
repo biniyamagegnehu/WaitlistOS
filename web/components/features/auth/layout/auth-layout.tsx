@@ -1,10 +1,10 @@
 "use client";
 
 import * as React from "react";
-import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { BrandLogo } from "@/components/brand/logo";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { BackButton } from "@/components/navigation/back-button";
 
 interface AuthLayoutProps {
   children: React.ReactNode;
@@ -52,13 +52,8 @@ export function AuthLayout({
         </Card>
 
         {showBackLink && (
-          <div className="mt-6 text-center">
-            <Link
-              href={backLinkHref}
-              className="text-sm text-muted-foreground transition-colors hover:text-foreground"
-            >
-              {backLinkText}
-            </Link>
+          <div className="mt-6 flex justify-center">
+            <BackButton href={backLinkHref} label={backLinkText} />
           </div>
         )}
       </div>

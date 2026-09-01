@@ -12,6 +12,7 @@ import { getApiErrorMessage } from "@/lib/errors";
 import { useAuth } from "@/contexts/auth-context";
 import { tokenStorage } from "@/lib/axios";
 import { routes } from "@/lib/routes";
+import { BackButton } from "@/components/navigation/back-button";
 
 export default function VerifyEmailContent() {
   const router = useRouter();
@@ -108,11 +109,7 @@ export default function VerifyEmailContent() {
               <Button onClick={handleResend} variant="secondary">
                 Request new verification email
               </Button>
-              <Link href={routes.login} className="w-full">
-                <Button variant="ghost" className="w-full">
-                  Back to login
-                </Button>
-              </Link>
+              <BackButton href={routes.login} label="Back to login" className="w-full justify-center" />
             </div>
           </div>
         )}
