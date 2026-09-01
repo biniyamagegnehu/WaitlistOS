@@ -12,6 +12,7 @@ import { getPageBuilder, publishPageBuilder, savePageBuilder, getDashboardWaitli
 import { getPublicWaitlistBySlug } from "@/services/api";
 import { defaultSection, PAGE_SECTION_TYPES, sectionLabel, singletonSections, type PageConfig, type PageSection, type PageSectionType } from "@/types/page-builder";
 import { routes } from "@/lib/routes";
+import { PageContainer } from "@/components/patterns/page-container";
 import { uploadFile } from "@/services/files";
 import {
   countErrors,
@@ -269,9 +270,11 @@ export default function PageBuilderPage() {
 
   if (!config) {
     return (
-      <div className="py-16 text-center text-sm text-muted-foreground">
-        {state === "failed" ? "Unable to load the page builder." : "Loading builder…"}
-      </div>
+      <PageContainer maxWidth="full">
+        <div className="py-16 text-center text-sm text-muted-foreground">
+          {state === "failed" ? "Unable to load the page builder." : "Loading builder…"}
+        </div>
+      </PageContainer>
     );
   }
 
@@ -300,7 +303,7 @@ export default function PageBuilderPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <PageContainer maxWidth="full" className="space-y-5">
       {/* ── Confirmation Modal ── */}
       {confirmAction && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
@@ -513,7 +516,7 @@ export default function PageBuilderPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageContainer>
   );
 }
 

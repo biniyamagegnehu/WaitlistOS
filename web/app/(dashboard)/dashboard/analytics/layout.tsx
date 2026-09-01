@@ -6,6 +6,7 @@ import { BarChart3, Globe2, GitBranch, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { routes } from "@/lib/routes";
 import { PageHeader } from "@/components/patterns/page-header";
+import { PageContainer } from "@/components/patterns/page-container";
 
 const items = [
   { label: "Source Attribution", href: routes.analyticsSourceAttribution, icon: BarChart3 },
@@ -19,7 +20,7 @@ export default function AnalyticsLayout({ children }: { children: React.ReactNod
   const searchParams = useSearchParams();
   const activeTab = searchParams.get("tab") ?? "source";
   return (
-    <div className="space-y-6">
+    <PageContainer className="space-y-6">
       <PageHeader
         title="Analytics"
         description="Understand performance across all your waitlists or one selected waitlist."
@@ -47,6 +48,6 @@ export default function AnalyticsLayout({ children }: { children: React.ReactNod
         })}
       </nav>
       {children}
-    </div>
+    </PageContainer>
   );
 }

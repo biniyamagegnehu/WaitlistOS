@@ -1,5 +1,6 @@
 "use client";
 
+import { PageContainer } from "@/components/patterns/page-container";
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -94,7 +95,7 @@ export default function ShareWaitlistPage() {
   const embedCode = getEmbedCode(waitlist.slug);
 
   return (
-    <div className="space-y-6">
+    <PageContainer className="space-y-6">
       <Link
         href={routes.waitlist(waitlist.id)}
         className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
@@ -226,6 +227,6 @@ export default function ShareWaitlistPage() {
           </ol>
         </CardContent>
       </Card>
-    </div>
+    </PageContainer>
   );
 }
