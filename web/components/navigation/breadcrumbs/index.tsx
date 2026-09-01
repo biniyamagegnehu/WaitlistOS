@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { ChevronRight, Home } from "lucide-react";
 import { cn } from "@/lib/cn";
 import { routes } from "@/lib/routes";
@@ -42,80 +41,12 @@ export function BreadcrumbProvider({ children }: { children: React.ReactNode }) 
   );
 }
 
-function buildSegments(pathname: string): BreadcrumbSegment[] {
-  const normalizedPath = pathname.replace(
-    /^\/dashboard\/dashboard(?=\/|$)/,
-    "/dashboard"
-  );
-  const parts = normalizedPath.split("/").filter(Boolean);
-
-  const labels: Record<string, string> = {
-    dashboard: "Dashboard",
-    waitlists: "Waitlists",
-    settings: "Settings",
-    profile: "Settings",
-    security: "Settings",
-    sessions: "Settings",
-    create: "Create",
-  };
-
-  const crumbs: BreadcrumbSegment[] = [];
-
-  parts.forEach((part, index) => {
-    if (part === "dashboard" && index === 0) return;
-
-    const href = "/" + parts.slice(0, index + 1).join("/");
-
-    if (part === "profile" || part === "security" || part === "sessions") {
-      if (!crumbs.some((crumb) => crumb.label === "Settings")) {
-        crumbs.push({ label: "Settings", href: routes.settings });
-      }
-      return;
-    }
-
-    if (labels[part]) {
-      crumbs.push({ label: labels[part], href: index < parts.length - 1 ? href : undefined });
-      return;
-    }
-
-    // If this segment is literally "participants" and comes after a waitlist ID,
-    // it should link back to the waitlist detail page (which shows the participant table).
-    if (part === "participants") {
-      // The waitlist ID is the part before this one
-      const waitlistId = parts[index - 1];
-      const waitlistHref = `/dashboard/waitlists/${waitlistId}`;
-      crumbs.push({ label: "Participants", href: waitlistHref });
-      return;
-    }
-
-    // If the previous segment is "participants", this is a participant detail page — show it as last crumb
-    if (parts[index - 1] === "participants") {
-      crumbs.push({ label: "Participant Details" });
-      return;
-    }
-
-    // Legacy: if the part comes right after a waitlist ID (e.g. old pattern), label it "Participants"
-    if (parts[index - 1] === "waitlists") {
-      crumbs.push({ label: "Participants", href: index < parts.length - 1 ? href : undefined });
-      return;
-    }
-
-    crumbs.push({
-      label: part.replace(/-/g, " ").replace(/\b\w/g, (char) => char.toUpperCase()),
-      href: index < parts.length - 1 ? href : undefined,
-    });
-  });
-
-  return crumbs;
-}
-
 export function Breadcrumbs({ segments, className }: BreadcrumbsProps) {
-  const pathname = usePathname();
   const context = React.useContext(BreadcrumbContext);
   const contextSegments = context?.segments;
-  const crumbs = segments ?? contextSegments ?? buildSegments(pathname);
+  const crumbs = segments ?? contextSegments;
 
-  if (crumbs.length === 0) return null;
+  if (!crumbs || crumbs.length === 0) return null;
 
   return (
     <nav

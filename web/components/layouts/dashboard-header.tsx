@@ -3,7 +3,6 @@
 import * as React from "react";
 import { Menu, Plus } from "lucide-react";
 import Link from "next/link";
-import { Breadcrumbs } from "@/components/navigation/breadcrumbs";
 import { UserMenu } from "@/components/navigation/user-menu";
 import { Button } from "@/components/ui/button";
 import { routes } from "@/lib/routes";
@@ -26,7 +25,6 @@ export function DashboardHeader({ onMobileMenuToggle }: DashboardHeaderProps) {
       </button>
 
       <div className="min-w-0 flex-1">
-        <Breadcrumbs />
       </div>
 
       <div className="flex shrink-0 items-center gap-1">
