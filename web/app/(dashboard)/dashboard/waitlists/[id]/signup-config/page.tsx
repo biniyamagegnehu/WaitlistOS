@@ -1,8 +1,6 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
-import { routes } from "@/lib/routes";
-import { BackButton } from "@/components/navigation/back-button";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { getSignupConfig, updateSignupConfig } from "@/services/dashboard";
@@ -10,15 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert } from "@/components/ui/alert";
 import { LoadingState } from "@/components/patterns/loading-state";
-import { ErrorState } from "@/components/patterns/error-state";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
+import { BackButton } from "@/components/navigation/back-button";
 import { Loader2, Plus, GripVertical, Trash2, AlertCircle } from "lucide-react";
 import { CustomFieldConfig, FieldRegistryEntry } from "@/types/custom-fields";
 import { FieldPickerModal } from "@/components/dashboard/waitlists/signup-config/FieldPickerModal";
 import { FieldConfigEditor } from "@/components/dashboard/waitlists/signup-config/FieldConfigEditor";
 import { validateSignupSteps } from "@/lib/signup-config-validation";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
+import { routes } from "@/lib/routes";
 
 type Step = {
   id: string;
@@ -173,6 +172,11 @@ export default function SignupConfigPage() {
       <PageHeader
         title="Multi-Step Signup"
         description="Configure additional qualification steps and referrals."
+        breadcrumbs={[
+          { label: "Waitlists", href: routes.waitlists },
+          { label: "Waitlist", href: routes.waitlist(waitlistId) },
+          { label: "Signup Config" },
+        ]}
         primaryAction={
           <div className="flex items-center gap-3">
             {enabled && !validationResult.valid && (
