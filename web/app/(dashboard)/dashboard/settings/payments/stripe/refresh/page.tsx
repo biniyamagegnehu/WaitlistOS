@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { PageContainer } from "@/components/patterns/page-container";
 
 export default function StripeRefreshPage() {
   const router = useRouter();
@@ -24,12 +25,14 @@ export default function StripeRefreshPage() {
   }, [router]);
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      <h2 className="text-xl font-semibold">Refreshing connection...</h2>
-      <p className="text-muted-foreground text-center max-w-sm">
-        Your onboarding link expired. We are generating a new one and redirecting you back to Stripe.
-      </p>
-    </div>
+    <PageContainer>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <h2 className="text-xl font-semibold">Refreshing connection...</h2>
+        <p className="text-muted-foreground text-center max-w-sm">
+          Your onboarding link expired. We are generating a new one and redirecting you back to Stripe.
+        </p>
+      </div>
+    </PageContainer>
   );
 }
