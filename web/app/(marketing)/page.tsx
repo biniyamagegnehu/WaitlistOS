@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { PageContainer } from "@/components/patterns/page-container";
 import { HeroSection } from "@/components/landing/hero-section";
 import { SocialProof } from "@/components/landing/social-proof";
 import { CoreCapabilities } from "@/components/landing/core-capabilities";
@@ -24,7 +25,7 @@ export default function HomePage() {
 
       {/* Visual Storytelling - Create Waitlist */}
       <section className="py-16 sm:py-24" id="how-it-works">
-        <div className="mx-auto max-w-7xl px-4">
+        <PageContainer withoutVerticalPadding>
           <ProductShowcase
             image={<DashboardMockup variant="waitlist" />}
             title="Create Your Waitlist in Minutes"
@@ -36,12 +37,12 @@ export default function HomePage() {
               "SEO-optimized pages"
             ]}
           />
-        </div>
+        </PageContainer>
       </section>
 
       {/* Visual Storytelling - Referral System */}
       <section className="bg-surface py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4">
+        <PageContainer withoutVerticalPadding>
           <ProductShowcase
             reverse
             image={<DashboardMockup variant="referrals" />}
@@ -54,12 +55,12 @@ export default function HomePage() {
               "Customizable reward tiers"
             ]}
           />
-        </div>
+        </PageContainer>
       </section>
 
       {/* Visual Storytelling - Analytics */}
       <section className="py-16 sm:py-24">
-        <div className="mx-auto max-w-7xl px-4">
+        <PageContainer withoutVerticalPadding>
           <ProductShowcase
             image={<DashboardMockup variant="analytics" />}
             title="Track Growth with Powerful Analytics"
@@ -71,12 +72,12 @@ export default function HomePage() {
               "Export to CSV anytime"
             ]}
           />
-        </div>
+        </PageContainer>
       </section>
 
       {/* Visual Storytelling - Open The Gates */}
       <section className="bg-surface py-16 sm:py-24" id="open-the-gates">
-        <div className="mx-auto max-w-7xl px-4">
+        <PageContainer withoutVerticalPadding>
           <ProductShowcase
             reverse
             image={<DashboardMockup variant="gates" />}
@@ -89,7 +90,7 @@ export default function HomePage() {
               "Manage onboarding seamlessly"
             ]}
           />
-        </div>
+        </PageContainer>
       </section>
 
       <PricingSection />

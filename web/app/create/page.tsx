@@ -37,6 +37,7 @@ import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
 import { cn } from "@/lib/cn";
 import toast from "react-hot-toast";
 import Link from "next/link";
+import { PageContainer } from "@/components/patterns/page-container";
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -563,8 +564,8 @@ export default function CreateWaitlistPage() {
   // Manual success screen
   if (result) {
     return (
-      <div className="min-h-screen bg-background px-4 py-12">
-        <div className="mx-auto max-w-2xl space-y-6">
+      <div className="min-h-screen bg-background">
+        <PageContainer maxWidth="sm" className="py-12">
           <Alert variant="success" title="Waitlist created">
             Your hosted page and widget embed code are ready.
           </Alert>
@@ -645,14 +646,14 @@ export default function CreateWaitlistPage() {
               </div>
             </CardContent>
           </Card>
-        </div>
+        </PageContainer>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
-      <div className="mx-auto max-w-xl">
+    <div className="min-h-screen bg-background">
+      <PageContainer maxWidth="sm" className="py-12">
         {/* Header */}
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-semibold text-foreground">
@@ -729,7 +730,7 @@ export default function CreateWaitlistPage() {
             )}
           </div>
         )}
-      </div>
+      </PageContainer>
     </div>
   );
 }

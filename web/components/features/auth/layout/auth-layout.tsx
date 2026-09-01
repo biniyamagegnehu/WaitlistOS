@@ -24,7 +24,10 @@ export function AuthLayout({
   backLinkText = "Back to home",
 }: AuthLayoutProps) {
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8">
+    <div 
+      /* Outer gutter aligns with --page-gutter-x (px-4 sm:px-6 lg:px-8) */
+      className="relative flex min-h-screen items-center justify-center bg-background px-4 py-12 sm:px-6 lg:px-8"
+    >
       <div className="absolute right-4 top-4">
         <ThemeToggle size="sm" />
       </div>

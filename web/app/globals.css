@@ -79,6 +79,17 @@
   --space-16: 64px;
   --space-20: 80px;
 
+  /* ── Page Gutter ─────────────────────────────────────────────
+   * Canonical horizontal page-level spacing.
+   * This is the single source of truth for outer page gutters.
+   * Consumed by PageContainer — do NOT add manual px-* on pages.
+   *
+   * Mobile  (< 640px):  16px  (--space-4)
+   * Tablet  (≥ 640px):  24px  (--space-6)
+   * Desktop (≥ 1024px): 32px  (--space-8)
+   * ─────────────────────────────────────────────────────────── */
+  --page-gutter-x: var(--space-4);
+
   /* Radius Scale */
   --radius-xs: 4px;
   --radius-sm: 6px;
@@ -176,6 +187,9 @@
 }
 
 @theme inline {
+  /* Page Gutter Token */
+  --page-gutter-x: var(--page-gutter-x);
+
   /* Background Colors */
   --color-background: var(--background);
   --color-surface: var(--surface);
@@ -248,6 +262,23 @@
 
   /* Font */
   --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+}
+
+/* ── Page Gutter — Responsive overrides ─────────────────────────────────
+ * Upgrades --page-gutter-x at each major breakpoint.
+ * These match Tailwind's sm (640px) and lg (1024px) breakpoints exactly
+ * so that PageContainer's px-4 sm:px-6 lg:px-8 stays in sync.
+ * ─────────────────────────────────────────────────────────────────────── */
+@media (min-width: 640px) {
+  :root {
+    --page-gutter-x: var(--space-6); /* 24px */
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --page-gutter-x: var(--space-8); /* 32px */
+  }
 }
 
 body {

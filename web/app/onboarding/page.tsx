@@ -9,6 +9,7 @@ import { getApiErrorMessage } from "@/lib/errors";
 import { CompanyProfileForm } from "@/components/company-profile/CompanyProfileForm";
 import type { CompanyProfileFormData } from "@/lib/validations/company-profile";
 import { LoadingScreen } from "@/components/layouts/loading-screen";
+import { PageContainer } from "@/components/patterns/page-container";
 
 export default function OnboardingPage() {
   const router = useRouter();
@@ -80,8 +81,8 @@ export default function OnboardingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-background px-4 py-12">
-      <div className="mx-auto max-w-xl">
+    <div className="min-h-screen bg-background">
+      <PageContainer maxWidth="sm" className="py-12">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-semibold text-foreground">
             {isEditMode ? "Edit company profile" : "Complete your company profile"}
@@ -101,7 +102,7 @@ export default function OnboardingPage() {
           submitButtonText={isEditMode ? "Update profile" : "Complete profile"}
           serverError={serverError}
         />
-      </div>
+      </PageContainer>
     </div>
   );
 }

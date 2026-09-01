@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { PageContainer } from "@/components/patterns/page-container";
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { useInitializePayment, usePublicPlans } from "@/hooks/use-billing";
@@ -85,7 +86,7 @@ export default function PricingPageClient() {
 
   return (
     <div className="flex-1">
-      <div className="mx-auto max-w-6xl px-4 py-24 text-center">
+      <PageContainer withoutVerticalPadding className="py-24 text-center">
         <h1 className="mb-4 text-4xl font-semibold text-foreground">Simple pricing</h1>
         <p className="mb-16 text-lg text-muted-foreground">
           Start free. Upgrade when you are ready to scale.
@@ -155,7 +156,7 @@ export default function PricingPageClient() {
             Manage billing
           </Link>
         </p>
-      </div>
+      </PageContainer>
 
       <Dialog open={!!selectedPlan} onClose={() => setSelectedPlan(null)}>
         <DialogContent>

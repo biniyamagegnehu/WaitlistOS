@@ -1,4 +1,5 @@
 import { BrandLogo } from "@/components/brand/logo";
+import { PageContainer } from "@/components/patterns/page-container";
 
 export default function WaitlistLayout({
   children,
@@ -11,8 +12,10 @@ export default function WaitlistLayout({
         <BrandLogo size="sm" />
       </header>
 
-      <main className="flex flex-1 flex-col items-center px-4 py-10 sm:py-16">
-        <div className="w-full max-w-5xl">{children}</div>
+      <main className="flex flex-1 flex-col">
+        <PageContainer maxWidth="md" className="py-10 sm:py-16">
+          {children}
+        </PageContainer>
       </main>
     </div>
   );
