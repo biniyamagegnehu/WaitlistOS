@@ -13,6 +13,7 @@ import { ErrorState } from "@/components/patterns/error-state";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
 import { WaitlistForm } from "@/components/waitlist/WaitlistForm";
+import { BackButton } from "@/components/navigation/back-button";
 import { getDashboardWaitlistDetail, updateWaitlist } from "@/services/dashboard";
 import type { DashboardWaitlistDetail } from "@/types/dashboard";
 
@@ -140,6 +141,7 @@ export default function EditWaitlistPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label={`Back to ${waitlistData?.waitlist.name || "Waitlist"}`} className="mb-4" />
       <PageHeader
         title="Edit waitlist"
         description="Update your waitlist information."

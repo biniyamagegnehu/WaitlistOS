@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useMemo } from "react";
+import { routes } from "@/lib/routes";
+import { BackButton } from "@/components/navigation/back-button";
 import { useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { getSignupConfig, updateSignupConfig } from "@/services/dashboard";
@@ -167,6 +169,7 @@ export default function SignupConfigPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Multi-Step Signup"
         description="Configure additional qualification steps and referrals."

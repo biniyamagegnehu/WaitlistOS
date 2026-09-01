@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BackButton } from "@/components/navigation/back-button";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { DollarSign, Zap, Package, Users, ChevronRight, ShoppingCart } from "lucide-react";
@@ -122,6 +123,7 @@ export default function WaitlistMonetizationPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Monetization"
         description={`${waitlist?.name} - Revenue and monetization features`}

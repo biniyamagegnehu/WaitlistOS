@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
+import { BackButton } from "@/components/navigation/back-button";
 import { useRouter } from "next/navigation";
 import { MapPin, Smartphone, Globe } from "lucide-react";
 
@@ -88,6 +89,7 @@ export default function AudienceAnalyticsPage({ params }: { params: Promise<{ id
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Geo & Device"
         description="Understand where your audience is from and how they access your waitlist."

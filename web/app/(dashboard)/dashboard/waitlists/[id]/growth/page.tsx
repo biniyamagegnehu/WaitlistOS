@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BackButton } from "@/components/navigation/back-button";
 import { useParams, useRouter } from "next/navigation";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
@@ -70,6 +71,7 @@ export default function GrowthSettingsPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Growth Engine"
         description="Boost referrals, engagement, collaboration, and conversions using WaitlistOS Growth Engine."

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BackButton } from "@/components/navigation/back-button";
 import { useParams, useRouter } from "next/navigation";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
@@ -31,6 +32,7 @@ export default function OpenGatesPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Open The Gates"
         description="Invite participants from your waitlist in batches"

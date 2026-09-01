@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
+import { BackButton } from "@/components/navigation/back-button";
 import { useRouter } from "next/navigation";
 import { Flame, Clock, Users } from "lucide-react";
 
@@ -83,6 +84,7 @@ export default function AnalyticsGrowthVelocityPage({ params }: { params: Promis
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Growth Velocity"
         description="See how quickly your waitlist is growing and identify viral referral moments."

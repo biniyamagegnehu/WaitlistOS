@@ -4,7 +4,7 @@ import { PageContainer } from "@/components/patterns/page-container";
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, Copy, Check, ExternalLink } from "lucide-react";
+import { Copy, Check, ExternalLink } from "lucide-react";
 import { SectionHeader } from "@/components/ui/section-header";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -16,6 +16,7 @@ import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { SocialShareButtons } from "@/components/waitlist/SocialShareButtons";
 import { trackFunnelEvent } from "@/components/waitlist/AnalyticsTracker";
+import { BackButton } from "@/components/navigation/back-button";
 
 export default function ShareWaitlistPage() {
   const params = useParams();
@@ -96,13 +97,7 @@ export default function ShareWaitlistPage() {
 
   return (
     <PageContainer className="space-y-6">
-      <Link
-        href={routes.waitlist(waitlist.id)}
-        className="inline-flex items-center gap-1.5 text-sm text-muted-foreground transition-colors hover:text-foreground"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to waitlist
-      </Link>
+      <BackButton href={routes.waitlist(waitlist.id)} label="Back to waitlist" className="mb-2" />
 
       <SectionHeader
         title="Share your waitlist"

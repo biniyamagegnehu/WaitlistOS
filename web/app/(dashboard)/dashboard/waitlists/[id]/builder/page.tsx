@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { AlertTriangle, ArrowLeft, ChevronDown, ChevronUp, Copy, Eye, EyeOff, FileStack, GripVertical, Plus, Redo2, RotateCcw, SlidersHorizontal, Trash2, Undo2, X } from "lucide-react";
+import { AlertTriangle, ChevronDown, ChevronUp, Copy, Eye, EyeOff, FileStack, GripVertical, Plus, Redo2, RotateCcw, SlidersHorizontal, Trash2, Undo2, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -25,6 +25,7 @@ import {
   type ValidationResult,
 } from "@/lib/page-builder-validation";
 import { WaitlistPageRenderer } from "@/components/waitlist/WaitlistPageRenderer";
+import { BackButton } from "@/components/navigation/back-button";
 import type { PublicWaitlistResponse } from "@/types/waitlist";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -340,9 +341,7 @@ export default function PageBuilderPage() {
       {/* ── Header bar ── */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <Link href={routes.waitlist(waitlistId)} className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
-            <ArrowLeft className="h-4 w-4" />Back to waitlist
-          </Link>
+          <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" />
           <h1 className="mt-2 text-2xl font-semibold">Visual Page Builder</h1>
         </div>
         <div className="flex items-center gap-2">

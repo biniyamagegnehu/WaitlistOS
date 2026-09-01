@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, use } from "react";
+import { BackButton } from "@/components/navigation/back-button";
 import { useRouter } from "next/navigation";
 import { TrendingUp, Users, MousePointer2, Send, Share2 } from "lucide-react";
 
@@ -81,6 +82,7 @@ export default function AnalyticsFunnelPage({ params }: { params: Promise<{ id: 
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Conversion Funnel"
         description="Track how visitors move through your waitlist signup process."

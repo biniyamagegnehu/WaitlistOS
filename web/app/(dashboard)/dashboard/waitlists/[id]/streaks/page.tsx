@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BackButton } from "@/components/navigation/back-button";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Edit2, Trash2 } from "lucide-react";
 import { PageContainer } from "@/components/patterns/page-container";
@@ -250,6 +251,7 @@ export default function StreakMilestonesPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Streak Milestones"
         description="Reward participants for consistently sharing their referral link every day."

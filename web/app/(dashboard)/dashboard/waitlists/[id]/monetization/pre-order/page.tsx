@@ -13,6 +13,7 @@ import { LoadingState } from "@/components/patterns/loading-state";
 import { ErrorState } from "@/components/patterns/error-state";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
+import { BackButton } from "@/components/navigation/back-button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -195,6 +196,7 @@ export default function PreOrderPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlistMonetization(waitlistId)} label="Back to Monetization" className="mb-4" />
       <PageHeader
         title="Pre-Order Deposits"
         description="Manage deposits and waitlist reservations"

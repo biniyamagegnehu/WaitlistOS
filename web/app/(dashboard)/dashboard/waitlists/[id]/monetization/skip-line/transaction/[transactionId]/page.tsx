@@ -3,7 +3,7 @@
 import * as React from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
-import { ArrowLeft, DollarSign, CreditCard, CheckCircle, XCircle, Clock, Calendar, User, Hash, BadgeCheck, TrendingUp } from "lucide-react";
+import { DollarSign, CreditCard, CheckCircle, XCircle, Clock, Calendar, User, Hash, BadgeCheck, TrendingUp } from "lucide-react";
 import { getApiErrorMessage } from "@/lib/errors";
 import { routes } from "@/lib/routes";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -14,6 +14,7 @@ import { Badge } from "@/components/ui/badge";
 import { api } from "@/lib/axios";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
+import { BackButton } from "@/components/navigation/back-button";
 import { LoadingState } from "@/components/patterns/loading-state";
 import { useSetBreadcrumbs } from "@/components/navigation/breadcrumbs";
 
@@ -139,12 +140,11 @@ export default function TransactionDetailPage() {
           <Alert variant="error" title="Error">
             {error}
           </Alert>
-          <Button
-            onClick={() => router.push(`/dashboard/waitlists/${waitlistId}/monetization/skip-line`)}
+          <BackButton 
+            href={`/dashboard/waitlists/${waitlistId}/monetization/skip-line`}
+            label="Back to Skip the Line"
             className="mt-4"
-          >
-            Back to Skip the Line
-          </Button>
+          />
         </div>
       </PageContainer>
     );
@@ -153,18 +153,10 @@ export default function TransactionDetailPage() {
   return (
     <PageContainer>
       <div className="mx-auto max-w-4xl space-y-6">
+        <BackButton href={`/dashboard/waitlists/${waitlistId}/monetization/skip-line`} label="Back to Skip the Line" className="mb-4" />
         <PageHeader
           title="Transaction Details"
           description="Payment information and participant details"
-          primaryAction={
-            <Button
-              variant="ghost"
-              onClick={() => router.push(`/dashboard/waitlists/${waitlistId}/monetization/skip-line`)}
-            >
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Skip the Line
-            </Button>
-          }
         />
 
         {error && (
@@ -362,12 +354,12 @@ export default function TransactionDetailPage() {
               </CardContent>
             </Card>
 
-            <Button
-              onClick={() => router.push(`/dashboard/waitlists/${waitlistId}/monetization/skip-line`)}
-              className="w-full"
-            >
-              Back to Skip the Line Dashboard
-            </Button>
+            <BackButton
+              href={`/dashboard/waitlists/${waitlistId}/monetization/skip-line`}
+              label="Back to Skip the Line Dashboard"
+              variant="primary"
+              className="w-full justify-center"
+            />
           </div>
         )}
       </div>

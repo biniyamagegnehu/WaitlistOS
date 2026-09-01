@@ -12,6 +12,7 @@ import { LoadingState } from "@/components/patterns/loading-state";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
 import { Badge } from "@/components/ui/badge";
+import { BackButton } from "@/components/navigation/back-button";
 
 export default function PreOrderDepositPage() {
   const router = useRouter();
@@ -35,6 +36,7 @@ export default function PreOrderDepositPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlistMonetization(waitlistId)} label="Back to Monetization" className="mb-4" />
       <PageHeader
         title="Pre-Order Deposit"
         description="Collect deposits from participants to validate purchase intent"
@@ -91,12 +93,12 @@ export default function PreOrderDepositPage() {
                 </p>
               </div>
             </div>
-            <Button
+            <BackButton
               variant="outline"
-              onClick={() => router.push(routes.monetization)}
-            >
-              Back to Monetization Overview
-            </Button>
+              href={routes.monetization}
+              label="Back to Monetization Overview"
+              className="justify-center"
+            />
           </div>
         </CardContent>
       </Card>

@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { BackButton } from "@/components/navigation/back-button";
 import { useParams, useRouter } from "next/navigation";
 import { Plus, Edit2, Trash2, Trophy, Users, TrendingUp, Gift, Target } from "lucide-react";
 import { PageContainer } from "@/components/patterns/page-container";
@@ -198,6 +199,7 @@ export default function TeamMilestonesPage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Team Referral Milestones"
         description="Configure shared rewards that unlock when a team's combined referrals reach a milestone."

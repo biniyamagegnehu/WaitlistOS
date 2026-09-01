@@ -13,6 +13,7 @@ import { LoadingState } from "@/components/patterns/loading-state";
 import { ErrorState } from "@/components/patterns/error-state";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
+import { BackButton } from "@/components/navigation/back-button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -273,6 +274,7 @@ export default function SkipLinePage() {
 
   return (
     <PageContainer>
+      <BackButton href={routes.waitlistMonetization(waitlistId)} label="Back to Monetization" className="mb-4" />
       <PageHeader
         title="Skip the Line"
         description="Monetization analytics and configuration"

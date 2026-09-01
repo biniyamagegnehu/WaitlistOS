@@ -10,7 +10,8 @@ import { LoadingState } from "@/components/patterns/loading-state";
 import { ErrorState } from "@/components/patterns/error-state";
 import { PageContainer } from "@/components/patterns/page-container";
 import { PageHeader } from "@/components/patterns/page-header";
-import { ArrowLeft, User, Trophy, Share2, Award, Zap, Users, Info } from "lucide-react";
+import { User, Trophy, Share2, Award, Zap, Users, Info } from "lucide-react";
+import { BackButton } from "@/components/navigation/back-button";
 import { getCountryName, getLanguageName } from "@/lib/locale-data";
 import { routes } from "@/lib/routes";
 
@@ -160,6 +161,7 @@ export default function ParticipantDetailPage() {
 
   return (
     <PageContainer>
+      <BackButton href={`/dashboard/waitlists/${waitlistId}/participants`} label="Back to Participants" className="mb-4" />
       <PageHeader
         title={participant.email}
         description={`Joined ${formatDate(participant.createdAt)}`}
