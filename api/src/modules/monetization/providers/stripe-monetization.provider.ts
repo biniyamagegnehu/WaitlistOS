@@ -186,12 +186,20 @@ export class StripeMonetizationProvider implements IMonetizationProvider {
 
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session;
+      
+      // Extract the actual charged amount and currency from Stripe
+      // Stripe returns amounts in cents, so we need to convert to dollars
+      const chargedAmount = session.amount_total ? session.amount_total / 100 : undefined;
+      const chargedCurrency = session.currency ? session.currency.toUpperCase() : undefined;
+      
       return {
         providerPaymentId: session.id,
         status: 'SUCCESS',
         providerEventId: event.id,
         eventType: event.type,
         payload: event,
+        chargedAmount,
+        chargedCurrency,
       };
     }
 

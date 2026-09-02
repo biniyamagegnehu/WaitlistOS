@@ -340,6 +340,10 @@ export class MonetizationService {
 
     const { platformFee, providerFee, founderAmount } = this.feeService.calculateFees(dto.amount);
 
+    // Fixed base currency: USD - system always uses USD as base currency
+    // Payment providers handle any currency conversion for the customer
+    const currency = 'USD';
+
     const payment = await this.prisma.monetizationPayment.create({
       data: {
         founderId,
@@ -349,7 +353,7 @@ export class MonetizationService {
         providerPaymentId: `temp_${randomUUID()}`,
         paymentType: dto.paymentType,
         amount: dto.amount,
-        currency: dto.currency,
+        currency,
         platformFee,
         providerFee,
         founderAmount,
@@ -443,7 +447,12 @@ export class MonetizationService {
       await this.prisma.$transaction(async (tx) => {
         await tx.monetizationPayment.update({
           where: { id: payment.id },
-          data: { status: MonetizationPaymentStatus.SUCCEEDED },
+          data: { 
+            status: MonetizationPaymentStatus.SUCCEEDED,
+            // Store provider-reported charged amount and currency when available
+            ...(eventResult.chargedAmount && { chargedAmount: eventResult.chargedAmount }),
+            ...(eventResult.chargedCurrency && { chargedCurrency: eventResult.chargedCurrency }),
+          },
         });
         await tx.monetizationPaymentEvent.update({
           where: {
@@ -573,7 +582,6 @@ export class MonetizationService {
     return {
       preOrderDepositEnabled: waitlist.preOrderDepositEnabled,
       preOrderDepositAmount: waitlist.preOrderDepositAmount,
-      preOrderDepositCurrency: waitlist.preOrderDepositCurrency,
       preOrderDepositDescription: waitlist.preOrderDepositDescription,
     };
   }
@@ -591,7 +599,6 @@ export class MonetizationService {
       data: {
         preOrderDepositEnabled: config.preOrderDepositEnabled,
         preOrderDepositAmount: config.preOrderDepositAmount,
-        preOrderDepositCurrency: config.preOrderDepositCurrency,
         preOrderDepositDescription: config.preOrderDepositDescription,
       },
     });
@@ -599,7 +606,6 @@ export class MonetizationService {
     return {
       preOrderDepositEnabled: updated.preOrderDepositEnabled,
       preOrderDepositAmount: updated.preOrderDepositAmount,
-      preOrderDepositCurrency: updated.preOrderDepositCurrency,
       preOrderDepositDescription: updated.preOrderDepositDescription,
     };
   }
@@ -630,7 +636,8 @@ export class MonetizationService {
     if (existingDeposit) throw new ConflictException('You have already paid a deposit');
 
     const amount = dto.amount || Number(waitlist.preOrderDepositAmount) || 5.00;
-    const currency = dto.currency || waitlist.preOrderDepositCurrency || 'USD';
+    // Fixed base currency: USD
+    const currency = 'USD';
     const frontendUrl = this.configService.get<string>('app.frontendUrl') ?? 'http://localhost:3001';
     const returnUrl = `${frontendUrl}/payment/pre-order/success?waitlistId=${waitlist.id}`;
     const cancelUrl = `${frontendUrl}/payment/pre-order/cancel?waitlistId=${waitlist.id}`;
@@ -796,7 +803,8 @@ export class MonetizationService {
 
     // Use server-side configured price if not provided
     const amount = dto.amount || Number(waitlist.skipLinePrice) || 10.00;
-    const currency = dto.currency || waitlist.skipLineCurrency || 'USD';
+    // Fixed base currency: USD
+    const currency = 'USD';
 
     // Create checkout using existing infrastructure
     const frontendUrl = this.configService.get<string>('app.frontendUrl') ?? 'http://localhost:3001';
@@ -883,7 +891,8 @@ export class MonetizationService {
 
     // Use server-side configured price if not provided
     const amount = dto.amount || Number(waitlist.skipLinePrice) || 10.00;
-    const currency = dto.currency || waitlist.skipLineCurrency || 'USD';
+    // Fixed base currency: USD
+    const currency = 'USD';
 
     // Create checkout using existing infrastructure
     const frontendUrl = this.configService.get<string>('app.frontendUrl') ?? 'http://localhost:3001';
@@ -1150,6 +1159,8 @@ export class MonetizationService {
           data: {
             status: MonetizationPaymentStatus.SUCCEEDED,
             providerPaymentId: verificationResult.providerPaymentId,
+            // Note: Manual verification doesn't provide charged amount/currency
+            // These fields will remain null and rely on webhook data
           },
         });
 
@@ -1246,6 +1257,8 @@ export class MonetizationService {
           data: {
             status: MonetizationPaymentStatus.SUCCEEDED,
             providerPaymentId: verificationResult.providerPaymentId,
+            // Note: Manual verification doesn't provide charged amount/currency
+            // These fields will remain null and rely on webhook data
           },
         });
 
@@ -1328,6 +1341,8 @@ export class MonetizationService {
           status: true,
           provider: true,
           providerPaymentId: true,
+          chargedAmount: true,
+          chargedCurrency: true,
           createdAt: true,
           updatedAt: true,
           participant: {
@@ -1454,7 +1469,6 @@ export class MonetizationService {
       currency: payments[0]?.currency || 'USD',
       skipLineEnabled: waitlist.skipLineEnabled,
       skipLinePrice: waitlist.skipLinePrice,
-      skipLineCurrency: waitlist.skipLineCurrency,
       totalRevenue: summary.totalRevenue,
       paidParticipants: summary.paidParticipants,
     };
@@ -1479,6 +1493,8 @@ export class MonetizationService {
         status: true,
         provider: true,
         providerPaymentId: true,
+        chargedAmount: true,
+        chargedCurrency: true,
         createdAt: true,
         updatedAt: true,
         participant: {
@@ -1527,21 +1543,12 @@ export class MonetizationService {
       }
     }
 
-    if (config.skipLineCurrency) {
-      const validCurrencies = ['USD', 'EUR', 'GBP', 'ETB', 'NGN', 'KES', 'ZAR'];
-      if (!validCurrencies.includes(config.skipLineCurrency.toUpperCase())) {
-        throw new BadRequestException(`Currency must be one of: ${validCurrencies.join(', ')}`);
-      }
-      config.skipLineCurrency = config.skipLineCurrency.toUpperCase();
-    }
-
-    // Update waitlist configuration
+    // Update waitlist configuration (currency removed - fixed USD base currency)
     const updatedWaitlist = await this.prisma.waitlist.update({
       where: { id: waitlistId },
       data: {
         skipLineEnabled: config.skipLineEnabled,
         skipLinePrice: config.skipLinePrice ? Number(config.skipLinePrice) : null,
-        skipLineCurrency: config.skipLineCurrency || null,
       },
     });
 

@@ -21,7 +21,8 @@ export class CreateCheckoutDto {
   amount: number;
 
   @IsString()
-  currency: string;
+  @IsOptional()
+  currency?: string;
 }
 
 /**
@@ -49,10 +50,6 @@ export class UpdatePreOrderDepositConfigDto {
   @Min(0.01)
   @IsOptional()
   preOrderDepositAmount?: number;
-
-  @IsString()
-  @IsOptional()
-  preOrderDepositCurrency?: string;
 
   @IsString()
   @MaxLength(500)

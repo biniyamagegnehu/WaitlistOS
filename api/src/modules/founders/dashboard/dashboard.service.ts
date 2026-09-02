@@ -282,7 +282,6 @@ export class DashboardService {
       showCountdown: w.showCountdown,
       skipLineEnabled: w.skipLineEnabled,
       skipLinePrice: w.skipLinePrice ? Number(w.skipLinePrice) : null,
-      skipLineCurrency: w.skipLineCurrency,
     }));
   }
 
@@ -420,7 +419,6 @@ export class DashboardService {
         themeMode: waitlist.themeMode,
         skipLineEnabled: waitlist.skipLineEnabled,
         skipLinePrice: waitlist.skipLinePrice ? Number(waitlist.skipLinePrice) : null,
-        skipLineCurrency: waitlist.skipLineCurrency,
       },
       participants: waitlist.participants.map((p) => ({
         id: p.id,

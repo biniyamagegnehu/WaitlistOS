@@ -663,7 +663,6 @@ export class ParticipantsService {
             id: true,
             skipLineEnabled: true,
             skipLinePrice: true,
-            skipLineCurrency: true,
           },
         },
       },
@@ -695,7 +694,6 @@ export class ParticipantsService {
         waitlist: {
           skipLineEnabled: participant.waitlist.skipLineEnabled,
           skipLinePrice: participant.waitlist.skipLinePrice,
-          skipLineCurrency: participant.waitlist.skipLineCurrency,
         },
         position: participant.position,
       },
@@ -711,7 +709,6 @@ export class ParticipantsService {
             id: true,
             preOrderDepositEnabled: true,
             preOrderDepositAmount: true,
-            preOrderDepositCurrency: true,
             preOrderDepositDescription: true,
           },
         },
@@ -743,7 +740,6 @@ export class ParticipantsService {
         waitlist: {
           preOrderDepositEnabled: participant.waitlist.preOrderDepositEnabled,
           preOrderDepositAmount: participant.waitlist.preOrderDepositAmount,
-          preOrderDepositCurrency: participant.waitlist.preOrderDepositCurrency,
           preOrderDepositDescription: participant.waitlist.preOrderDepositDescription,
         },
       },

@@ -11,6 +11,9 @@ export interface WebhookEventResult {
   providerEventId: string;
   eventType: string;
   payload: any;
+  // Provider-reported actual charged amount and currency (when available)
+  chargedAmount?: number;
+  chargedCurrency?: string;
 }
 
 export interface VerifyPaymentResult {

@@ -109,14 +109,9 @@ export class WaitlistsService {
         throw new BadRequestException('Skip the Line price must be greater than 0');
       }
 
-      // Validate currency if provided
+      // Normalize currency to uppercase if provided
       if (dto.skipLineCurrency !== undefined) {
-        const supportedCurrencies = ['USD', 'ETB', 'EUR', 'GBP'];
-        if (!supportedCurrencies.includes(dto.skipLineCurrency.toUpperCase())) {
-          throw new BadRequestException(
-            `Currency ${dto.skipLineCurrency} is not supported. Supported currencies: ${supportedCurrencies.join(', ')}`,
-          );
-        }
+        dto.skipLineCurrency = dto.skipLineCurrency.toUpperCase();
       }
     }
 

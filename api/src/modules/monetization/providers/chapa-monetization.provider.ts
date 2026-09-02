@@ -102,12 +102,19 @@ export class ChapaMonetizationProvider implements IMonetizationProvider {
       status = 'FAILED';
     }
 
+    // Extract the actual charged amount and currency from Chapa webhook
+    // Chapa provides amount and currency in the webhook payload
+    const chargedAmount = payload.amount ? parseFloat(payload.amount) : undefined;
+    const chargedCurrency = payload.currency ? payload.currency.toUpperCase() : undefined;
+
     return {
       providerPaymentId: payload.tx_ref,
       status,
       providerEventId,
       eventType: payload.event || payload.status,
       payload,
+      chargedAmount,
+      chargedCurrency,
     };
   }
 
