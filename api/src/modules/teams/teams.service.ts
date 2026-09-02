@@ -396,8 +396,8 @@ export class TeamsService {
     const teams = await this.prisma.team.findMany({
       where: { waitlistId },
       include: {
-        members: { select: { referralCount: true } },
-        _count: { select: { members: true } },
+        members: { select: { referralCount: true }, where: { emailVerified: true } },
+        _count: { select: { members: { where: { emailVerified: true } } } },
       },
       orderBy: { createdAt: 'asc' },
     });
@@ -430,8 +430,8 @@ export class TeamsService {
     const teams = await this.prisma.team.findMany({
       where: { waitlistId },
       include: {
-        members: { select: { referralCount: true } },
-        _count: { select: { members: true } },
+        members: { select: { referralCount: true }, where: { emailVerified: true } },
+        _count: { select: { members: { where: { emailVerified: true } } } },
         teamMilestoneRewards: {
           include: { participantRewards: true },
         },

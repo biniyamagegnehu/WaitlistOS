@@ -115,6 +115,7 @@ export class DashboardService {
       select: {
         name: true,
         participants: {
+          where: { emailVerified: true },
           select: {
             email: true,
             referralCount: true,
@@ -314,6 +315,7 @@ export class DashboardService {
     const totalParticipants = await this.prisma.participant.count({
       where: {
         waitlistId,
+        emailVerified: true,
         ...(search && {
           email: {
             contains: search,
@@ -334,6 +336,7 @@ export class DashboardService {
         logo: true,
         participants: {
           where: {
+            emailVerified: true,
             ...(search && {
               email: {
                 contains: search,

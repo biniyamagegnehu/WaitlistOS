@@ -64,6 +64,18 @@ export class ParticipantsService {
   ): Promise<void> {
     this.logger.log(`Starting rerank for waitlist ${waitlistId}`);
 
+    // Zero out positions for unverified participants (separate call — Prisma cannot multi-statement)
+    await tx.$executeRaw(
+      Prisma.sql`
+        UPDATE "participants"
+        SET position = 0
+        WHERE "waitlistId" = ${waitlistId}
+          AND "emailVerified" = false
+          AND position != 0
+      `
+    );
+
+    // Rerank only verified participants
     await tx.$executeRaw(
       Prisma.sql`
         UPDATE "participants"
@@ -77,9 +89,10 @@ export class ParticipantsService {
                  ) as new_pos
           FROM "participants"
           WHERE "waitlistId" = ${waitlistId}
+            AND "emailVerified" = true
         ) as ranked
         WHERE "participants".id = ranked.id
-          AND "participants".position IS DISTINCT FROM ranked.new_pos;
+          AND "participants".position IS DISTINCT FROM ranked.new_pos
       `
     );
 
@@ -96,7 +109,7 @@ export class ParticipantsService {
   // ── Debug method to check current ranking state ─────────────────────
   async debugRank(waitlistId: string) {
     const participants = await this.prisma.participant.findMany({
-      where: { waitlistId },
+      where: { waitlistId, emailVerified: true },
       select: {
         id: true,
         email: true,
@@ -122,6 +135,208 @@ export class ParticipantsService {
         createdAt: p.createdAt,
       })),
     };
+  }
+
+  // ── Confirm participant & Referrals ───────────────────────
+  async confirmParticipant(participantId: string): Promise<void> {
+    await this.prisma.$transaction(async (tx) => {
+      const participant = await tx.participant.findUniqueOrThrow({
+        where: { id: participantId },
+        include: { waitlist: { include: { streakMilestones: true } } },
+      });
+
+      if (participant.emailVerified) {
+        return; // Idempotent
+      }
+
+      await tx.participant.update({
+        where: { id: participantId },
+        data: { emailVerified: true },
+      });
+
+      if (participant.referredById) {
+        const referrer = await tx.participant.findUniqueOrThrow({
+          where: { id: participant.referredById },
+        });
+
+        // Increment referrer's referral count
+        let updatedReferrer = await tx.participant.update({
+          where: { id: referrer.id },
+          data: { referralCount: { increment: 1 } },
+        });
+
+        // Check for reward milestones
+        const matchingRewards = await tx.reward.findMany({
+          where: {
+            waitlistId: participant.waitlistId,
+            milestone: updatedReferrer.referralCount,
+          },
+        });
+
+        for (const reward of matchingRewards) {
+          await tx.participantReward.create({
+            data: {
+              participantId: referrer.id,
+              rewardId: reward.id,
+            },
+          });
+
+          if (reward.type === 'POSITION_BOOST' && reward.value && reward.value > 0) {
+            updatedReferrer = await tx.participant.update({
+              where: { id: referrer.id },
+              data: { positionBoostBonus: { increment: reward.value } },
+            });
+          }
+        }
+
+        // ── Double-Sided Rewards ─────────────────────────────
+        if (participant.waitlist.doubleSidedRewardsEnabled) {
+          updatedReferrer = await tx.participant.update({
+            where: { id: referrer.id },
+            data: { positionBoostBonus: { increment: participant.waitlist.referrerRankingBonus } },
+          });
+
+          await tx.participant.update({
+            where: { id: participant.id },
+            data: { positionBoostBonus: { increment: participant.waitlist.newParticipantRankingBonus } },
+          });
+
+          await tx.waitlist.update({
+            where: { id: participant.waitlistId },
+            data: {
+              doubleSidedRewardsGranted: { increment: 1 },
+              totalReferrerRankingBonusAwarded: { increment: participant.waitlist.referrerRankingBonus },
+              totalNewParticipantRankingBonusAwarded: { increment: participant.waitlist.newParticipantRankingBonus },
+            },
+          });
+        }
+
+        // ── Streak Bonuses ────────────────────────────────────
+        if (participant.waitlist.streakBonusesEnabled && participant.waitlist.streakMilestones.length > 0) {
+          const freshReferrer = await tx.participant.findUniqueOrThrow({
+            where: { id: referrer.id },
+            include: { participantStreakRewards: true },
+          });
+
+          const effectiveStreak = computeEffectiveStreak(
+            freshReferrer.currentStreak,
+            freshReferrer.lastSuccessfulReferralAt,
+          );
+
+          const now = new Date();
+          const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+          const lastRef = freshReferrer.lastSuccessfulReferralAt;
+          const lastRefDayUTC = lastRef
+            ? new Date(Date.UTC(lastRef.getUTCFullYear(), lastRef.getUTCMonth(), lastRef.getUTCDate()))
+            : null;
+
+          const alreadyReferredToday = lastRefDayUTC?.getTime() === todayUTC.getTime();
+
+          let newStreak: number;
+          if (alreadyReferredToday) {
+            newStreak = effectiveStreak;
+          } else if (effectiveStreak === 0) {
+            newStreak = 1;
+          } else {
+            newStreak = effectiveStreak + 1;
+          }
+
+          const newLongest = Math.max(freshReferrer.longestStreak, newStreak);
+
+          updatedReferrer = await tx.participant.update({
+            where: { id: referrer.id },
+            data: {
+              currentStreak: newStreak,
+              longestStreak: newLongest,
+              lastSuccessfulReferralAt: alreadyReferredToday ? undefined : now,
+            },
+          });
+
+          const alreadyUnlockedIds = new Set(
+            freshReferrer.participantStreakRewards.map((r) => r.streakMilestoneId),
+          );
+
+          for (const milestone of participant.waitlist.streakMilestones) {
+            if (newStreak >= milestone.days && !alreadyUnlockedIds.has(milestone.id)) {
+              await tx.participantStreakReward.create({
+                data: {
+                  participantId: referrer.id,
+                  streakMilestoneId: milestone.id,
+                },
+              });
+
+              if (milestone.type === 'POSITION_BOOST' && milestone.value && milestone.value > 0) {
+                updatedReferrer = await tx.participant.update({
+                  where: { id: referrer.id },
+                  data: { positionBoostBonus: { increment: milestone.value } },
+                });
+              }
+            }
+          }
+        }
+
+        // ── Team Milestone Rewards ──────────────────────────────
+        if (participant.waitlist.teamReferralsEnabled && referrer.teamId) {
+          const teamAgg = await tx.participant.aggregate({
+            where: { teamId: referrer.teamId },
+            _sum: { referralCount: true },
+          });
+          const teamTotal = teamAgg._sum.referralCount || 0;
+
+          const reachedMilestones = await tx.teamRewardMilestone.findMany({
+            where: {
+              waitlistId: participant.waitlistId,
+              milestone: { lte: teamTotal },
+            },
+          });
+
+          for (const milestone of reachedMilestones) {
+            const existingReward = await tx.teamMilestoneReward.findUnique({
+              where: {
+                teamId_teamRewardMilestoneId: {
+                  teamId: referrer.teamId,
+                  teamRewardMilestoneId: milestone.id,
+                },
+              },
+            });
+
+            if (!existingReward) {
+              const teamReward = await tx.teamMilestoneReward.create({
+                data: {
+                  teamId: referrer.teamId,
+                  teamRewardMilestoneId: milestone.id,
+                },
+              });
+
+              const members = await tx.participant.findMany({
+                where: { teamId: referrer.teamId },
+              });
+
+              for (const member of members) {
+                await tx.teamParticipantReward.create({
+                  data: {
+                    teamMilestoneRewardId: teamReward.id,
+                    participantId: member.id,
+                  },
+                });
+
+                if (milestone.type === 'POSITION_BOOST' && milestone.value && milestone.value > 0) {
+                  await tx.participant.update({
+                    where: { id: member.id },
+                    data: {
+                      positionBoostBonus: { increment: milestone.value },
+                    },
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
+      // Rerank all participants based on new verified participant and updated bonuses
+      await this.rerankParticipants(participant.waitlistId, tx);
+    });
   }
 
   // ── Create participant ────────────────────────────────────
@@ -230,17 +445,11 @@ export class ParticipantsService {
             throw new Error('ROW_LOCKED');
           }
 
-          // New participant starts at the bottom (count + 1)
-          const count = await tx.participant.count({
-            where: { waitlistId: waitlist.id },
-          });
-          const initialPosition = count + 1;
-
           const p = await tx.participant.create({
             data: {
               waitlistId: waitlist.id,
               email,
-              position: initialPosition,
+              position: 0,
               referralCode: newReferralCode,
               source: resolveTrafficSource(source, dtoReferrer),
               medium: sanitizeAttributionValue(medium),
@@ -256,220 +465,7 @@ export class ParticipantsService {
             },
           });
 
-          if (referrer) {
-            // Increment referrer's referral count
-            let updatedReferrer = await tx.participant.update({
-              where: { id: referrer.id },
-              data: { referralCount: { increment: 1 } },
-            });
-
-            // Check for reward milestones
-            const matchingRewards = await tx.reward.findMany({
-              where: {
-                waitlistId: waitlist.id,
-                milestone: updatedReferrer.referralCount,
-              },
-            });
-
-            for (const reward of matchingRewards) {
-              // Unlock reward record
-              await tx.participantReward.create({
-                data: {
-                  participantId: referrer.id,
-                  rewardId: reward.id,
-                },
-              });
-
-              // POSITION_BOOST: add virtual bonus to effective rank score
-              if (
-                reward.type === 'POSITION_BOOST' &&
-                reward.value &&
-                reward.value > 0
-              ) {
-                updatedReferrer = await tx.participant.update({
-                  where: { id: referrer.id },
-                  data: { positionBoostBonus: { increment: reward.value } },
-                });
-              }
-            }
-
-            // ── Double-Sided Rewards ─────────────────────────────
-            if (waitlist.doubleSidedRewardsEnabled) {
-              // 1. Give referrer their bonus
-              updatedReferrer = await tx.participant.update({
-                where: { id: referrer.id },
-                data: { positionBoostBonus: { increment: waitlist.referrerRankingBonus } },
-              });
-
-              // 2. Give new participant their bonus
-              await tx.participant.update({
-                where: { id: p.id },
-                data: { positionBoostBonus: { increment: waitlist.newParticipantRankingBonus } },
-              });
-
-              // 3. Update Waitlist analytics counters
-              await tx.waitlist.update({
-                where: { id: waitlist.id },
-                data: {
-                  doubleSidedRewardsGranted: { increment: 1 },
-                  totalReferrerRankingBonusAwarded: { increment: waitlist.referrerRankingBonus },
-                  totalNewParticipantRankingBonusAwarded: { increment: waitlist.newParticipantRankingBonus },
-                },
-              });
-            }
-
-            // ── Streak Bonuses ────────────────────────────────────
-            if (waitlist.streakBonusesEnabled && waitlist.streakMilestones.length > 0) {
-              // Fetch the referrer with streak fields (fresh from DB inside tx)
-              const freshReferrer = await tx.participant.findUniqueOrThrow({
-                where: { id: referrer.id },
-                include: { participantStreakRewards: true },
-              });
-
-              // Compute the effective current streak (accounting for lapsed days)
-              const effectiveStreak = computeEffectiveStreak(
-                freshReferrer.currentStreak,
-                freshReferrer.lastSuccessfulReferralAt,
-              );
-
-              // Determine how to update the streak
-              const now = new Date();
-              const todayUTC = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
-              const lastRef = freshReferrer.lastSuccessfulReferralAt;
-              const lastRefDayUTC = lastRef
-                ? new Date(Date.UTC(lastRef.getUTCFullYear(), lastRef.getUTCMonth(), lastRef.getUTCDate()))
-                : null;
-
-              const alreadyReferredToday = lastRefDayUTC?.getTime() === todayUTC.getTime();
-
-              let newStreak: number;
-              if (alreadyReferredToday) {
-                // Already got credit for today — don't double-count
-                newStreak = effectiveStreak;
-              } else if (effectiveStreak === 0) {
-                // Starting fresh or lapsed
-                newStreak = 1;
-              } else {
-                // Continuing streak
-                newStreak = effectiveStreak + 1;
-              }
-
-              const newLongest = Math.max(freshReferrer.longestStreak, newStreak);
-
-              updatedReferrer = await tx.participant.update({
-                where: { id: referrer.id },
-                data: {
-                  currentStreak: newStreak,
-                  longestStreak: newLongest,
-                  lastSuccessfulReferralAt: alreadyReferredToday ? undefined : now,
-                },
-              });
-
-              // Check if any milestone is hit for the first time
-              const alreadyUnlockedIds = new Set(
-                freshReferrer.participantStreakRewards.map((r) => r.streakMilestoneId),
-              );
-
-              for (const milestone of waitlist.streakMilestones) {
-                if (newStreak >= milestone.days && !alreadyUnlockedIds.has(milestone.id)) {
-                  // Unlock the milestone
-                  await tx.participantStreakReward.create({
-                    data: {
-                      participantId: referrer.id,
-                      streakMilestoneId: milestone.id,
-                    },
-                  });
-
-                  // Award positionBoostBonus for POSITION_BOOST type
-                  if (milestone.type === 'POSITION_BOOST' && milestone.value && milestone.value > 0) {
-                    updatedReferrer = await tx.participant.update({
-                      where: { id: referrer.id },
-                      data: { positionBoostBonus: { increment: milestone.value } },
-                    });
-                  }
-                }
-              }
-            }
-
-            // ── Team Milestone Rewards ──────────────────────────────
-            if (waitlist.teamReferralsEnabled && referrer.teamId) {
-              const teamAgg = await tx.participant.aggregate({
-                where: { teamId: referrer.teamId },
-                _sum: { referralCount: true },
-              });
-              const teamTotal = teamAgg._sum.referralCount || 0;
-
-              const reachedMilestones = await tx.teamRewardMilestone.findMany({
-                where: {
-                  waitlistId: waitlist.id,
-                  milestone: { lte: teamTotal },
-                },
-              });
-
-              for (const milestone of reachedMilestones) {
-                const existingReward = await tx.teamMilestoneReward.findUnique({
-                  where: {
-                    teamId_teamRewardMilestoneId: {
-                      teamId: referrer.teamId,
-                      teamRewardMilestoneId: milestone.id,
-                    },
-                  },
-                });
-
-                if (!existingReward) {
-                  const teamReward = await tx.teamMilestoneReward.create({
-                    data: {
-                      teamId: referrer.teamId,
-                      teamRewardMilestoneId: milestone.id,
-                    },
-                  });
-
-                  const members = await tx.participant.findMany({
-                    where: { teamId: referrer.teamId },
-                  });
-
-                  for (const member of members) {
-                    await tx.teamParticipantReward.create({
-                      data: {
-                        teamMilestoneRewardId: teamReward.id,
-                        participantId: member.id,
-                      },
-                    });
-
-                    if (
-                      milestone.type === 'POSITION_BOOST' &&
-                      milestone.value &&
-                      milestone.value > 0
-                    ) {
-                      await tx.participant.update({
-                        where: { id: member.id },
-                        data: {
-                          positionBoostBonus: { increment: milestone.value },
-                        },
-                      });
-                    }
-                  }
-                }
-              }
-            }
-
-            // Rerank all participants based on new referral counts / bonuses
-            await this.rerankParticipants(waitlist.id, tx);
-
-            // Re-fetch the created participant with its final position
-            const finalParticipant = await tx.participant.findUniqueOrThrow({
-              where: { id: p.id },
-            });
-            return finalParticipant;
-          }
-
-          // No referrer: rerank still runs to assign a clean sequential position
-          await this.rerankParticipants(waitlist.id, tx);
-
-          const finalParticipant = await tx.participant.findUniqueOrThrow({
-            where: { id: p.id },
-          });
-          return finalParticipant;
+          return p;
         });
 
         break; // success

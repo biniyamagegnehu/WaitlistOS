@@ -26,7 +26,7 @@ export class PublicWaitlistsService {
         },
         widget: true,
         _count: {
-          select: { participants: true },
+          select: { participants: { where: { emailVerified: true } } },
         },
         copy: true,
         pageConfig: true,
@@ -36,8 +36,8 @@ export class PublicWaitlistsService {
         },
         teams: {
           include: {
-            members: { select: { referralCount: true } },
-            _count: { select: { members: true } },
+            members: { select: { referralCount: true }, where: { emailVerified: true } },
+            _count: { select: { members: { where: { emailVerified: true } } } },
           },
           orderBy: { createdAt: 'asc' },
         },

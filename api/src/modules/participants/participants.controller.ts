@@ -93,7 +93,7 @@ export class ParticipantsController {
     }
 
     // 3. Find participant by token hash scoped to this waitlist
-    const participant = await this.prisma.participant.findFirst({
+    let participant = await this.prisma.participant.findFirst({
       where: {
         waitlistId: waitlist.id,
         accessTokenHash: tokenHash,
@@ -140,10 +140,15 @@ export class ParticipantsController {
 
     // 5. Verify email on first valid access (idempotent)
     if (!participant.emailVerified) {
-      await this.prisma.participant.update({
+      await this.participantsService.confirmParticipant(participant.id);
+      
+      const updated = await this.prisma.participant.findUnique({
         where: { id: participant.id },
-        data: { emailVerified: true },
       });
+      if (updated) {
+        participant.emailVerified = true;
+        participant.position = updated.position;
+      }
     }
 
     // 6. Build safe participant page response (never expose email, raw token, or internal IDs beyond participant's own use)
