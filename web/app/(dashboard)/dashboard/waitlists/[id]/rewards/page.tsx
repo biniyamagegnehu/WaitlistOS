@@ -259,189 +259,191 @@ export default function RewardsPage() {
 
   return (
     <PageContainer>
-      <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
-      <PageHeader
-        title="Referral Rewards"
-        description="Encourage participants to share by rewarding them at certain milestones."
-        breadcrumbs={[
-          { label: "Waitlist", href: routes.waitlist(waitlistId) },
-          { label: "Referral Rewards" },
-        ]}
-        primaryAction={
-          <Button onClick={openNewDialog} leftIcon={<Plus className="h-4 w-4" />}>
-            New Reward
-          </Button>
-        }
-      />
-
-      {analytics && (
-        <div className="grid gap-4 sm:grid-cols-3">
-          <MetricCard
-            label="Total Rewards"
-            value={analytics.totalCreated}
-          />
-          <MetricCard
-            label="Total Unlocked"
-            value={analytics.totalUnlocked}
-          />
-          <MetricCard
-            label="Most Unlocked"
-            value={analytics.mostUnlocked ? analytics.mostUnlocked.title : "None yet"}
-          />
-        </div>
-      )}
-
-      <DataTable
-        data={rewards}
-        columns={columns}
-        rowKey={(row) => row.id}
-        empty={{
-          title: "No rewards configured",
-          description: "Create your first reward milestone to encourage referrals.",
-          action: (
+      <div className="space-y-6">
+        <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" />
+        <PageHeader
+          title="Referral Rewards"
+          description="Encourage participants to share by rewarding them at certain milestones."
+          breadcrumbs={[
+            { label: "Waitlist", href: routes.waitlist(waitlistId) },
+            { label: "Referral Rewards" },
+          ]}
+          primaryAction={
             <Button onClick={openNewDialog} leftIcon={<Plus className="h-4 w-4" />}>
-              Create Reward
+              New Reward
             </Button>
-          ),
-        }}
-      />
+          }
+        />
 
-      <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{editingReward ? "Edit Reward" : "Create Reward"}</DialogTitle>
-          </DialogHeader>
-          <form onSubmit={form.handleSubmit(handleSave)}>
-            <DialogBody className="space-y-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Title <span className="text-destructive">*</span></label>
-                <Input
-                  {...form.register("title")}
-                  placeholder="e.g. Skip 100 spots"
-                  required
-                />
-                {form.formState.errors.title && (
-                  <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
-                )}
-              </div>
+        {analytics && (
+          <div className="grid gap-4 sm:grid-cols-3">
+            <MetricCard
+              label="Total Rewards"
+              value={analytics.totalCreated}
+            />
+            <MetricCard
+              label="Total Unlocked"
+              value={analytics.totalUnlocked}
+            />
+            <MetricCard
+              label="Most Unlocked"
+              value={analytics.mostUnlocked ? analytics.mostUnlocked.title : "None yet"}
+            />
+          </div>
+        )}
 
-              <div className="grid grid-cols-2 gap-4">
+        <DataTable
+          data={rewards}
+          columns={columns}
+          rowKey={(row) => row.id}
+          empty={{
+            title: "No rewards configured",
+            description: "Create your first reward milestone to encourage referrals.",
+            action: (
+              <Button onClick={openNewDialog} leftIcon={<Plus className="h-4 w-4" />}>
+                Create Reward
+              </Button>
+            ),
+          }}
+        />
+
+        <Dialog open={isDialogOpen} onClose={() => setIsDialogOpen(false)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>{editingReward ? "Edit Reward" : "Create Reward"}</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={form.handleSubmit(handleSave)}>
+              <DialogBody className="space-y-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">Milestone <span className="text-destructive">*</span></label>
+                  <label className="text-sm font-medium">Title <span className="text-destructive">*</span></label>
                   <Input
-                    type="number"
-                    min="1"
-                    {...form.register("milestone")}
-                    placeholder="e.g. 5"
+                    {...form.register("title")}
+                    placeholder="e.g. Skip 100 spots"
                     required
                   />
-                  {form.formState.errors.milestone && (
-                    <p className="text-sm text-destructive">{form.formState.errors.milestone.message}</p>
+                  {form.formState.errors.title && (
+                    <p className="text-sm text-destructive">{form.formState.errors.title.message}</p>
                   )}
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Reward Type <span className="text-destructive">*</span></label>
-                  <select
-                    {...form.register("type")}
-                    className="flex h-10 w-full rounded-lg border border-border/60 bg-surface px-3 py-2 text-sm ring-offset-background shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 hover:border-border"
-                  >
-                    <option value="POSITION_BOOST">Position Boost</option>
-                    <option value="EARLY_ACCESS">Early Access</option>
-                    <option value="VIP_ACCESS">VIP Access</option>
-                    <option value="DISCOUNT">Discount</option>
-                    <option value="CUSTOM">Custom Reward</option>
-                  </select>
-                  {form.formState.errors.type && (
-                    <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>
-                  )}
-                </div>
-              </div>
 
-              {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT' || rewardType === 'CUSTOM') && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Milestone <span className="text-destructive">*</span></label>
+                    <Input
+                      type="number"
+                      min="1"
+                      {...form.register("milestone")}
+                      placeholder="e.g. 5"
+                      required
+                    />
+                    {form.formState.errors.milestone && (
+                      <p className="text-sm text-destructive">{form.formState.errors.milestone.message}</p>
+                    )}
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Reward Type <span className="text-destructive">*</span></label>
+                    <select
+                      {...form.register("type")}
+                      className="flex h-10 w-full rounded-lg border border-border/60 bg-surface px-3 py-2 text-sm ring-offset-background shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50 hover:border-border"
+                    >
+                      <option value="POSITION_BOOST">Position Boost</option>
+                      <option value="EARLY_ACCESS">Early Access</option>
+                      <option value="VIP_ACCESS">VIP Access</option>
+                      <option value="DISCOUNT">Discount</option>
+                      <option value="CUSTOM">Custom Reward</option>
+                    </select>
+                    {form.formState.errors.type && (
+                      <p className="text-sm text-destructive">{form.formState.errors.type.message}</p>
+                    )}
+                  </div>
+                </div>
+
+                {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT' || rewardType === 'CUSTOM') && (
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">
+                      Value {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT') && <span className="text-destructive">*</span>}
+                    </label>
+                    <div className="flex gap-2">
+                      {rewardType === 'CUSTOM' && (
+                        <select
+                          {...form.register("valueType")}
+                          className="flex h-10 w-32 rounded-xl border border-border/60 bg-surface px-3 py-2 text-sm ring-offset-background shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <option value="fixed">Fixed</option>
+                          <option value="percent">Percent</option>
+                        </select>
+                      )}
+                      <div className="relative flex-1">
+                        <Input
+                          type="number"
+                          {...form.register("value")}
+                          placeholder={
+                            rewardType === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
+                            rewardType === 'DISCOUNT' ? 'e.g. 50' :
+                            valueType === 'percent' ? 'e.g. 50' :
+                            'e.g. custom value'
+                          }
+                          required={rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT'}
+                          className={(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) ? 'pr-8' : ''}
+                        />
+                        {(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) && (
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
+                        )}
+                      </div>
+                    </div>
+                    {form.formState.errors.value && (
+                      <p className="text-sm text-destructive">{form.formState.errors.value.message}</p>
+                    )}
+                    {(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) && !form.formState.errors.value && (
+                      <p className="text-xs text-muted-foreground">Enter a percentage between 0 and 100</p>
+                    )}
+                  </div>
+                )}
+
                 <div className="space-y-2">
                   <label className="text-sm font-medium">
-                    Value {(rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT') && <span className="text-destructive">*</span>}
+                    Description
                   </label>
-                  <div className="flex gap-2">
-                    {rewardType === 'CUSTOM' && (
-                      <select
-                        {...form.register("valueType")}
-                        className="flex h-10 w-32 rounded-xl border border-border/60 bg-surface px-3 py-2 text-sm ring-offset-background shadow-sm transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        <option value="fixed">Fixed</option>
-                        <option value="percent">Percent</option>
-                      </select>
-                    )}
-                    <div className="relative flex-1">
-                      <Input
-                        type="number"
-                        {...form.register("value")}
-                        placeholder={
-                          rewardType === 'POSITION_BOOST' ? 'e.g. 100 (number of positions to skip)' :
-                          rewardType === 'DISCOUNT' ? 'e.g. 50' :
-                          valueType === 'percent' ? 'e.g. 50' :
-                          'e.g. custom value'
-                      }
-                        required={rewardType === 'POSITION_BOOST' || rewardType === 'DISCOUNT'}
-                        className={(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) ? 'pr-8' : ''}
-                      />
-                      {(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) && (
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">%</span>
-                      )}
-                    </div>
-                  </div>
-                  {form.formState.errors.value && (
-                    <p className="text-sm text-destructive">{form.formState.errors.value.message}</p>
-                  )}
-                  {(rewardType === 'DISCOUNT' || (rewardType === 'CUSTOM' && valueType === 'percent')) && !form.formState.errors.value && (
-                    <p className="text-xs text-muted-foreground">Enter a percentage between 0 and 100</p>
-                  )}
+                  <Textarea
+                    {...form.register("description")}
+                    placeholder="Details about the reward"
+                    rows={3}
+                  />
                 </div>
-              )}
+              </DialogBody>
+              <DialogFooter>
+                <Button variant="secondary" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting} type="button">
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Saving..." : "Save Reward"}
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
 
-              <div className="space-y-2">
-                <label className="text-sm font-medium">
-                  Description
-                </label>
-                <Textarea
-                  {...form.register("description")}
-                  placeholder="Details about the reward"
-                  rows={3}
-                />
-              </div>
+        <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Delete Reward</DialogTitle>
+            </DialogHeader>
+            <DialogBody>
+              <p className="text-sm text-muted-foreground">
+                Are you sure you want to delete the reward "{rewardToDelete?.title}"? This action cannot be undone.
+              </p>
             </DialogBody>
             <DialogFooter>
-              <Button variant="secondary" onClick={() => setIsDialogOpen(false)} disabled={isSubmitting} type="button">
+              <Button variant="secondary" onClick={() => setDeleteDialogOpen(false)} type="button">
                 Cancel
               </Button>
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : "Save Reward"}
+              <Button variant="destructive" onClick={handleDelete}>
+                Delete Reward
               </Button>
             </DialogFooter>
-          </form>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog open={deleteDialogOpen} onClose={() => setDeleteDialogOpen(false)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Reward</DialogTitle>
-          </DialogHeader>
-          <DialogBody>
-            <p className="text-sm text-muted-foreground">
-              Are you sure you want to delete the reward "{rewardToDelete?.title}"? This action cannot be undone.
-            </p>
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="secondary" onClick={() => setDeleteDialogOpen(false)} type="button">
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete}>
-              Delete Reward
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+          </DialogContent>
+        </Dialog>
+      </div>
     </PageContainer>
   );
 }
