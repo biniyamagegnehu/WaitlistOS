@@ -161,7 +161,7 @@ export default function ParticipantDetailPage() {
 
   return (
     <PageContainer>
-      <BackButton href={`/dashboard/waitlists/${waitlistId}/participants`} label="Back to Participants" className="mb-4" />
+      <BackButton href={`/dashboard/waitlists/${waitlistId}`} label="Back to Participants" className="mb-4" />
       <PageHeader
         title={participant.email}
         description={`Joined ${formatDate(participant.createdAt)}`}
