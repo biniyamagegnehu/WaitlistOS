@@ -315,7 +315,7 @@ export default function PreOrderPage() {
                           <TableCell>{deposit.participant.email}</TableCell>
                           <TableCell>
                             <div>
-                              {deposit.currency === "USD" ? "$" : ""}{Number(deposit.amount).toFixed(2)} {deposit.currency}
+                              ${Number(deposit.amount).toFixed(2)}
                             </div>
                           </TableCell>
                           <TableCell>
