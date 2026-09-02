@@ -154,6 +154,7 @@ export class ParticipantsController {
       success: true,
       data: {
         participant: {
+          id: participant.id,
           position: participant.position,
           peopleAhead,
           referralCode: participant.referralCode,
