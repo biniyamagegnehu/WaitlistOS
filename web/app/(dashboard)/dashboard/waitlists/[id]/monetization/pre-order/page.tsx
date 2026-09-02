@@ -25,7 +25,6 @@ import { z } from "zod";
 
 const configSchema = z.object({
   amount: z.string().min(1, "Amount is required").refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Amount must be a positive number"),
-  currency: z.enum(["USD", "EUR", "GBP"]),
   description: z.string().max(500, "Description must be less than 500 characters").optional(),
 });
 
@@ -39,7 +38,6 @@ interface PreOrderAnalytics {
 interface PreOrderConfig {
   preOrderDepositEnabled: boolean;
   preOrderDepositAmount: number | string | null;
-  preOrderDepositCurrency: string | null;
   preOrderDepositDescription: string | null;
 }
 
@@ -75,7 +73,6 @@ export default function PreOrderPage() {
     resolver: zodResolver(configSchema),
     defaultValues: {
       amount: "",
-      currency: "USD",
       description: "",
     },
   });
@@ -101,7 +98,6 @@ export default function PreOrderPage() {
       if (configRes.data.preOrderDepositAmount) {
         reset({
           amount: Number(configRes.data.preOrderDepositAmount).toString(),
-          currency: configRes.data.preOrderDepositCurrency || "USD",
           description: configRes.data.preOrderDepositDescription || "",
         });
       }
@@ -151,7 +147,6 @@ export default function PreOrderPage() {
       await api.patch(`/monetization/pre-order/config/${waitlistId}`, {
         preOrderDepositEnabled: true,
         preOrderDepositAmount: amount,
-        preOrderDepositCurrency: data.currency,
         preOrderDepositDescription: data.description?.trim() || null,
       });
       
@@ -244,18 +239,6 @@ export default function PreOrderPage() {
                   />
                   {errors.amount && <p className="text-xs text-error mt-1">{errors.amount.message}</p>}
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-text-primary">Currency</label>
-                  <select
-                    className="mt-1 w-full rounded-md border border-border bg-surface px-3 py-2 text-sm"
-                    {...register("currency")}
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                  </select>
-                  {errors.currency && <p className="text-xs text-error mt-1">{errors.currency.message}</p>}
-                </div>
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-text-primary">Product Description (Optional)</label>
                   <Input
@@ -286,9 +269,9 @@ export default function PreOrderPage() {
                 </div>
                 <div className="text-right">
                   <p className="text-2xl font-bold text-text-primary">
-                    {config?.preOrderDepositCurrency === "USD" ? "$" : ""}{Number(config?.preOrderDepositAmount || 0).toFixed(2)}
+                    {Number(config?.preOrderDepositAmount || 0).toFixed(2)}
                   </p>
-                  <p className="text-xs text-text-muted">{config?.preOrderDepositCurrency || "USD"}</p>
+                  <p className="text-xs text-text-muted">Base price</p>
                 </div>
               </CardContent>
             </Card>
@@ -305,9 +288,9 @@ export default function PreOrderPage() {
                 <CardContent className="p-6">
                   <div className="flex items-center gap-2 mb-2"><DollarSign className="h-4 w-4 text-success" /><p className="text-sm font-medium text-text-muted">Gross Revenue</p></div>
                   <p className="text-3xl font-bold text-text-primary">
-                    {config?.preOrderDepositCurrency === "USD" ? "$" : ""}{Number(analytics.grossRevenue).toFixed(2)}
+                    {Number(analytics.grossRevenue).toFixed(2)}
                   </p>
-                  <p className="text-xs text-text-muted mt-1">{config?.preOrderDepositCurrency || "USD"}</p>
+                  <p className="text-xs text-text-muted mt-1">Total collected</p>
                 </CardContent>
               </Card>
             </div>
@@ -330,7 +313,11 @@ export default function PreOrderPage() {
                       {deposits.map((deposit) => (
                         <TableRow key={deposit.id}>
                           <TableCell>{deposit.participant.email}</TableCell>
-                          <TableCell>{deposit.currency === "USD" ? "$" : ""}{Number(deposit.amount).toFixed(2)}</TableCell>
+                          <TableCell>
+                            <div>
+                              {deposit.currency === "USD" ? "$" : ""}{Number(deposit.amount).toFixed(2)} {deposit.currency}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Badge variant="outline" className="text-xs">
                               {deposit.provider === 'STRIPE' ? 'Stripe' : deposit.provider === 'CHAPA' ? 'Chapa' : deposit.provider}

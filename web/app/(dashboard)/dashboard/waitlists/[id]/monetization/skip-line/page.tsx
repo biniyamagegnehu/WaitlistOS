@@ -26,7 +26,6 @@ import { z } from "zod";
 
 const configSchema = z.object({
   price: z.string().min(1, "Price is required").refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) > 0, "Price must be a positive number"),
-  currency: z.enum(["USD", "EUR", "GBP", "ETB", "NGN", "KES", "ZAR"]),
 });
 
 type ConfigFormData = z.infer<typeof configSchema>;
@@ -41,7 +40,6 @@ interface SkipLineAnalytics {
   currency: string;
   skipLineEnabled: boolean;
   skipLinePrice: number | string | null;
-  skipLineCurrency: string | null;
   byProvider: {
     stripe?: {
       totalRevenue: number | string;
@@ -71,6 +69,8 @@ interface Transaction {
   status: string;
   provider: string;
   providerPaymentId: string;
+  chargedAmount?: number | string;
+  chargedCurrency?: string;
   createdAt: string;
   updatedAt: string;
   participant: {
@@ -113,7 +113,6 @@ export default function SkipLinePage() {
     resolver: zodResolver(configSchema),
     defaultValues: {
       price: "",
-      currency: "USD",
     },
   });
 
@@ -140,7 +139,6 @@ export default function SkipLinePage() {
       if (analyticsResponse.data.skipLinePrice) {
         reset({
           price: Number(analyticsResponse.data.skipLinePrice).toString(),
-          currency: analyticsResponse.data.skipLineCurrency || "USD",
         });
       }
     } catch (err) {
@@ -212,7 +210,6 @@ export default function SkipLinePage() {
       await api.patch(`/monetization/skip-line/config/${waitlistId}`, {
         skipLineEnabled: true,
         skipLinePrice: price,
-        skipLineCurrency: data.currency,
       });
       
       await fetchAnalytics();
@@ -331,22 +328,6 @@ export default function SkipLinePage() {
                   />
                   {errors.price && <p className="text-xs text-destructive mt-1">{errors.price.message}</p>}
                 </div>
-                <div>
-                  <label className="text-sm font-medium text-foreground">Currency</label>
-                  <select
-                    className="mt-1 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
-                    {...register("currency")}
-                  >
-                    <option value="USD">USD ($)</option>
-                    <option value="EUR">EUR (€)</option>
-                    <option value="GBP">GBP (£)</option>
-                    <option value="ETB">ETB (ብ)</option>
-                    <option value="NGN">NGN (₦)</option>
-                    <option value="KES">KES (KSh)</option>
-                    <option value="ZAR">ZAR (R)</option>
-                  </select>
-                  {errors.currency && <p className="text-xs text-destructive mt-1">{errors.currency.message}</p>}
-                </div>
                 <div className="md:col-span-2 flex justify-end gap-2 mt-2">
                   <Button
                     variant="outline"
@@ -383,14 +364,14 @@ export default function SkipLinePage() {
                       </h3>
                       <p className="text-sm text-text-muted">
                         {analytics.skipLineEnabled
-                          ? `Participants can pay ${analytics.currency === "USD" ? "$" : ""}${Number(analytics.skipLinePrice || 0).toFixed(2)} to move into the priority pool`
+                          ? `Participants can pay $${Number(analytics.skipLinePrice || 0).toFixed(2)} USD to move into the priority pool`
                           : "Enable Skip the Line to allow participants to pay for priority placement"}
                       </p>
                     </div>
                   </div>
                   <div className="text-right">
                     <p className="text-2xl font-bold text-text-primary">
-                      {analytics.currency === "USD" ? "$" : ""}{Number(analytics.skipLinePrice || 0).toFixed(2)}
+                      ${Number(analytics.skipLinePrice || 0).toFixed(2)} USD
                     </p>
                     <p className="text-xs text-text-muted">Price per participant</p>
                   </div>
@@ -417,7 +398,7 @@ export default function SkipLinePage() {
                     <p className="text-sm font-medium text-text-muted">Total Revenue</p>
                   </div>
                   <p className="text-3xl font-bold text-text-primary">
-                    {analytics.currency === "USD" ? "$" : ""}{Number(analytics.totalRevenue).toFixed(2)}
+                    ${Number(analytics.totalRevenue).toFixed(2)} USD
                   </p>
                 </CardContent>
               </Card>
@@ -429,7 +410,7 @@ export default function SkipLinePage() {
                     <p className="text-sm font-medium text-text-muted">Platform Fees</p>
                   </div>
                   <p className="text-3xl font-bold text-text-primary">
-                    {analytics.currency === "USD" ? "$" : ""}{Number(analytics.platformFees).toFixed(2)}
+                    ${Number(analytics.platformFees).toFixed(2)} USD
                   </p>
                 </CardContent>
               </Card>
@@ -441,7 +422,7 @@ export default function SkipLinePage() {
                     <p className="text-sm font-medium text-text-muted">Provider Fees</p>
                   </div>
                   <p className="text-3xl font-bold text-text-primary">
-                    {analytics.currency === "USD" ? "$" : ""}{Number(analytics.providerFees).toFixed(2)}
+                    ${Number(analytics.providerFees).toFixed(2)} USD
                   </p>
                 </CardContent>
               </Card>
@@ -453,7 +434,7 @@ export default function SkipLinePage() {
                     <p className="text-sm font-medium text-text-muted">Founder Revenue</p>
                   </div>
                   <p className="text-3xl font-bold text-text-primary">
-                    {analytics.currency === "USD" ? "$" : ""}{Number(analytics.founderRevenue).toFixed(2)}
+                    ${Number(analytics.founderRevenue).toFixed(2)} USD
                   </p>
                 </CardContent>
               </Card>
@@ -506,7 +487,7 @@ export default function SkipLinePage() {
                       <div className="space-y-2">
                         <div className="flex justify-between text-sm">
                           <span className="text-text-muted">Revenue</span>
-                          <span className="font-medium">{analytics.currency === "USD" ? "$" : ""}{Number(analytics.byProvider.chapa.totalRevenue).toFixed(2)}</span>
+                          <span className="font-medium">${Number(analytics.byProvider.chapa.totalRevenue).toFixed(2)} USD</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-text-muted">Paid Skips</span>
@@ -514,15 +495,15 @@ export default function SkipLinePage() {
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-text-muted">Platform Fees</span>
-                          <span className="font-medium">{analytics.currency === "USD" ? "$" : ""}{Number(analytics.byProvider.chapa.platformFees).toFixed(2)}</span>
+                          <span className="font-medium">${Number(analytics.byProvider.chapa.platformFees).toFixed(2)} USD</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-text-muted">Provider Fees</span>
-                          <span className="font-medium">{analytics.currency === "USD" ? "$" : ""}{Number(analytics.byProvider.chapa.providerFees).toFixed(2)}</span>
+                          <span className="font-medium">${Number(analytics.byProvider.chapa.providerFees).toFixed(2)} USD</span>
                         </div>
                         <div className="flex justify-between text-sm">
                           <span className="text-text-muted">Founder Revenue</span>
-                          <span className="font-medium">{analytics.currency === "USD" ? "$" : ""}{Number(analytics.byProvider.chapa.founderRevenue).toFixed(2)}</span>
+                          <span className="font-medium">${Number(analytics.byProvider.chapa.founderRevenue).toFixed(2)} USD</span>
                         </div>
                       </div>
                     </div>
@@ -550,7 +531,7 @@ export default function SkipLinePage() {
                         <thead className="bg-surface-muted">
                           <TableRow>
                             <TableHeadCell>Participant</TableHeadCell>
-                            <TableHeadCell>Amount</TableHeadCell>
+                            <TableHeadCell>Amount (Base/Charged)</TableHeadCell>
                             <TableHeadCell>Provider</TableHeadCell>
                             <TableHeadCell>Status</TableHeadCell>
                             <TableHeadCell>Date</TableHeadCell>
@@ -575,7 +556,16 @@ export default function SkipLinePage() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                {transaction.currency === "USD" ? "$" : ""}{Number(transaction.amount).toFixed(2)}
+                                <div>
+                                  <div>
+                                    ${Number(transaction.amount).toFixed(2)} USD
+                                  </div>
+                                  {transaction.chargedAmount && transaction.chargedCurrency && (
+                                    <div className="text-xs text-muted-foreground">
+                                      Charged: {transaction.chargedCurrency === "USD" ? "$" : ""}{Number(transaction.chargedAmount).toFixed(2)} {transaction.chargedCurrency}
+                                    </div>
+                                  )}
+                                </div>
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">

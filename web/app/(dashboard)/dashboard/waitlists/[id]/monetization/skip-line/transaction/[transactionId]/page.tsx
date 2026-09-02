@@ -29,6 +29,8 @@ interface PaymentDetails {
   status: string;
   provider: string;
   providerPaymentId: string;
+  chargedAmount?: number | string;
+  chargedCurrency?: string;
   createdAt: string;
   updatedAt: string;
   participant: {
@@ -211,11 +213,25 @@ export default function TransactionDetailPage() {
                   <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
                     <div className="flex items-center gap-2">
                       <DollarSign className="h-5 w-5 text-primary" />
-                      <span className="font-medium text-foreground">Gross Amount</span>
+                      <div>
+                        <span className="font-medium text-foreground">Gross Amount</span>
+                        {payment.chargedAmount && payment.chargedCurrency && (
+                          <span className="text-xs text-muted-foreground block">
+                            (Base: {payment.currency === "USD" ? "$" : ""}{Number(payment.amount).toFixed(2)} {payment.currency})
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <span className="text-xl font-bold text-foreground">
-                      {payment.currency === "USD" ? "$" : ""}{Number(payment.amount).toFixed(2)}
-                    </span>
+                    <div className="text-right">
+                      <span className="text-xl font-bold text-foreground">
+                        {payment.chargedCurrency === "USD" ? "$" : ""}{Number(payment.chargedAmount || payment.amount).toFixed(2)} {payment.chargedCurrency || payment.currency}
+                      </span>
+                      {payment.chargedAmount && payment.chargedCurrency && payment.chargedCurrency !== payment.currency && (
+                        <span className="text-xs text-muted-foreground block">
+                          Provider converted to {payment.chargedCurrency}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="flex justify-between items-center p-4 bg-muted rounded-lg">
@@ -224,7 +240,7 @@ export default function TransactionDetailPage() {
                       <span className="font-medium text-foreground">Provider Fee</span>
                     </div>
                     <span className="text-xl font-bold text-foreground">
-                      {payment.currency === "USD" ? "-$" : "-"}{Number(payment.providerFee).toFixed(2)}
+                      {payment.currency === "USD" ? "-$" : "-"}{Number(payment.providerFee).toFixed(2)} {payment.currency}
                     </span>
                   </div>
                   
@@ -234,7 +250,7 @@ export default function TransactionDetailPage() {
                       <span className="font-medium text-foreground">Platform Fee</span>
                     </div>
                     <span className="text-xl font-bold text-foreground">
-                      {payment.currency === "USD" ? "-$" : "-"}{Number(payment.platformFee).toFixed(2)}
+                      {payment.currency === "USD" ? "-$" : "-"}{Number(payment.platformFee).toFixed(2)} {payment.currency}
                     </span>
                   </div>
                   
@@ -244,7 +260,7 @@ export default function TransactionDetailPage() {
                       <span className="font-semibold text-foreground">Founder Net Revenue</span>
                     </div>
                     <span className="text-2xl font-bold text-success">
-                      {payment.currency === "USD" ? "$" : ""}{Number(payment.founderAmount).toFixed(2)}
+                      {payment.currency === "USD" ? "$" : ""}{Number(payment.founderAmount).toFixed(2)} {payment.currency}
                     </span>
                   </div>
                 </div>
