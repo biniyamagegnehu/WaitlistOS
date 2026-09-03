@@ -150,11 +150,11 @@ export function SkipLineCard({
               <p className="text-xs text-muted-foreground">Get priority access</p>
             </div>
           </div>
-          <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
+          <Badge variant="outline" className="bg-primary/10 text-primary hover:bg-primary/20 border-primary/20">
             Recommended
           </Badge>
         </div>
-        
+
         <div className="rounded-lg border border-border bg-surface-muted/50 p-3">
           <div className="flex items-center justify-between">
             <p className="text-xs font-medium text-muted-foreground">Current position</p>
