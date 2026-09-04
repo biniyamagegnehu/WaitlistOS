@@ -29,7 +29,8 @@ export function PricingSection() {
               name: "Free",
               price: "$0",
               desc: "Perfect for getting started",
-              features: ["1 waitlist", "100 participants", "Basic analytics", "Email support"],
+              billingCycle: "Forever",
+              features: ["1 waitlist", "500 signups"],
               cta: "Start Free",
               popular: false,
             },
@@ -37,16 +38,18 @@ export function PricingSection() {
               name: "Starter",
               price: "$19",
               desc: "For growing waitlists",
-              features: ["3 waitlists", "1,000 participants", "Advanced analytics", "Priority support", "Custom branding"],
-              cta: "Get Started",
+              billingCycle: "Per month",
+              features: ["5 waitlists", "5,000 signups"],
+              cta: "Upgrade to Starter",
               popular: true,
             },
             {
               name: "Pro",
               price: "$49",
               desc: "For serious founders",
-              features: ["Unlimited waitlists", "10,000 participants", "API access", "Dedicated support", "White-label option"],
-              cta: "Get Started",
+              billingCycle: "Per month",
+              features: ["Unlimited waitlists & signups", "Custom domain"],
+              cta: "Upgrade to Pro",
               popular: false,
             },
           ].map((plan, i) => (
@@ -70,9 +73,8 @@ export function PricingSection() {
                 <h3 className="text-xl font-semibold text-foreground">{plan.name}</h3>
                 <div className="mt-4">
                   <span className="text-4xl font-semibold text-foreground">{plan.price}</span>
-                  <span className="text-muted-foreground">/month</span>
                 </div>
-                <p className="mt-2 text-sm text-muted-foreground">{plan.desc}</p>
+                <p className="mt-2 text-sm text-muted-foreground">{plan.billingCycle}</p>
                 <ul className="mt-8 space-y-4">
                   {plan.features.map((feature, j) => (
                     <li key={j} className="flex items-start gap-3 text-sm text-muted-foreground">
