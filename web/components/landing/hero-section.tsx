@@ -84,9 +84,9 @@ export function HeroSection() {
 
         {/* Eyebrow pill */}
         <Appear delay={0.05}>
-          <div className="mb-7 inline-flex items-center gap-2 rounded-full border border-border bg-white/85 dark:bg-surface/80 backdrop-blur-sm px-3 py-1.5 text-sm shadow-sm">
+          <div className="mb-7 inline-flex items-center gap-1.5 rounded-full border border-border bg-white/85 dark:bg-surface/80 backdrop-blur-sm px-2.5 py-1 text-xs shadow-sm">
             <span
-              className="rounded-full px-2 py-0.5 text-xs font-semibold text-white"
+              className="rounded-full px-1.5 py-[2px] text-[10px] uppercase tracking-wider font-bold text-white"
               style={{ background: "var(--primary)" }}
             >
               New
@@ -94,7 +94,7 @@ export function HeroSection() {
             <span className="text-muted-foreground font-medium">
               Grow Before Launch
             </span>
-            <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
+            <ChevronRight className="h-3 w-3 text-muted-foreground" />
           </div>
         </Appear>
 
