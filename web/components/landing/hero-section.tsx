@@ -80,7 +80,7 @@ export function HeroSection() {
       />
 
       {/* ── Content ── */}
-      <div className="relative mx-auto max-w-4xl flex flex-col items-center text-center">
+      <div className="relative mx-auto max-w-5xl flex flex-col items-center text-center">
 
         {/* Eyebrow pill */}
         <Appear delay={0.05}>
@@ -159,32 +159,56 @@ export function HeroSection() {
 
         {/* Image Grid */}
         <Appear delay={0.45} className="w-full">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mt-4">
             {/* Card 1 */}
-            <div className="relative aspect-square md:aspect-auto md:h-[380px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border">
+            <div className="group relative aspect-square md:aspect-auto md:h-[450px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border shadow-sm">
               <img
-                src="/hero-1.png"
-                alt="Founder preparing for launch"
-                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                src="/hero-1.jpg"
+                alt="WaitlistOS Analytics Dashboard"
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 flex flex-col justify-end p-8 text-left">
+                <h3 className="text-white font-semibold text-xl translate-y-4 transition-transform duration-500 group-hover:translate-y-0">
+                  Powerful Analytics
+                </h3>
+                <p className="text-white/80 text-sm mt-2 translate-y-4 transition-transform duration-500 delay-75 group-hover:translate-y-0">
+                  Track every metric and conversion with real-time insights from your dashboard.
+                </p>
+              </div>
             </div>
 
             {/* Card 2 */}
-            <div className="relative aspect-square md:aspect-auto md:h-[380px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border">
+            <div className="group relative aspect-square md:aspect-auto md:h-[450px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border shadow-sm">
               <img
-                src="/hero-2.png"
-                alt="Waitlist Growth Dashboard"
-                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                src="/hero-2.jpg"
+                alt="WaitlistOS Mobile Signup"
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 flex flex-col justify-end p-8 text-left">
+                <h3 className="text-white font-semibold text-xl translate-y-4 transition-transform duration-500 group-hover:translate-y-0">
+                  Frictionless Signups
+                </h3>
+                <p className="text-white/80 text-sm mt-2 translate-y-4 transition-transform duration-500 delay-75 group-hover:translate-y-0">
+                  Beautiful, mobile-optimized waitlist pages designed for high conversion rates.
+                </p>
+              </div>
             </div>
 
             {/* Card 3 */}
-            <div className="relative aspect-square md:aspect-auto md:h-[380px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border">
+            <div className="group relative aspect-square md:aspect-auto md:h-[450px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border shadow-sm">
               <img
-                src="/hero-3.png"
-                alt="Founder smiling on Launch Day"
-                className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
+                src="/hero-3.jpg"
+                alt="WaitlistOS Referral Growth"
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 flex flex-col justify-end p-8 text-left">
+                <h3 className="text-white font-semibold text-xl translate-y-4 transition-transform duration-500 group-hover:translate-y-0">
+                  Referral Growth
+                </h3>
+                <p className="text-white/80 text-sm mt-2 translate-y-4 transition-transform duration-500 delay-75 group-hover:translate-y-0">
+                  Watch your audience grow organically with built-in referral milestones.
+                </p>
+              </div>
             </div>
           </div>
         </Appear>
