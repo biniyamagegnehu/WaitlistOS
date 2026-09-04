@@ -63,8 +63,8 @@ export function GrowthVelocityChart({ data, spikes, viewMode }: GrowthVelocityCh
             dataKey="timestamp"
             tickLine={false}
             axisLine={false}
-            tickMargin={8}
-            interval={0}
+            tickMargin={12}
+            minTickGap={30}
             tickFormatter={(value) => formatTimestamp(value, viewMode, true)}
           />
           <YAxis allowDecimals={false} tickLine={false} axisLine={false} tickMargin={8} width={36} />

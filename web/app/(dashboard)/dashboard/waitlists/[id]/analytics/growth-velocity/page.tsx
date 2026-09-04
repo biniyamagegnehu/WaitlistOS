@@ -94,14 +94,15 @@ export default function AnalyticsGrowthVelocityPage({ params }: { params: Promis
           { label: "Growth Velocity" },
         ]}
         secondaryActions={
-          <div className="flex flex-wrap gap-2 sm:items-center">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-medium text-foreground hidden sm:inline">Period</span>
+          <div className="flex items-center gap-2 bg-surface border border-border rounded-lg p-1 shadow-sm">
+            <div className="flex items-center gap-1.5 px-2 border-r border-border">
+              <Clock className="h-3.5 w-3.5 text-muted-foreground hidden sm:block" />
               <Select
                 value={dateRange}
                 onChange={(e) => setDateRange(e.target.value)}
                 size="sm"
                 aria-label="Select date range"
+                className="border-0 shadow-none bg-transparent hover:bg-surface-muted focus:ring-0 text-sm font-medium"
               >
                 <option value="7">Last 7 days</option>
                 <option value="30">Last 30 days</option>
@@ -110,12 +111,18 @@ export default function AnalyticsGrowthVelocityPage({ params }: { params: Promis
               </Select>
             </div>
 
-            <Tabs value={viewMode} onValueChange={(value) => setViewMode(value as "hourly" | "daily")}>
-              <TabsList>
-                <TabsTrigger value="hourly">Hourly</TabsTrigger>
-                <TabsTrigger value="daily">Daily</TabsTrigger>
-              </TabsList>
-            </Tabs>
+            <div className="flex items-center px-1">
+              <Select
+                value={viewMode}
+                onChange={(e) => setViewMode(e.target.value as "hourly" | "daily")}
+                size="sm"
+                aria-label="Select resolution"
+                className="border-0 shadow-none bg-transparent hover:bg-surface-muted focus:ring-0 text-sm font-medium"
+              >
+                <option value="hourly">Hourly</option>
+                <option value="daily">Daily</option>
+              </Select>
+            </div>
           </div>
         }
       />
