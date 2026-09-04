@@ -157,11 +157,18 @@ export class MonetizationService {
         newStatus = PaymentAccountStatus.PENDING;
       }
 
+      if (newStatus !== PaymentAccountStatus.ACTIVE) {
+        await this.prisma.paymentAccount.delete({
+          where: { id: account.id },
+        });
+        return { status: PaymentAccountStatus.NOT_CONNECTED };
+      }
+
       await this.prisma.paymentAccount.update({
         where: { id: account.id },
         data: {
           status: newStatus,
-          connectedAt: newStatus === PaymentAccountStatus.ACTIVE ? new Date() : account.connectedAt,
+          connectedAt: new Date(),
           lastError: null,
         },
       });
@@ -291,9 +298,8 @@ export class MonetizationService {
       throw new NotFoundException(`No ${provider} account found.`);
     }
 
-    await this.prisma.paymentAccount.update({
+    await this.prisma.paymentAccount.delete({
       where: { id: account.id },
-      data: { status: PaymentAccountStatus.DISCONNECTED },
     });
   }
 
