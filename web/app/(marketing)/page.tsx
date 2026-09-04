@@ -4,6 +4,7 @@ import { HeroSection } from "@/components/landing/hero-section";
 import { SocialProof } from "@/components/landing/social-proof";
 import { CoreCapabilities } from "@/components/landing/core-capabilities";
 import { ProductShowcase, DashboardMockup } from "@/components/landing/product-showcase";
+import { ReferralGrowthEngine } from "@/components/landing/referral-growth-engine";
 import { PricingSection } from "@/components/landing/pricing-section";
 import { FAQSection } from "@/components/landing/faq-section";
 import { FinalCTA } from "@/components/landing/final-cta";
@@ -41,22 +42,7 @@ export default function HomePage() {
       </section>
 
       {/* Visual Storytelling - Referral System */}
-      <section className="bg-surface py-16 sm:py-24">
-        <PageContainer withoutVerticalPadding>
-          <ProductShowcase
-            reverse
-            image={<DashboardMockup variant="referrals" />}
-            title="Viral Referral Growth Engine"
-            description="Every participant gets a unique referral link. When they share it and friends sign up, they move up the waitlist and unlock exclusive rewards."
-            features={[
-              "Unique referral links for each participant",
-              "Real-time leaderboard tracking",
-              "Automatic position updates",
-              "Customizable reward tiers"
-            ]}
-          />
-        </PageContainer>
-      </section>
+      <ReferralGrowthEngine />
 
       {/* Visual Storytelling - Analytics */}
       <section className="py-16 sm:py-24">
