@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { PageContainer } from "@/components/patterns/page-container";
 import { HeroSection } from "@/components/landing/hero-section";
-import { SocialProof } from "@/components/landing/social-proof";
 import { CoreCapabilities } from "@/components/landing/core-capabilities";
 import { ProductShowcase, DashboardMockup } from "@/components/landing/product-showcase";
 import { ReferralGrowthEngine } from "@/components/landing/referral-growth-engine";
@@ -19,7 +18,6 @@ export default function HomePage() {
   return (
     <div className="flex-1">
       <HeroSection />
-      <SocialProof />
       
       {/* Core Capabilities Section */}
       <CoreCapabilities />
