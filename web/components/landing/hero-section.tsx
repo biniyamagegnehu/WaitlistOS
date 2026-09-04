@@ -150,7 +150,7 @@ export function HeroSection() {
             <Link
               href="#how-it-works"
               id="hero-cta-how-it-works"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full px-7 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-foreground/[0.06]"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full px-7 text-sm font-semibold text-foreground transition-all duration-200 hover:bg-foreground/[0.06] bg-foreground/[0.06] hover:scale-[1.03]"
             >
               See How It Works
             </Link>
