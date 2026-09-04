@@ -99,7 +99,7 @@ export function ReferralGrowthEngine() {
           {/* Features Left */}
           <motion.div style={{ y: y1 }} className="lg:col-span-3 space-y-6 hidden lg:block">
             {features.slice(0, 2).map((feature, i) => (
-              <FeatureCard key={i} feature={feature} align="right" />
+              <FeatureCard key={i} feature={feature} align="left" />
             ))}
           </motion.div>
 
@@ -121,7 +121,7 @@ export function ReferralGrowthEngine() {
           </motion.div>
 
           {/* Features Right */}
-          <motion.div style={{ y: y2 }} className="lg:col-span-3 space-y-6 hidden lg:block">
+          <motion.div style={{ y: y1 }} className="lg:col-span-3 space-y-6 hidden lg:block">
             {features.slice(2, 4).map((feature, i) => (
               <FeatureCard key={i + 2} feature={feature} align="left" />
             ))}
@@ -143,7 +143,7 @@ function FeatureCard({ feature, align }: { feature: any, align: 'left' | 'right'
   return (
     <div className={`
       relative p-6 rounded-2xl bg-background/50 border border-border backdrop-blur-sm
-      hover:bg-foreground/5 transition-colors duration-300 group
+      hover:bg-foreground/5 transition-colors duration-300 group flex flex-col justify-center min-h-[220px]
       ${align === 'right' ? 'lg:text-right' : 'lg:text-left'}
     `}>
       <div className={`
