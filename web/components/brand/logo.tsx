@@ -22,13 +22,13 @@ export function BrandLogo({
       <img
         src="/getlist-logo-light.png"
         alt="Getlist Logo"
-        style={{ height: `${height}px`, width: "auto", mixBlendMode: "multiply", filter: "contrast(2)" }}
+        style={{ height: `${height}px`, width: "auto" }}
         className="shrink-0 block dark:hidden object-contain"
       />
       <img
         src="/getlist-logo-dark.png"
         alt="Getlist Logo"
-        style={{ height: `${height}px`, width: "auto", mixBlendMode: "screen", filter: "contrast(2)" }}
+        style={{ height: `${height}px`, width: "auto" }}
         className="shrink-0 hidden dark:block object-contain"
       />
     </>
