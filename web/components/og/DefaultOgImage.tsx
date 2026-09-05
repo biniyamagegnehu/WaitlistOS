@@ -38,7 +38,7 @@ export function DefaultOgImage() {
             color: OG_COLORS.text,
           }}
         >
-          WaitlistOS
+          Getlist
         </div>
         <div style={{ display: "flex", height: 12, width: 1 }} />
         <div
@@ -61,7 +61,7 @@ export function DefaultOgImage() {
             fontWeight: 600,
           }}
         >
-          waitlistos.com
+          getlist.com
         </div>
       </div>
     </div>

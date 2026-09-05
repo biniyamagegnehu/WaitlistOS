@@ -23,9 +23,9 @@ import {
 } from "@/components/legal/legal-page-shell";
 
 export const metadata: Metadata = {
-  title: "Privacy Policy | WaitlistOS",
+  title: "Privacy Policy | Getlist",
   description:
-    "Read the WaitlistOS Privacy Policy to understand how we collect, use, protect, and manage information when you use our services.",
+    "Read the Getlist Privacy Policy to understand how we collect, use, protect, and manage information when you use our services.",
 };
 
 const highlights: HighlightItem[] = [
@@ -33,7 +33,7 @@ const highlights: HighlightItem[] = [
     icon: <Users className="h-4 w-4" />,
     title: "Two Distinct Roles",
     description:
-      "We distinguish between WaitlistOS Founders (account owners) and Waitlist Participants joining public waitlists.",
+      "We distinguish between Getlist Founders (account owners) and Waitlist Participants joining public waitlists.",
   },
   {
     icon: <CreditCard className="h-4 w-4" />,
@@ -79,7 +79,7 @@ export default function PrivacyPolicyPage() {
       eyebrow="Trust & Transparency"
       titlePrefix="Privacy Policy: How we protect &"
       titleAccent="handle your data"
-      description="At WaitlistOS, we believe in privacy by design. This policy outlines how information is collected, processed, and safeguarded across both our founder platform and public waitlist pages."
+      description="At Getlist, we believe in privacy by design. This policy outlines how information is collected, processed, and safeguarded across both our founder platform and public waitlist pages."
       effectiveDate={effectiveDate}
       highlights={highlights}
       toc={toc}
@@ -94,7 +94,7 @@ export default function PrivacyPolicyPage() {
         badge="Scope"
       >
         <p>
-          Welcome to WaitlistOS. This Privacy Policy explains how{" "}
+          Welcome to Getlist. This Privacy Policy explains how{" "}
           <strong className="text-foreground">[LEGAL ENTITY NAME]</strong> (&quot;we&quot;,
           &quot;us&quot;, or &quot;our&quot;) collects, uses, and protects information when you
           use our waitlist management platform, APIs, dashboard, and public waitlist surfaces
@@ -102,7 +102,7 @@ export default function PrivacyPolicyPage() {
         </p>
 
         <p>
-          To maintain clarity and accuracy regarding data responsibilities, WaitlistOS operates
+          To maintain clarity and accuracy regarding data responsibilities, Getlist operates
           under two distinct relationships:
         </p>
 
@@ -113,7 +113,7 @@ export default function PrivacyPolicyPage() {
               Founder Information
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              For businesses, creators, and individuals who register accounts on WaitlistOS
+              For businesses, creators, and individuals who register accounts on Getlist
               to build, configure, and manage waitlists, we act as the <strong>Data Controller</strong>.
             </p>
           </div>
@@ -124,7 +124,7 @@ export default function PrivacyPolicyPage() {
               Participant Information
             </div>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              For prospective customers joining waitlists created by Founders, WaitlistOS acts as a{" "}
+              For prospective customers joining waitlists created by Founders, Getlist acts as a{" "}
               <strong>Data Processor (Service Provider)</strong> on behalf of the Founder who controls that waitlist.
             </p>
           </div>
@@ -265,7 +265,7 @@ export default function PrivacyPolicyPage() {
           <li>
             <strong className="text-foreground">Between Founders and their Participants:</strong> When a participant
             joins a creator&apos;s waitlist, their email, questionnaire answers, and referral tier status are accessible
-            to that specific Founder via their WaitlistOS administrative dashboard.
+            to that specific Founder via their Getlist administrative dashboard.
           </li>
           <li>
             <strong className="text-foreground">Third-Party Service Infrastructure:</strong> We share data with verified
@@ -287,7 +287,7 @@ export default function PrivacyPolicyPage() {
         badge="Audited Integrations"
       >
         <p>
-          The WaitlistOS application interfaces with reputable external service providers to deliver robust functionality:
+          The Getlist application interfaces with reputable external service providers to deliver robust functionality:
         </p>
 
         <div className="space-y-3 pt-2">
@@ -420,7 +420,7 @@ export default function PrivacyPolicyPage() {
         </div>
 
         <p className="text-xs sm:text-sm pt-2">
-          <strong>Participants:</strong> Because WaitlistOS processes participant submissions on behalf of Founders,
+          <strong>Participants:</strong> Because Getlist processes participant submissions on behalf of Founders,
           requests for deletion or correction of answers submitted to a creator&apos;s waitlist should be directed
           to that Founder first.
         </p>
@@ -452,7 +452,7 @@ export default function PrivacyPolicyPage() {
         icon={<Globe className="h-5 w-5 text-primary" />}
       >
         <p>
-          WaitlistOS provides a global platform. As such, information collected through our Service may be transferred
+          Getlist provides a global platform. As such, information collected through our Service may be transferred
           to, stored, and processed in cloud data centers located outside of your state, province, or country of residence.
         </p>
         <p>
@@ -493,7 +493,7 @@ export default function PrivacyPolicyPage() {
 
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 mt-3 space-y-2">
           <div className="font-semibold text-foreground text-sm">
-            WaitlistOS Privacy & Compliance Office
+            Getlist Privacy & Compliance Office
           </div>
           <div className="text-xs text-muted-foreground">
             Operating Entity: <span className="font-mono text-foreground font-medium">[LEGAL ENTITY NAME]</span>

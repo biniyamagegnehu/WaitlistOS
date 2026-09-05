@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import PricingPageClient from "@/components/billing/PricingPageClient";
 
 export const metadata: Metadata = {
-  title: "Pricing — WaitlistOS",
-  description: "Simple, transparent pricing for WaitlistOS.",
+  title: "Pricing — Getlist",
+  description: "Simple, transparent pricing for Getlist.",
 };
 
 export default function PricingPage() {

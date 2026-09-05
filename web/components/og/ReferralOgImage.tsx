@@ -204,7 +204,7 @@ export function ReferralOgImage({ data }: ReferralOgImageProps) {
                 fontWeight: 600,
               }}
             >
-              waitlistos.com
+              getlist.com
             </div>
           </div>
         </div>

@@ -8,7 +8,7 @@ import {
 } from "@/lib/og";
 import { routes } from "@/lib/routes";
 
-const DEFAULT_TITLE = "WaitlistOS";
+const DEFAULT_TITLE = "Getlist";
 const DEFAULT_DESCRIPTION =
   "Create and manage referral-based waitlists for your product launch.";
 
@@ -32,7 +32,7 @@ export function buildDefaultReferralMetadata(referralCode: string): Metadata {
       title: DEFAULT_TITLE,
       description: DEFAULT_DESCRIPTION,
       url: `${appUrl}${routes.referral(referralCode)}`,
-      siteName: "WaitlistOS",
+      siteName: "Getlist",
       type: "website",
       images: [buildOgImageMeta(imageUrl, DEFAULT_TITLE)],
     },

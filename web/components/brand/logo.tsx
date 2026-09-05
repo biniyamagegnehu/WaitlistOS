@@ -15,23 +15,22 @@ export function BrandLogo({
   showText = true,
   size = "md",
 }: BrandLogoProps) {
-  const height = size === "sm" ? 32 : 40;
-  const width = size === "sm" ? 32 : 40;
+  const height = size === "sm" ? 28 : 36;
 
   const content = (
     <>
-      <Image
-        src="/favicon.ico"
-        alt="WaitlistOS Logo"
-        width={width}
-        height={height}
-        className="shrink-0 dark:invert dark:hue-rotate-180 dark:mix-blend-lighten"
+      <img
+        src="/getlist-logo-light.png"
+        alt="Getlist Logo"
+        style={{ height: `${height}px`, width: "auto", mixBlendMode: "multiply", filter: "contrast(2)" }}
+        className="shrink-0 block dark:hidden object-contain"
       />
-      {showText && (
-        <span className="text-[15px] font-semibold tracking-tight text-foreground">
-          WaitlistOS
-        </span>
-      )}
+      <img
+        src="/getlist-logo-dark.png"
+        alt="Getlist Logo"
+        style={{ height: `${height}px`, width: "auto", mixBlendMode: "screen", filter: "contrast(2)" }}
+        className="shrink-0 hidden dark:block object-contain"
+      />
     </>
   );
 

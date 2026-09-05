@@ -23,7 +23,7 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "WaitlistOS",
+  title: "Getlist",
   description: "Create and manage waitlists for your product",
 };
 

@@ -27,9 +27,9 @@ import {
 } from "@/components/legal/legal-page-shell";
 
 export const metadata: Metadata = {
-  title: "Terms of Service | WaitlistOS",
+  title: "Terms of Service | Getlist",
   description:
-    "Read the WaitlistOS Terms of Service governing your use of the WaitlistOS platform and services.",
+    "Read the Getlist Terms of Service governing your use of the Getlist platform and services.",
 };
 
 const highlights: HighlightItem[] = [
@@ -62,7 +62,7 @@ const highlights: HighlightItem[] = [
 const toc: TocItem[] = [
   { id: "acceptance", title: "Acceptance of Terms", badge: "Binding" },
   { id: "eligibility", title: "Eligibility & Accounts" },
-  { id: "founder-responsibilities", title: "Using WaitlistOS (Founders)", badge: "Core" },
+  { id: "founder-responsibilities", title: "Using Getlist (Founders)", badge: "Core" },
   { id: "payments-monetization", title: "Payments & Monetization", badge: "Billing" },
   { id: "affiliate-program", title: "Affiliate Program", badge: "Referrals" },
   { id: "intellectual-property", title: "Intellectual Property & Content" },
@@ -87,7 +87,7 @@ export default function TermsOfServicePage() {
       eyebrow="Platform Agreement"
       titlePrefix="Terms of Service: Simple, transparent"
       titleAccent="platform rules"
-      description="These terms establish the legal agreement between you and WaitlistOS for operating waitlists, processing early monetization, and building customer communities."
+      description="These terms establish the legal agreement between you and Getlist for operating waitlists, processing early monetization, and building customer communities."
       effectiveDate={effectiveDate}
       highlights={highlights}
       toc={toc}
@@ -102,14 +102,14 @@ export default function TermsOfServicePage() {
         badge="Agreement"
       >
         <p>
-          By creating an account, accessing, or utilizing WaitlistOS (the &quot;Service&quot;),
+          By creating an account, accessing, or utilizing Getlist (the &quot;Service&quot;),
           you agree to be bound by these Terms of Service. If you are entering into this agreement
           on behalf of a legal entity or organization, you represent and warrant that you possess
           the legal authority to bind that entity to these Terms.
         </p>
 
         <p>
-          If you do not agree to these Terms, you must not access or use WaitlistOS.
+          If you do not agree to these Terms, you must not access or use Getlist.
         </p>
       </LegalSectionCard>
 
@@ -121,27 +121,27 @@ export default function TermsOfServicePage() {
         icon={<UserCheck className="h-5 w-5 text-primary" />}
       >
         <p>
-          To access certain features of WaitlistOS, you must register for an account. You agree to:
+          To access certain features of Getlist, you must register for an account. You agree to:
         </p>
 
         <ul className="list-disc pl-5 space-y-2 text-xs sm:text-sm">
           <li>Provide accurate, current, and complete registration information.</li>
           <li>Maintain the confidentiality of your credentials, password, and session access tokens.</li>
-          <li>Notify WaitlistOS immediately upon discovering any unauthorized breach or account compromise.</li>
+          <li>Notify Getlist immediately upon discovering any unauthorized breach or account compromise.</li>
           <li>Accept responsibility for all activities occurring under your administrative account credentials.</li>
         </ul>
       </LegalSectionCard>
 
-      {/* ── Section 3: Using WaitlistOS (Founders) ── */}
+      {/* ── Section 3: Using Getlist (Founders) ── */}
       <LegalSectionCard
         id="founder-responsibilities"
         number="03"
-        title="Using WaitlistOS (For Founders)"
+        title="Using Getlist (For Founders)"
         icon={<Briefcase className="h-5 w-5 text-primary" />}
         badge="Responsibilities"
       >
         <p>
-          Founders use WaitlistOS to build viral waitlists, run gamified referral competitions,
+          Founders use Getlist to build viral waitlists, run gamified referral competitions,
           and validate consumer demand for forthcoming products or services. As a Founder, you agree that:
         </p>
 
@@ -157,7 +157,7 @@ export default function TermsOfServicePage() {
           <div className="rounded-xl border border-border bg-surface/60 p-4">
             <h4 className="font-semibold text-foreground text-xs mb-1">Truth in Advertising</h4>
             <p className="text-xs text-muted-foreground">
-              You will not use WaitlistOS to promote deceptive offers, phantom products, illegal schemes,
+              You will not use Getlist to promote deceptive offers, phantom products, illegal schemes,
               or misleading promotional campaigns.
             </p>
           </div>
@@ -178,7 +178,7 @@ export default function TermsOfServicePage() {
         badge="Financials"
       >
         <p>
-          WaitlistOS provides subscription tiers (Starter, Pro) alongside creator monetization features,
+          Getlist provides subscription tiers (Starter, Pro) alongside creator monetization features,
           including <strong>Skip the Line</strong> paid queue priority and <strong>Pre-Order Deposits</strong>:
         </p>
 
@@ -189,7 +189,7 @@ export default function TermsOfServicePage() {
             </h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
               All payment transactions are processed securely through third-party processors (Stripe and Chapa).
-              WaitlistOS does not hold customer bank funds directly or retain sensitive credit card numbers.
+              Getlist does not hold customer bank funds directly or retain sensitive credit card numbers.
               Founders must maintain active, compliant merchant accounts with these providers.
             </p>
           </div>
@@ -199,7 +199,7 @@ export default function TermsOfServicePage() {
               Platform Service Fees
             </h4>
             <p className="text-xs text-muted-foreground leading-relaxed">
-              WaitlistOS may collect a platform fee on monetization transactions processed through the Service,
+              Getlist may collect a platform fee on monetization transactions processed through the Service,
               as indicated in your dashboard settings at the time of feature enablement.
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function TermsOfServicePage() {
         badge="Referral Program"
       >
         <p>
-          Eligible founders may participate in the WaitlistOS Affiliate Program to earn recurring commissions
+          Eligible founders may participate in the Getlist Affiliate Program to earn recurring commissions
           on referred platform subscribers.
         </p>
 
@@ -240,7 +240,7 @@ export default function TermsOfServicePage() {
             verification window before reaching &quot;Eligible&quot; payout status to detect fraud or payment failures.
           </li>
           <li>
-            <strong className="text-foreground">Fraud Enforcement:</strong> Self-referrals, bidding on WaitlistOS
+            <strong className="text-foreground">Fraud Enforcement:</strong> Self-referrals, bidding on Getlist
             branded search terms, or manipulating click telemetry is strictly prohibited and leads to commission forfeiture.
           </li>
         </ul>
@@ -255,12 +255,12 @@ export default function TermsOfServicePage() {
       >
         <p>
           <strong className="text-foreground">Your Content:</strong> You retain 100% intellectual property ownership
-          over logos, trademarks, copywriting, and waitlist materials uploaded to WaitlistOS. You grant us a limited,
+          over logos, trademarks, copywriting, and waitlist materials uploaded to Getlist. You grant us a limited,
           non-exclusive license strictly to host, render, and display your materials as necessary to operate your waitlist.
         </p>
         <p>
-          <strong className="text-foreground">WaitlistOS Platform IP:</strong> All software, code, algorithms,
-          visual designs, logos, and documentation related to the WaitlistOS platform remain the exclusive intellectual
+          <strong className="text-foreground">Getlist Platform IP:</strong> All software, code, algorithms,
+          visual designs, logos, and documentation related to the Getlist platform remain the exclusive intellectual
           property of <strong className="text-foreground">[LEGAL ENTITY NAME]</strong>.
         </p>
       </LegalSectionCard>
@@ -273,13 +273,13 @@ export default function TermsOfServicePage() {
         icon={<Ban className="h-5 w-5 text-primary" />}
         badge="Conduct"
       >
-        <p>You agree not to misuse WaitlistOS. You may not:</p>
+        <p>You agree not to misuse Getlist. You may not:</p>
 
         <ul className="list-disc pl-5 space-y-2 text-xs sm:text-sm">
           <li>Use the Service to transmit unsolicited commercial bulk email (&quot;spam&quot;) or violate CAN-SPAM regulations.</li>
           <li>Host malicious software, phishing pages, deceptive investment scams, or infringing intellectual property.</li>
           <li>Probe, scan, or test the vulnerability of our APIs, servers, or networks without authorized penetration testing agreements.</li>
-          <li>Reverse engineer, decompile, scrape, or extract source code from the WaitlistOS application.</li>
+          <li>Reverse engineer, decompile, scrape, or extract source code from the Getlist application.</li>
           <li>Circumvent plan limits, subscriber caps, or billing security mechanisms.</li>
         </ul>
       </LegalSectionCard>
@@ -293,7 +293,7 @@ export default function TermsOfServicePage() {
       >
         <p>
           We continually enhance our infrastructure to provide maximum uptime and high-velocity performance.
-          However, WaitlistOS is provided without warranties of uninterrupted or error-free availability.
+          However, Getlist is provided without warranties of uninterrupted or error-free availability.
         </p>
         <p>
           We reserve the right to deploy updates, modify feature sets, conduct scheduled maintenance, or discontinue
@@ -329,7 +329,7 @@ export default function TermsOfServicePage() {
           Notice to all users
         </p>
         <p className="text-xs sm:text-sm leading-relaxed">
-          WAITLISTOS AND ALL INTEGRATED SERVICES ARE PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot;
+          GETLIST AND ALL INTEGRATED SERVICES ARE PROVIDED ON AN &quot;AS IS&quot; AND &quot;AS AVAILABLE&quot;
           BASIS, WITHOUT WARRANTIES OF ANY KIND, WHETHER EXPRESS, IMPLIED, OR STATUTORY, INCLUDING WITHOUT LIMITATION
           THE IMPLIED WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE, TITLE, AND NON-INFRINGEMENT.
         </p>
@@ -398,7 +398,7 @@ export default function TermsOfServicePage() {
           or email.
         </p>
         <p>
-          Your continued use of WaitlistOS after changes become effective constitutes your binding acceptance of the updated terms.
+          Your continued use of Getlist after changes become effective constitutes your binding acceptance of the updated terms.
         </p>
       </LegalSectionCard>
 
@@ -417,7 +417,7 @@ export default function TermsOfServicePage() {
 
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-5 mt-3 space-y-2">
           <div className="font-semibold text-foreground text-sm">
-            WaitlistOS Legal Affairs & Platform Governance
+            Getlist Legal Affairs & Platform Governance
           </div>
           <div className="text-xs text-muted-foreground">
             Entity: <span className="font-mono text-foreground font-medium">[LEGAL ENTITY NAME]</span>

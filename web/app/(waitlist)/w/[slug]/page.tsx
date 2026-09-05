@@ -41,7 +41,7 @@ export async function generateMetadata({
   }
 
   return {
-    title: `Join ${slug} | WaitlistOS`,
+    title: `Join ${slug} | Getlist`,
     description: "Join the waitlist and secure your spot.",
   };
 }

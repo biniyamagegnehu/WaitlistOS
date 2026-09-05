@@ -70,7 +70,7 @@ export function MarketingFooter() {
 
         <div className="mt-12 border-t border-border pt-8 text-center">
           <p className="text-sm text-muted-foreground">
-            &copy; {new Date().getFullYear()} WaitlistOS. All rights reserved.
+            &copy; {new Date().getFullYear()} Getlist. All rights reserved.
           </p>
         </div>
       </div>

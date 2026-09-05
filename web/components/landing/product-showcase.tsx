@@ -103,7 +103,7 @@ export function DashboardMockup({ variant = "analytics" }: DashboardMockupProps)
           <div className="h-3 w-3 rounded-full bg-green-400" />
         </div>
         <div className="ml-4 flex-1 rounded-md bg-background px-3 py-1.5 text-xs text-muted-foreground">
-          waitlistos.com/dashboard
+          getlist.com/dashboard
         </div>
       </div>
 

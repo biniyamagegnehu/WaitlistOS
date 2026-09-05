@@ -9,7 +9,7 @@ import { FAQSection } from "@/components/landing/faq-section";
 import { FinalCTA } from "@/components/landing/final-cta";
 
 export const metadata: Metadata = {
-  title: "WaitlistOS — Launch With Demand Already Waiting",
+  title: "Getlist — Launch With Demand Already Waiting",
   description:
     "Create branded waitlists, reward referrals, and build a community before your product launches.",
 };

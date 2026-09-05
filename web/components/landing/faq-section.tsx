@@ -13,7 +13,7 @@ export function FAQSection() {
               Frequently Asked Questions
             </h2>
             <p className="text-lg text-muted-foreground">
-              Everything you need to know about WaitlistOS
+              Everything you need to know about Getlist
             </p>
           </div>
         </SlideUp>
@@ -22,8 +22,8 @@ export function FAQSection() {
           <FAQAccordion
             faqs={[
               {
-                q: "What is WaitlistOS?",
-                a: "WaitlistOS is a platform that helps founders create branded waitlists, reward referrals, and build launch communities before their product launches.",
+                q: "What is Getlist?",
+                a: "Getlist is a platform that helps founders create branded waitlists, reward referrals, and build launch communities before their product launches.",
               },
               {
                 q: "How do referral waitlists work?",

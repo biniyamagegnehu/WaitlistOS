@@ -120,7 +120,7 @@ export function HeroSection() {
         {/* Description */}
         <Appear delay={0.25}>
           <p className="mb-10 max-w-xl text-sm sm:text-[0.95rem] text-muted-foreground leading-relaxed">
-            With WaitlistOS, you can launch a branded waitlist in minutes,
+            With Getlist, you can launch a branded waitlist in minutes,
             collect and manage interested customers, encourage referrals, and
             build an audience you can bring with you when launch day arrives.
           </p>
@@ -164,7 +164,7 @@ export function HeroSection() {
             <div className="group relative aspect-square md:aspect-auto md:h-[450px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border shadow-sm">
               <img
                 src="/hero-1.jpg"
-                alt="WaitlistOS Analytics Dashboard"
+                alt="Getlist Analytics Dashboard"
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 flex flex-col justify-end p-8 text-left">
@@ -181,7 +181,7 @@ export function HeroSection() {
             <div className="group relative aspect-square md:aspect-auto md:h-[450px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border shadow-sm">
               <img
                 src="/hero-2.jpg"
-                alt="WaitlistOS Mobile Signup"
+                alt="Getlist Mobile Signup"
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 flex flex-col justify-end p-8 text-left">
@@ -198,7 +198,7 @@ export function HeroSection() {
             <div className="group relative aspect-square md:aspect-auto md:h-[450px] w-full overflow-hidden rounded-[2rem] bg-muted border border-border shadow-sm">
               <img
                 src="/hero-3.jpg"
-                alt="WaitlistOS Referral Growth"
+                alt="Getlist Referral Growth"
                 className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100 flex flex-col justify-end p-8 text-left">
