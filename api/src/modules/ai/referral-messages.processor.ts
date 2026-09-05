@@ -48,7 +48,7 @@ export class ReferralMessagesProcessor {
       // We can use a placeholder domain and let the frontend replace it if necessary, 
       // or we can pass the origin. Actually, it's safer to use a relative link in the prompt 
       // or a generic "waitlistos.com/r/code". Let's provide a generic absolute URL.
-      const referralLink = `https://waitlistos.com/r/${participant.referralCode}`;
+      const referralLink = `https://getlist.com/r/${participant.referralCode}`;
 
       const prompt = generateReferralMessagesPrompt(
         waitlist.name,

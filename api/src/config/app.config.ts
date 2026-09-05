@@ -47,7 +47,7 @@ export const appConfig = registerAs('app', () => ({
   lockoutDurationMs: 15 * 60 * 1000,                    // 15 minutes
 
   // ── Two-Factor Authentication ────────────────────────────────────
-  twoFactorIssuer: process.env.TWO_FACTOR_ISSUER ?? 'WaitlistOS',
+  twoFactorIssuer: process.env.TWO_FACTOR_ISSUER ?? 'Getlist',
 
   // ── Cloudinary ───────────────────────────────────────────────────
   cloudinaryCloudName: process.env.CLOUDINARY_CLOUD_NAME ?? '',

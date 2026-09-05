@@ -9,7 +9,7 @@ export function getSubscriptionActivatedTemplate(
     'Subscription activated',
     `
       <p>${greeting}</p>
-      <p>Your <strong>${planName}</strong> subscription is now active on WaitlistOS.</p>
+      <p>Your <strong>${planName}</strong> subscription is now active on Getlist.</p>
       <p>Premium features are unlocked on your account.</p>
     `,
   );

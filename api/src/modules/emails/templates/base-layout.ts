@@ -9,7 +9,7 @@ export function baseLayout(content: string, previewText = ''): string {
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-  <title>WaitlistOS</title>
+  <title>Getlist</title>
   <style>
     body { margin: 0; padding: 0; background-color: #f4f6f9; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, sans-serif; }
     .wrapper { max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.07); }
@@ -33,15 +33,15 @@ export function baseLayout(content: string, previewText = ''): string {
   ${previewText ? `<div style="display:none;max-height:0;overflow:hidden;">${previewText}</div>` : ''}
   <div class="wrapper">
     <div class="header">
-      <h1>WaitlistOS</h1>
+      <h1>Getlist</h1>
       <p>Transactional Email</p>
     </div>
     <div class="body">
       ${content}
     </div>
     <div class="footer">
-      <p>This email was sent by WaitlistOS. If you did not request this, please ignore it.<br/>
-      &copy; ${new Date().getFullYear()} WaitlistOS. All rights reserved.</p>
+      <p>This email was sent by Getlist. If you did not request this, please ignore it.<br/>
+      &copy; ${new Date().getFullYear()} Getlist. All rights reserved.</p>
     </div>
   </div>
 </body>

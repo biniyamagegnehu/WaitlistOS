@@ -308,7 +308,7 @@ export class EmailsService implements OnModuleInit {
     }
 
     const mailOptions = {
-      from: `"WaitlistOS" <${this.fromEmail}>`,
+      from: `"Getlist" <${this.fromEmail}>`,
       to: email,
       subject,
       html,
@@ -355,7 +355,7 @@ export class EmailsService implements OnModuleInit {
 
   async sendPasswordResetEmail(data: { email: string; resetUrl: string; name: string | null }) {
     const html = getPasswordResetTemplate(data.name, data.resetUrl);
-    await this.executeSend(data.email, 'Reset your WaitlistOS password', html);
+    await this.executeSend(data.email, 'Reset your Getlist password', html);
   }
 
   async sendPasswordChangedEmail(data: { email: string; name: string | null }) {

@@ -15,7 +15,7 @@ export class TwoFactorService {
   private readonly issuer: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.issuer = this.configService.get<string>('app.twoFactorIssuer', 'WaitlistOS');
+    this.issuer = this.configService.get<string>('app.twoFactorIssuer', 'Getlist');
     
     // Configure otplib
     authenticator.options = {
