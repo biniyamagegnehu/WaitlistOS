@@ -37,27 +37,7 @@ export function HeroSection() {
       className="relative overflow-hidden px-4 pt-12 pb-24 sm:pt-16 sm:pb-32 bg-[#faf9f7] dark:bg-[#111110]"
       id="hero"
     >
-      {/* ── Dot-grid — light ── */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 dark:hidden"
-        style={{
-          backgroundImage: "radial-gradient(circle, #ccc8c0 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-          opacity: 0.65,
-        }}
-      />
 
-      {/* ── Dot-grid — dark ── */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 hidden dark:block"
-        style={{
-          backgroundImage: "radial-gradient(circle, #2a2a28 1px, transparent 1px)",
-          backgroundSize: "28px 28px",
-          opacity: 0.9,
-        }}
-      />
 
       {/* ── Centre glow — light ── */}
       <div
