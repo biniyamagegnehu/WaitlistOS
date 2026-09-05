@@ -21,7 +21,7 @@ import toast from "react-hot-toast";
 import { AffiliatePayoutsTab } from "@/components/dashboard/affiliates/affiliate-payouts-tab";
 import { AffiliatePerformanceTab } from "@/components/dashboard/affiliates/affiliate-performance-tab";
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://waitlistos.com";
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "https://getlist.com";
 
 export function AffiliateSection() {
   const [data, setData] = useState<AffiliateDashboardResponse | null>(null);

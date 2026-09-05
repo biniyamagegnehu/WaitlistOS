@@ -380,7 +380,7 @@ export function PaymentsSettingsSection() {
               label="Business Name"
               value={chapaForm.businessName}
               onChange={(e) => setChapaForm({ ...chapaForm, businessName: e.target.value })}
-              placeholder="e.g. WaitlistOS Payments"
+              placeholder="e.g. Getlist Payments"
             />
             <Input
               label="Bank Code"

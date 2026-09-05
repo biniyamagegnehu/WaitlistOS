@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import PreOrderSuccessContent from "./success-content";
 
 export const metadata: Metadata = {
-  title: "Deposit Successful | WaitlistOS",
+  title: "Deposit Successful | Getlist",
   description: "Your pre-order deposit was successful",
 };
 

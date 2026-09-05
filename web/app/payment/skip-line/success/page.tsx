@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import SkipLineSuccessContent from "./success-content";
 
 export const metadata: Metadata = {
-  title: "Payment Successful | WaitlistOS",
+  title: "Payment Successful | Getlist",
   description: "Your Skip the Line payment was successful",
 };
 

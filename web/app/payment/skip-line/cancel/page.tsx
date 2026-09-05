@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import SkipLineCancelContent from "./cancel-content";
 
 export const metadata: Metadata = {
-  title: "Payment Cancelled | WaitlistOS",
+  title: "Payment Cancelled | Getlist",
   description: "Your Skip the Line payment was cancelled",
 };
 

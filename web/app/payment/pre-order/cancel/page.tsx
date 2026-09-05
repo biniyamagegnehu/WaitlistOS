@@ -3,7 +3,7 @@ import { Suspense } from "react";
 import PreOrderCancelContent from "./cancel-content";
 
 export const metadata: Metadata = {
-  title: "Deposit Cancelled | WaitlistOS",
+  title: "Deposit Cancelled | Getlist",
   description: "Your pre-order deposit was cancelled",
 };
 

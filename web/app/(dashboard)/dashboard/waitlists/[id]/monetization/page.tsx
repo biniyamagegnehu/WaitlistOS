@@ -216,7 +216,7 @@ export default function WaitlistMonetizationPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-text-muted mb-2">
-                      Turn your WaitlistOS experience into a referral channel.
+                      Turn your Getlist experience into a referral channel.
                     </p>
                     <div className="flex gap-4 text-sm">
                       <div>

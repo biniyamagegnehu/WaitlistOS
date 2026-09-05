@@ -39,7 +39,7 @@ export default function AffiliateProgramPage() {
       <BackButton href={routes.waitlistMonetization(waitlistId)} label="Back to Monetization" className="mb-4" />
       <PageHeader
         title="Affiliate Program"
-        description="Turn your WaitlistOS experience into a referral channel"
+        description="Turn your Getlist experience into a referral channel"
         breadcrumbs={[
           { label: "Waitlists", href: routes.waitlists },
           { label: "Waitlist", href: routes.waitlist(waitlistId) },

@@ -74,7 +74,7 @@ export default function GrowthSettingsPage() {
       <BackButton href={routes.waitlist(waitlistId)} label="Back to waitlist" className="mb-4" />
       <PageHeader
         title="Growth Engine"
-        description="Boost referrals, engagement, collaboration, and conversions using WaitlistOS Growth Engine."
+        description="Boost referrals, engagement, collaboration, and conversions using Getlist Growth Engine."
         breadcrumbs={[
           { label: waitlist.name, href: routes.waitlist(waitlistId) },
           { label: "Growth Engine" },
