@@ -67,7 +67,7 @@ export function createConfigFromOriginal(waitlist: any, copy: any): PageConfig {
   const footer = config.sections.find(s => s.type === 'FOOTER');
   if (footer) {
     footer.content.title = waitlist.name || '';
-    footer.content.text = `© ${new Date().getFullYear()} ${waitlist.name || 'WaitlistOS'}. All rights reserved.`;
+    footer.content.text = `© ${new Date().getFullYear()} ${waitlist.name || 'Getlist'}. All rights reserved.`;
   }
 
   return config;

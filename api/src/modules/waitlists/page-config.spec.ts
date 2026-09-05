@@ -273,24 +273,24 @@ describe('FAQ section validation', () => {
 
   it('rejects exact duplicate questions', () => {
     const items = [
-      { question: 'What is WaitlistOS?', answer: 'Answer A.' },
-      { question: 'What is WaitlistOS?', answer: 'Answer B.' },
+      { question: 'What is Getlist?', answer: 'Answer A.' },
+      { question: 'What is Getlist?', answer: 'Answer B.' },
     ];
     expect(() => validatePageConfig(validFaq(items))).toThrow('already exists');
   });
 
   it('rejects case-insensitive duplicate questions', () => {
     const items = [
-      { question: 'What is WaitlistOS?', answer: 'Answer A.' },
-      { question: 'what is waitlistos?', answer: 'Answer B.' },
+      { question: 'What is Getlist?', answer: 'Answer A.' },
+      { question: 'what is getlist?', answer: 'Answer B.' },
     ];
     expect(() => validatePageConfig(validFaq(items))).toThrow('already exists');
   });
 
   it('rejects duplicate questions with extra whitespace', () => {
     const items = [
-      { question: 'What is WaitlistOS?', answer: 'Answer A.' },
-      { question: '  what is  waitlistos?  ', answer: 'Answer B.' },
+      { question: 'What is Getlist?', answer: 'Answer A.' },
+      { question: '  what is  getlist?  ', answer: 'Answer B.' },
     ];
     expect(() => validatePageConfig(validFaq(items))).toThrow('already exists');
   });
@@ -396,7 +396,7 @@ describe('FOOTER section validation', () => {
     return config;
   }
 
-  const validContent = { title: 'WaitlistOS', text: 'All rights reserved.' };
+  const validContent = { title: 'Getlist', text: 'All rights reserved.' };
 
   it('accepts a valid footer', () => {
     expect(() => validatePageConfig(validFooter(validContent))).not.toThrow();

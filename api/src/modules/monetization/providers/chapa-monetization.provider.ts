@@ -36,7 +36,7 @@ export class ChapaMonetizationProvider implements IMonetizationProvider {
         callback_url: returnUrl,
         return_url: returnUrl,
         customization: {
-          title: 'WaitlistOS',
+          title: 'Getlist',
           description: 'Payment',
         },
         subaccount: account.providerAccountId,

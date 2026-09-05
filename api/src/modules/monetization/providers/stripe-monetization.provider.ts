@@ -131,7 +131,7 @@ export class StripeMonetizationProvider implements IMonetizationProvider {
               price_data: {
                 currency: payment.currency.toLowerCase(),
                 product_data: {
-                  name: `WaitlistOS: ${payment.paymentType}`,
+                  name: `Getlist: ${payment.paymentType}`,
                 },
                 unit_amount: Math.round(Number(payment.amount) * 100),
               },
