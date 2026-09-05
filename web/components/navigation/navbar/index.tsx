@@ -21,9 +21,31 @@ export function MarketingNavbar() {
   const pathname = usePathname();
   const { isAuthenticated, isLoading } = useAuth();
 
+  const [isScrolled, setIsScrolled] = React.useState(false);
+
+  React.useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
   return (
-    <header className="sticky top-0 z-40 w-full border-b border-border bg-background/95 backdrop-blur-sm">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
+    <header 
+      className={cn(
+        "sticky top-0 z-40 w-full flex flex-col items-center border-b",
+        isScrolled ? "pt-4 border-transparent bg-transparent" : "border-border bg-background"
+      )}
+    >
+      <div 
+        className={cn(
+          "flex items-center justify-between px-4 sm:px-6",
+          isScrolled 
+            ? "h-14 w-[800px] max-w-[95%] rounded-full bg-background/70 shadow-md backdrop-blur-md" 
+            : "mx-auto h-16 w-full max-w-6xl rounded-none bg-transparent shadow-none backdrop-blur-none"
+        )}
+      >
         <BrandLogo />
 
         <nav
@@ -88,7 +110,7 @@ export function MarketingNavbar() {
       {mobileOpen && (
         <div
           id="mobile-menu"
-          className="space-y-1 border-t border-border bg-surface px-4 pb-5 pt-3 md:hidden"
+          className="w-full space-y-1 border-t border-border bg-surface px-4 pb-5 pt-3 md:hidden"
         >
           {navLinks.map((link) => (
             <Link
