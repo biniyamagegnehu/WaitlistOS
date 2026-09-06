@@ -209,11 +209,11 @@ export function DashboardMockup({ variant = "analytics" }: DashboardMockupProps)
               </div>
               <div className="space-y-2">
                 {[
-                  { email: "sarah@techstartup.io", referrals: 47, position: "#1" },
-                  { email: "mike@producthunt.com", referrals: 38, position: "#2" },
-                  { email: "jess@indiehackers.co", referrals: 29, position: "#3" },
-                  { email: "alex@saaslab.io", referrals: 24, position: "#4" },
-                  { email: "emma@launch.co", referrals: 19, position: "#5" },
+                  { email: "sarah@techstartup.io", referrals: 47, position: "#1", name: "Sarah", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150&h=150&fit=crop&crop=face" },
+                  { email: "mike@producthunt.com", referrals: 38, position: "#2", name: "Mike", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face" },
+                  { email: "jess@indiehackers.co", referrals: 29, position: "#3", name: "Jess", avatar: "https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=150&h=150&fit=crop&crop=face" },
+                  { email: "alex@saaslab.io", referrals: 24, position: "#4", name: "Alex", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=150&h=150&fit=crop&crop=face" },
+                  { email: "emma@launch.co", referrals: 19, position: "#5", name: "Emma", avatar: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face" },
                 ].map((user, i) => (
                   <motion.div
                     key={i}
@@ -224,9 +224,11 @@ export function DashboardMockup({ variant = "analytics" }: DashboardMockupProps)
                     className="flex items-center justify-between rounded-lg bg-surface p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-xs font-medium text-primary">
-                        {user.position}
-                      </div>
+                      <img
+                        src={user.avatar}
+                        alt={user.name}
+                        className="h-8 w-8 rounded-full object-cover"
+                      />
                       <div>
                         <div className="text-sm font-medium text-foreground">{user.email}</div>
                         <div className="text-xs text-muted-foreground">{user.referrals} referrals</div>
