@@ -39,9 +39,9 @@ export function ReferralGrowthEngine() {
   ];
 
   return (
-    <section 
+    <section
       ref={containerRef}
-      className="relative py-16 sm:py-24 overflow-hidden flex items-center justify-center bg-surface text-foreground"
+      className="relative py-16 sm:py-24 overflow-hidden flex items-center justify-center bg-[var(--landing-bg)] text-foreground"
       id="referral-engine"
     >
       {/* Dynamic Background */}

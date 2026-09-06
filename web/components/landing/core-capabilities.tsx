@@ -88,7 +88,7 @@ export function CoreCapabilities() {
 
   return (
     <section
-      className="bg-surface-muted py-20 sm:py-28 relative"
+      className="bg-[var(--landing-bg)] py-20 sm:py-28 relative"
       id="core-capabilities"
     >
       <div className="mx-auto max-w-[1100px] px-6 sm:px-10 lg:px-12">

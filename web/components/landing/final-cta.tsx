@@ -7,7 +7,7 @@ import { SlideUp } from "./scroll-animations";
 
 export function FinalCTA() {
   return (
-    <section className="py-16 sm:py-24">
+    <section className="bg-[var(--landing-bg)] py-16 sm:py-24">
       <div className="mx-auto max-w-4xl px-4 text-center">
         <SlideUp>
           <div className="relative overflow-hidden rounded-3xl bg-primary px-8 py-16 sm:px-12 sm:py-20">

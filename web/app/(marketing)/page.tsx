@@ -23,7 +23,7 @@ export default function HomePage() {
       <CoreCapabilities />
 
       {/* Visual Storytelling - Create Waitlist */}
-      <section className="py-16 sm:py-24" id="how-it-works">
+      <section className="bg-[var(--landing-bg)] py-16 sm:py-24" id="how-it-works">
         <PageContainer withoutVerticalPadding>
           <ProductShowcase
             image={<DashboardMockup variant="waitlist" />}
@@ -43,7 +43,7 @@ export default function HomePage() {
       <ReferralGrowthEngine />
 
       {/* Visual Storytelling - Analytics */}
-      <section className="py-16 sm:py-24">
+      <section className="bg-[var(--landing-bg)] py-16 sm:py-24">
         <PageContainer withoutVerticalPadding>
           <ProductShowcase
             image={<DashboardMockup variant="analytics" />}
@@ -60,7 +60,7 @@ export default function HomePage() {
       </section>
 
       {/* Visual Storytelling - Open The Gates */}
-      <section className="bg-surface py-16 sm:py-24" id="open-the-gates">
+      <section className="bg-[var(--landing-bg)] py-16 sm:py-24" id="open-the-gates">
         <PageContainer withoutVerticalPadding>
           <ProductShowcase
             reverse

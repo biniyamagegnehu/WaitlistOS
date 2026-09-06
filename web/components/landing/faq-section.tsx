@@ -5,7 +5,7 @@ import { FAQAccordion } from "./faq-accordion";
 
 export function FAQSection() {
   return (
-    <section className="bg-surface py-16 sm:py-24" id="faq">
+    <section className="bg-[var(--landing-bg)] py-16 sm:py-24" id="faq">
       <div className="mx-auto max-w-3xl px-4">
         <SlideUp>
           <div className="text-center">

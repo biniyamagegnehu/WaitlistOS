@@ -10,7 +10,7 @@ import { SlideUp, StaggerContainer, StaggerItem } from "./scroll-animations";
 
 export function PricingSection() {
   return (
-    <section className="py-16 sm:py-24" id="pricing">
+    <section className="bg-[var(--landing-bg)] py-16 sm:py-24" id="pricing">
       <div className="mx-auto max-w-7xl px-4">
         <SlideUp>
           <div className="mx-auto max-w-2xl text-center">

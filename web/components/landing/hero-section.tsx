@@ -34,28 +34,18 @@ function Appear({
 export function HeroSection() {
   return (
     <section
-      className="relative overflow-hidden px-4 pt-12 pb-24 sm:pt-16 sm:pb-32 bg-[#faf9f7] dark:bg-[#111110]"
+      className="relative overflow-hidden px-4 pt-12 pb-24 sm:pt-16 sm:pb-32 bg-[var(--landing-bg)]"
       id="hero"
     >
 
 
-      {/* ── Centre glow — light ── */}
+      {/* ── Centre glow ── */}
       <div
         aria-hidden="true"
-        className="pointer-events-none absolute inset-0 dark:hidden"
+        className="pointer-events-none absolute inset-0"
         style={{
           background:
-            "radial-gradient(ellipse 72% 58% at 50% 38%, #faf9f7 10%, transparent 100%)",
-        }}
-      />
-
-      {/* ── Centre glow — dark ── */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute inset-0 hidden dark:block"
-        style={{
-          background:
-            "radial-gradient(ellipse 72% 58% at 50% 38%, #111110 10%, transparent 100%)",
+            "radial-gradient(ellipse 72% 58% at 50% 38%, var(--landing-bg) 10%, transparent 100%)",
         }}
       />
 
