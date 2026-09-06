@@ -34,7 +34,7 @@ export function MarketingNavbar() {
   return (
     <header 
       className={cn(
-        "sticky top-0 z-40 w-full flex flex-col items-center border-b",
+        "sticky top-0 z-40 w-full flex flex-col items-center border-b ",
         isScrolled ? "pt-4 border-transparent bg-transparent" : "border-border bg-background"
       )}
     >
