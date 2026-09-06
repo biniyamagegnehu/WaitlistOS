@@ -70,7 +70,7 @@ export function HeroSection() {
 
         {/* Headline */}
         <Appear delay={0.15}>
-          <h1 className="mb-5 text-[2rem] font-bold tracking-tight text-foreground sm:text-4xl lg:text-[3rem] leading-[1.12]">
+          <h1 className="mb-5 text-[1.75rem] font-bold tracking-tight text-foreground sm:text-[2.5rem] lg:text-[2.75rem] leading-[1.12]">
             Create a Waitlist, Grow Your Audience, and{" "}
             <em
               style={{
