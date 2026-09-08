@@ -15,7 +15,7 @@ function normalizeOrigin(value: string | undefined): string | null {
 
 function getAllowedOrigins(): string[] {
   const origins = new Set<string>([
-    'https://waitlistos.vercel.app',
+    'https://getlist.vercel.app',
     'https://waitlistos.up.railway.app',
     'http://localhost:3001',
     'http://localhost:3000',
