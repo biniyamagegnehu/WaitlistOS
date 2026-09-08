@@ -45,14 +45,14 @@ export class AffiliatePayoutsService {
 
   /**
    * Create a commission record.
-   * Uses ELIGIBLE status for subscription payments.
+   * Commissions are granted immediately as ELIGIBLE — the referrer sees and
+   * can accumulate earnings right away. Payouts still require the $50 minimum
+   * threshold and are processed on the monthly cron run.
    */
   async createCommission(input: CommissionInput): Promise<void> {
     // Idempotency: if a commission already exists for this payment, skip
     const existing = await this.prisma.affiliateCommission.findFirst({
-      where: {
-        sourcePaymentId: input.sourcePaymentId,
-      },
+      where: { sourcePaymentId: input.sourcePaymentId },
     });
 
     if (existing) {
@@ -60,9 +60,8 @@ export class AffiliatePayoutsService {
       return;
     }
 
-    const eligibleAt = new Date();
-    // Settlement window: 14 days for payment processing, verification, and fraud prevention
-    eligibleAt.setDate(eligibleAt.getDate() + 14);
+    // Commissions are immediately eligible — no settlement delay
+    const now = new Date();
 
     await this.prisma.affiliateCommission.create({
       data: {
@@ -73,13 +72,13 @@ export class AffiliatePayoutsService {
         amount: input.amount,
         currency: input.currency,
         commissionRate: input.commissionRate,
-        status: AffiliateCommissionStatus.PENDING,
-        eligibleAt,
+        status: AffiliateCommissionStatus.ELIGIBLE,
+        eligibleAt: now,
       },
     });
 
     this.logger.log(
-      `Commission created: ${input.amount} ${input.currency} for affiliate ${input.affiliateId} from payment ${input.sourcePaymentId}`,
+      `Commission created (immediately ELIGIBLE): ${input.amount} ${input.currency} for affiliate ${input.affiliateId} from payment ${input.sourcePaymentId}`,
     );
   }
 
@@ -88,8 +87,9 @@ export class AffiliatePayoutsService {
   // ─────────────────────────────────────────────────────────────────────────────
 
   /**
-   * Daily job to clear PENDING commissions that have passed their eligibleAt date.
-   * Commissions move from PENDING to ELIGIBLE after the 14-day settlement window.
+   * Settlement pass — kept for backward compatibility with the cron job.
+   * Since commissions are now created as ELIGIBLE immediately, this method
+   * only handles any legacy PENDING commissions that may still be in the DB.
    */
   async processSettlements(): Promise<{ cleared: number }> {
     const result = await this.prisma.affiliateCommission.updateMany({
@@ -97,13 +97,11 @@ export class AffiliatePayoutsService {
         status: AffiliateCommissionStatus.PENDING,
         eligibleAt: { lte: new Date() },
       },
-      data: {
-        status: AffiliateCommissionStatus.ELIGIBLE,
-      },
+      data: { status: AffiliateCommissionStatus.ELIGIBLE },
     });
 
     if (result.count > 0) {
-      this.logger.log(`Settled ${result.count} pending commissions to ELIGIBLE`);
+      this.logger.log(`Settled ${result.count} legacy PENDING commissions to ELIGIBLE`);
     }
 
     return { cleared: result.count };

@@ -222,7 +222,11 @@ export function AffiliateSection() {
               <div className="text-2xl font-bold text-emerald-600 dark:text-emerald-400">
                 {formatCurrency(data.stats.eligibleBalance)}
               </div>
-              <p className="text-xs text-muted-foreground">Ready for next payout</p>
+              <p className="text-xs text-muted-foreground">
+                {data.stats.eligibleBalance >= 50
+                  ? "Eligible for next payout"
+                  : `$${(50 - data.stats.eligibleBalance).toFixed(2)} more to reach $50 minimum`}
+              </p>
             </CardContent>
           </Card>
 
@@ -234,7 +238,7 @@ export function AffiliateSection() {
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(data.stats.totalEarned)}</div>
               <p className="text-xs text-muted-foreground">
-                {formatCurrency(data.stats.pendingBalance)} pending (14-day settlement window) · {formatCurrency(data.stats.paidOut)} paid out
+                {formatCurrency(data.stats.paidOut)} paid out · {formatCurrency(data.stats.eligibleBalance)} pending payout
               </p>
             </CardContent>
           </Card>

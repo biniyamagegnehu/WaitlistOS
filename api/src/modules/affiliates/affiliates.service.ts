@@ -307,6 +307,8 @@ export class AffiliatesService {
     };
 
     const totalEarned = toAmount(AffiliateCommissionStatus.ELIGIBLE) + toAmount(AffiliateCommissionStatus.PAID);
+    // pendingBalance is kept in the response for API compatibility but will always be 0
+    // since commissions are now granted as ELIGIBLE immediately upon creation
     const pendingBalance = toAmount(AffiliateCommissionStatus.PENDING);
     const eligibleBalance = toAmount(AffiliateCommissionStatus.ELIGIBLE);
     const paidOut = toAmount(AffiliateCommissionStatus.PAID);
