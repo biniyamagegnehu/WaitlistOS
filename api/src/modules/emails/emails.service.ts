@@ -57,45 +57,54 @@ export class EmailsService implements OnModuleInit {
     // Use a dedicated non-pooled transporter just for the verify check
     // because verify() is unreliable on pooled transporters
     const appConfig = this.configService.get('app');
-    const verifyTransporter = nodemailer.createTransport({
-      host: appConfig.smtpHost,
-      port: appConfig.smtpPort,
-      secure: appConfig.smtpSecure,
-      auth: { user: appConfig.smtpUser, pass: appConfig.smtpPassword },
-      // Force IPv4 DNS resolution — 'family: 4' alone only affects the socket,
-      // not DNS. Render has no outbound IPv6 so we must resolve to IPv4 first.
-      lookup: (hostname: string, options: any, callback: any) =>
-        dns.lookup(hostname, { ...options, family: 4 }, callback),
-      connectionTimeout: 15000,
-      greetingTimeout: 10000,
-      socketTimeout: 10000,
-      tls: { rejectUnauthorized: false },
-    } as any);
+    
+    this.logger.log(`Verifying SMTP connection to ${appConfig.smtpHost}:${appConfig.smtpPort} with IPv6 disabled: ${appConfig.smtpDisableIPv6}`);
+    
+    // Force IPv4 by resolving the hostname first
+    dns.lookup(appConfig.smtpHost, { family: 4 }, (err, address) => {
+      if (err) {
+        this.logger.error(`Failed to resolve ${appConfig.smtpHost} to IPv4: ${err.message}`);
+        return;
+      }
+      
+      this.logger.log(`Resolved ${appConfig.smtpHost} to IPv4 address: ${address}`);
+      
+      const verifyTransporter = nodemailer.createTransport({
+        host: address, // Use the resolved IPv4 address directly
+        port: appConfig.smtpPort,
+        secure: appConfig.smtpSecure,
+        auth: { user: appConfig.smtpUser, pass: appConfig.smtpPassword },
+        connectionTimeout: 15000,
+        greetingTimeout: 10000,
+        socketTimeout: 10000,
+        tls: { rejectUnauthorized: false },
+      } as any);
 
-    Promise.race([
-      verifyTransporter.verify(),
-      new Promise((_, reject) =>
-        setTimeout(() => reject(new Error(
-          'Connection timed out after 20s. ' +
-          'This usually means the SMTP port is blocked by your hosting provider (Render blocks port 25/465). ' +
-          'Try port 587 with SMTP_REQUIRE_TLS=true, or switch to an HTTP-based email API (Resend, SendGrid, Brevo).'
-        )), 100000)
-      ),
-    ])
-      .then(() => {
-        this.logger.log('SMTP connection verified successfully');
-      })
-      .catch((error: any) => {
-        this.logger.error(`SMTP connection verification failed: ${error.message}`);
-        if (error.code) this.logger.error(`Error code: ${error.code}`);
-        if (error.command) this.logger.error(`SMTP command: ${error.command}`);
-        this.logger.error(
-          'Troubleshooting: Ensure SMTP_PORT=587, SMTP_SECURE=false, SMTP_REQUIRE_TLS=true, SMTP_DISABLE_POOLING=true in your Render environment variables.'
-        );
-      })
-      .finally(() => {
-        verifyTransporter.close();
-      });
+      Promise.race([
+        verifyTransporter.verify(),
+        new Promise((_, reject) =>
+          setTimeout(() => reject(new Error(
+            'Connection timed out after 20s. ' +
+            'This usually means the SMTP port is blocked by your hosting provider (Render blocks port 25/465). ' +
+            'Try port 587 with SMTP_REQUIRE_TLS=true, or switch to an HTTP-based email API (Resend, SendGrid, Brevo).'
+          )), 100000)
+        ),
+      ])
+        .then(() => {
+          this.logger.log('SMTP connection verified successfully');
+        })
+        .catch((error: any) => {
+          this.logger.error(`SMTP connection verification failed: ${error.message}`);
+          if (error.code) this.logger.error(`Error code: ${error.code}`);
+          if (error.command) this.logger.error(`SMTP command: ${error.command}`);
+          this.logger.error(
+            'Troubleshooting: Ensure SMTP_PORT=587, SMTP_SECURE=false, SMTP_REQUIRE_TLS=true, SMTP_DISABLE_POOLING=true in your Render environment variables.'
+          );
+        })
+        .finally(() => {
+          verifyTransporter.close();
+        });
+    });
   }
 
   private initializeTransporter() {
@@ -127,54 +136,63 @@ export class EmailsService implements OnModuleInit {
         host: smtpHost || 'localhost',
         port: smtpPort,
         secure: smtpSecure,
-        lookup: smtpDisableIPv6
-          ? (h: string, o: any, cb: any) => dns.lookup(h, { ...o, family: 4 }, cb)
-          : undefined,
         connectionTimeout,
         greetingTimeout,
         socketTimeout,
       } as any);
     } else {
-      const transportConfig: any = {
-        host: smtpHost,
-        port: smtpPort,
-        secure: smtpSecure,
-        // Force IPv4 DNS resolution — prevents ENETUNREACH on hosts without
-        // outbound IPv6 (e.g. Render). 'family:4' alone only affects the socket,
-        // not the DNS lookup, so we override the lookup function instead.
-        lookup: smtpDisableIPv6
-          ? (h: string, o: any, cb: any) => dns.lookup(h, { ...o, family: 4 }, cb)
-          : undefined,
-        auth: {
-          user: smtpUser,
-          pass: smtpPassword,
-        },
-        connectionTimeout,
-        greetingTimeout,
-        socketTimeout,
-      };
+      // If IPv6 is disabled, resolve to IPv4 first
+      if (smtpDisableIPv6) {
+        dns.lookup(smtpHost, { family: 4 }, (err, address) => {
+          if (err) {
+            this.logger.error(`Failed to resolve ${smtpHost} to IPv4: ${err.message}. Using hostname instead.`);
+            this.createTransporter(smtpHost, smtpPort, smtpSecure, smtpUser, smtpPassword, connectionTimeout, greetingTimeout, socketTimeout, smtpRequireTLS, smtpIgnoreTLS, smtpDisablePooling, smtpTlsVersion, smtpProxyHost, smtpProxyPort, smtpProxyUser, smtpProxyPassword);
+          } else {
+            this.logger.log(`Resolved ${smtpHost} to IPv4 address: ${address}`);
+            this.createTransporter(address, smtpPort, smtpSecure, smtpUser, smtpPassword, connectionTimeout, greetingTimeout, socketTimeout, smtpRequireTLS, smtpIgnoreTLS, smtpDisablePooling, smtpTlsVersion, smtpProxyHost, smtpProxyPort, smtpProxyUser, smtpProxyPassword);
+          }
+        });
+      } else {
+        this.createTransporter(smtpHost, smtpPort, smtpSecure, smtpUser, smtpPassword, connectionTimeout, greetingTimeout, socketTimeout, smtpRequireTLS, smtpIgnoreTLS, smtpDisablePooling, smtpTlsVersion, smtpProxyHost, smtpProxyPort, smtpProxyUser, smtpProxyPassword);
+      }
+    }
+  }
+
+  private createTransporter(host: string, port: number, secure: boolean, user: string, pass: string, connectionTimeout: number, greetingTimeout: number, socketTimeout: number, requireTLS: boolean, ignoreTLS: boolean, disablePooling: boolean, tlsVersion: string, proxyHost: string, proxyPort: number, proxyUser: string, proxyPassword: string) {
+    const transportConfig: any = {
+      host: host,
+      port: port,
+      secure: secure,
+      auth: {
+        user: user,
+        pass: pass,
+      },
+      connectionTimeout,
+      greetingTimeout,
+      socketTimeout,
+    };
 
       // TLS configuration
-      if (smtpIgnoreTLS) {
+      if (ignoreTLS) {
         transportConfig.ignoreTLS = true;
         this.logger.log('TLS is explicitly ignored');
       } else {
         const tlsConfig: any = {
           rejectUnauthorized: false, // Allow self-signed certificates
         };
-        if (smtpTlsVersion) {
-          tlsConfig.minVersion = smtpTlsVersion;
-          this.logger.log(`TLS version set to: ${smtpTlsVersion}`);
+        if (tlsVersion) {
+          tlsConfig.minVersion = tlsVersion;
+          this.logger.log(`TLS version set to: ${tlsVersion}`);
         }
         transportConfig.tls = tlsConfig;
-        if (smtpRequireTLS) {
+        if (requireTLS) {
           transportConfig.requireTLS = true;
           this.logger.log('TLS is explicitly required');
         }
       }
 
       // Connection pooling
-      if (!smtpDisablePooling) {
+      if (!disablePooling) {
         transportConfig.pool = true;
         transportConfig.maxConnections = 5;
         transportConfig.maxMessages = 100;
@@ -184,20 +202,20 @@ export class EmailsService implements OnModuleInit {
       }
 
       // Proxy configuration
-      if (smtpProxyHost && smtpProxyPort > 0) {
+      if (proxyHost && proxyPort > 0) {
         transportConfig.proxy = {
-          host: smtpProxyHost,
-          port: smtpProxyPort,
-          ...(smtpProxyUser && smtpProxyPassword ? {
-            user: smtpProxyUser,
-            pass: smtpProxyPassword,
+          host: proxyHost,
+          port: proxyPort,
+          ...(proxyUser && proxyPassword ? {
+            user: proxyUser,
+            pass: proxyPassword,
           } : {}),
         };
-        this.logger.log(`Proxy configured: ${smtpProxyHost}:${smtpProxyPort}`);
+        this.logger.log(`Proxy configured: ${proxyHost}:${proxyPort}`);
       }
 
       this.transporter = nodemailer.createTransport(transportConfig);
-    }
+      this.logger.log('Transporter created successfully');
   }
 
   // ── Queueing Methods ────────────────────────────────────────────────────────
