@@ -3,6 +3,7 @@ import { InjectQueue } from '@nestjs/bull';
 import type { Queue } from 'bull';
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
+import * as dns from 'dns';
 import { getWelcomeEmailTemplate } from './templates/welcome';
 import { getEmailVerificationTemplate } from './templates/email-verification';
 import { getPasswordResetTemplate } from './templates/password-reset';
@@ -61,7 +62,10 @@ export class EmailsService implements OnModuleInit {
       port: appConfig.smtpPort,
       secure: appConfig.smtpSecure,
       auth: { user: appConfig.smtpUser, pass: appConfig.smtpPassword },
-      family: 4, // Force IPv4 - Render may have limited IPv6
+      // Force IPv4 DNS resolution — 'family: 4' alone only affects the socket,
+      // not DNS. Render has no outbound IPv6 so we must resolve to IPv4 first.
+      lookup: (hostname: string, options: any, callback: any) =>
+        dns.lookup(hostname, { ...options, family: 4 }, callback),
       connectionTimeout: 15000,
       greetingTimeout: 10000,
       socketTimeout: 10000,
@@ -123,7 +127,9 @@ export class EmailsService implements OnModuleInit {
         host: smtpHost || 'localhost',
         port: smtpPort,
         secure: smtpSecure,
-        family: smtpDisableIPv6 ? 4 : undefined, // Force IPv4 if disabled
+        lookup: smtpDisableIPv6
+          ? (h: string, o: any, cb: any) => dns.lookup(h, { ...o, family: 4 }, cb)
+          : undefined,
         connectionTimeout,
         greetingTimeout,
         socketTimeout,
@@ -133,7 +139,12 @@ export class EmailsService implements OnModuleInit {
         host: smtpHost,
         port: smtpPort,
         secure: smtpSecure,
-        family: smtpDisableIPv6 ? 4 : undefined, // Force IPv4 if disabled
+        // Force IPv4 DNS resolution — prevents ENETUNREACH on hosts without
+        // outbound IPv6 (e.g. Render). 'family:4' alone only affects the socket,
+        // not the DNS lookup, so we override the lookup function instead.
+        lookup: smtpDisableIPv6
+          ? (h: string, o: any, cb: any) => dns.lookup(h, { ...o, family: 4 }, cb)
+          : undefined,
         auth: {
           user: smtpUser,
           pass: smtpPassword,
@@ -141,9 +152,6 @@ export class EmailsService implements OnModuleInit {
         connectionTimeout,
         greetingTimeout,
         socketTimeout,
-        dns: smtpDisableIPv6 ? {
-          family: 4, // Force IPv4 for DNS resolution
-        } : undefined,
       };
 
       // TLS configuration
