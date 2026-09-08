@@ -27,50 +27,75 @@ export function defaultPageConfig(mode: "CUSTOMIZE_ORIGINAL" | "FROM_SCRATCH" = 
 }
 
 export function createConfigFromOriginal(waitlist: any, copy: any): PageConfig {
-  const config = defaultPageConfig("CUSTOMIZE_ORIGINAL");
-  
-  // Hero
-  const hero = config.sections.find(s => s.type === 'HERO');
-  if (hero) {
-    hero.content.headline = copy?.headline || waitlist.name || '';
-    hero.content.subheadline = copy?.subheadline || waitlist.tagline || '';
-    hero.content.description = waitlist.description || '';
+  const sections: PageSection[] = [];
+
+  // HERO — always present, pre-filled from original data
+  sections.push({
+    id: 'hero',
+    type: 'HERO',
+    order: sections.length,
+    visible: true,
+    content: {
+      headline: copy?.headline || waitlist.name || '',
+      subheadline: copy?.subheadline || waitlist.tagline || '',
+      description: waitlist.description || '',
+    },
+  });
+
+  // FEATURES — only if the original copy has feature items
+  if (Array.isArray(copy?.features) && copy.features.length > 0) {
+    sections.push({
+      id: 'features',
+      type: 'FEATURES',
+      order: sections.length,
+      visible: true,
+      content: {
+        title: 'Why join?',
+        columns: '3',
+        items: JSON.stringify(copy.features),
+      },
+    });
   }
 
-  // Social Proof (optional/default)
-  const socialProof = config.sections.find(s => s.type === 'SOCIAL_PROOF');
-  if (socialProof) {
-    socialProof.content.title = 'Loved by early adopters';
+  // FAQ — only if the original copy has FAQ items
+  if (Array.isArray(copy?.faqs) && copy.faqs.length > 0) {
+    sections.push({
+      id: 'faq',
+      type: 'FAQ',
+      order: sections.length,
+      visible: true,
+      content: {
+        title: 'Frequently Asked Questions',
+        items: JSON.stringify(copy.faqs),
+      },
+    });
   }
 
-  // Features
-  const features = config.sections.find(s => s.type === 'FEATURES');
-  if (features && copy?.features && Array.isArray(copy.features)) {
-    features.content.title = 'Why join?';
-    features.content.items = JSON.stringify(copy.features);
-  }
+  // SIGNUP — always present
+  sections.push({
+    id: 'signup',
+    type: 'SIGNUP',
+    order: sections.length,
+    visible: true,
+    content: {
+      title: 'Join the waitlist',
+      subtitle: '',
+    },
+  });
 
-  // Signup
-  const signup = config.sections.find(s => s.type === 'SIGNUP');
-  if (signup) {
-    signup.content.title = 'Join the waitlist';
-  }
+  // FOOTER — always present, pre-filled from original data
+  sections.push({
+    id: 'footer',
+    type: 'FOOTER',
+    order: sections.length,
+    visible: true,
+    content: {
+      title: waitlist.name || '',
+      text: `© ${new Date().getFullYear()} ${waitlist.name || 'Getlist'}. All rights reserved.`,
+    },
+  });
 
-  // FAQ
-  const faq = config.sections.find(s => s.type === 'FAQ');
-  if (faq && copy?.faqs && Array.isArray(copy.faqs)) {
-    faq.content.title = 'Frequently Asked Questions';
-    faq.content.items = JSON.stringify(copy.faqs);
-  }
-
-  // Footer
-  const footer = config.sections.find(s => s.type === 'FOOTER');
-  if (footer) {
-    footer.content.title = waitlist.name || '';
-    footer.content.text = `© ${new Date().getFullYear()} ${waitlist.name || 'Getlist'}. All rights reserved.`;
-  }
-
-  return config;
+  return { version: 1, mode: 'CUSTOMIZE_ORIGINAL', sections };
 }
 
 /** Keeps supported sections from earlier builder drafts and restores required defaults. */

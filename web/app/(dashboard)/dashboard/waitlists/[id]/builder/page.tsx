@@ -43,18 +43,57 @@ const EMPTY_VALIDATION: ValidationResult = { valid: true, fieldErrors: {}, secti
 /** Build a minimal PageConfig skeleton from a public waitlist response (CUSTOMIZE_ORIGINAL mode) */
 function makeConfigFromPublicData(publicData: PublicWaitlistResponse): PageConfig {
   const { waitlist, copy } = publicData;
-  return {
-    version: 1,
-    mode: "CUSTOMIZE_ORIGINAL",
-    sections: [
-      { id: "hero", type: "HERO", order: 0, visible: true, content: { headline: copy?.headline ?? waitlist.name, subheadline: copy?.subheadline ?? waitlist.tagline, description: waitlist.description ?? "" } },
-      { id: "social-proof", type: "SOCIAL_PROOF", order: 1, visible: false, content: { title: "Loved by early adopters" } },
-      { id: "features", type: "FEATURES", order: 2, visible: !!(copy?.features?.length), content: { title: "Why join?", items: JSON.stringify(copy?.features ?? []) } },
-      { id: "signup", type: "SIGNUP", order: 3, visible: true, content: { title: "Join the waitlist", subtitle: "" } },
-      { id: "faq", type: "FAQ", order: 4, visible: !!(copy?.faqs?.length), content: { title: "Frequently Asked Questions", items: JSON.stringify(copy?.faqs ?? []) } },
-      { id: "footer", type: "FOOTER", order: 5, visible: true, content: { title: waitlist.name, text: `© ${new Date().getFullYear()} ${waitlist.name}. All rights reserved.` } },
-    ],
-  };
+  const sections: PageSection[] = [];
+
+  // HERO — always present, pre-filled from original
+  sections.push({
+    id: "hero", type: "HERO", order: sections.length, visible: true,
+    content: {
+      headline: copy?.headline ?? waitlist.name,
+      subheadline: copy?.subheadline ?? waitlist.tagline,
+      description: waitlist.description ?? "",
+    },
+  });
+
+  // FEATURES — only if original copy has feature items
+  if (copy?.features?.length) {
+    sections.push({
+      id: "features", type: "FEATURES", order: sections.length, visible: true,
+      content: {
+        title: "Why join?",
+        columns: "3",
+        items: JSON.stringify(copy.features),
+      },
+    });
+  }
+
+  // FAQ — only if original copy has FAQ items
+  if (copy?.faqs?.length) {
+    sections.push({
+      id: "faq", type: "FAQ", order: sections.length, visible: true,
+      content: {
+        title: "Frequently Asked Questions",
+        items: JSON.stringify(copy.faqs),
+      },
+    });
+  }
+
+  // SIGNUP — always present
+  sections.push({
+    id: "signup", type: "SIGNUP", order: sections.length, visible: true,
+    content: { title: "Join the waitlist", subtitle: "" },
+  });
+
+  // FOOTER — always present, pre-filled from original
+  sections.push({
+    id: "footer", type: "FOOTER", order: sections.length, visible: true,
+    content: {
+      title: waitlist.name,
+      text: `© ${new Date().getFullYear()} ${waitlist.name}. All rights reserved.`,
+    },
+  });
+
+  return { version: 1, mode: "CUSTOMIZE_ORIGINAL", sections };
 }
 
 /** Build a minimal FROM_SCRATCH config (just the required SIGNUP section) */

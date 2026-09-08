@@ -83,9 +83,9 @@ export function WaitlistPageRenderer({
                   {typeof heroContent.subheadline === "string" && heroContent.subheadline ? heroContent.subheadline : waitlist.tagline}
                 </p>
               </div>
-              {waitlist.description && (
+              {(typeof heroContent.description === "string" ? heroContent.description : waitlist.description) && (
                 <p className="mx-auto max-w-xl text-sm text-muted-foreground leading-relaxed">
-                  {waitlist.description}
+                  {typeof heroContent.description === "string" && heroContent.description ? heroContent.description : waitlist.description}
                 </p>
               )}
             </CardContent>
@@ -111,7 +111,7 @@ export function WaitlistPageRenderer({
                 </CardContent>
               </Card>
             )}
-            {copy && (
+            {!isPreview && copy && (
               <div className="text-center space-y-6 py-8">
                 <h2 className="text-3xl font-bold tracking-tight text-foreground md:text-4xl">{copy.headline}</h2>
                 <p className="mx-auto max-w-2xl text-lg text-muted-foreground">{copy.subheadline}</p>
@@ -120,9 +120,7 @@ export function WaitlistPageRenderer({
                   className="mt-4 rounded-full px-8 font-semibold shadow-sm hover:opacity-90"
                   style={{ backgroundColor: primaryColor }}
                   onClick={() => {
-                    if (!isPreview) {
-                      document.getElementById("join-form")?.scrollIntoView({ behavior: "smooth" });
-                    }
+                    document.getElementById("join-form")?.scrollIntoView({ behavior: "smooth" });
                   }}
                 >
                   {copy.cta}
