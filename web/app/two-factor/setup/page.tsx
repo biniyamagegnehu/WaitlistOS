@@ -52,15 +52,10 @@ export default function TwoFactorSetupPage() {
   };
 
   const handleEnable = async (data: TwoFactorFormData) => {
-    try {
-      await enableTwoFactor(data);
-      patchUser({ isTwoFactorEnabled: true });
-      await refreshUser();
-      toast.success("Two-factor authentication enabled successfully");
-      router.replace(routes.settingsTab("security"));
-    } catch (error: unknown) {
-      toast.error(getApiErrorMessage(error, "Failed to enable 2FA"));
-    }
+    await enableTwoFactor(data);
+    patchUser({ isTwoFactorEnabled: true });
+    await refreshUser();
+    router.replace(routes.settingsTab("security"));
   };
 
   return (
@@ -161,6 +156,7 @@ export default function TwoFactorSetupPage() {
             schema={twoFactorSchema}
             onSubmit={handleEnable}
             submitText="Enable two-factor authentication"
+            onSuccessMessage="Two-factor authentication enabled successfully"
           >
             {({ watch, setValue, formState: { errors } }) => (
               <div className="flex justify-center">
