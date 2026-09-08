@@ -191,10 +191,7 @@ export default function PublicWaitlistPageClient() {
           ))}
         </div>
 
-        {/* Didn't receive it nudge */}
-        <p className="mt-6 text-center text-xs text-muted-foreground">
-          Didn&apos;t get it? Check your spam folder.
-        </p>
+
 
         {/* Security note */}
         <div className="mt-4 flex items-start gap-2 rounded-lg border border-border bg-surface-muted/60 p-3 text-left">
