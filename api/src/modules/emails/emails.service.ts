@@ -74,9 +74,9 @@ export class EmailsService implements OnModuleInit {
         port: appConfig.smtpPort,
         secure: appConfig.smtpSecure,
         auth: { user: appConfig.smtpUser, pass: appConfig.smtpPassword },
-        connectionTimeout: 60000, // Increased from 15s to 60s
-        greetingTimeout: 30000, // Increased from 10s to 30s
-        socketTimeout: 30000, // Increased from 10s to 30s
+        connectionTimeout: 30000, // 30 seconds for TCP connection
+        greetingTimeout: 15000, // 15 seconds for SMTP greeting
+        socketTimeout: 15000, // 15 seconds for data transfer
         tls: { rejectUnauthorized: false },
       } as any);
 
@@ -84,10 +84,10 @@ export class EmailsService implements OnModuleInit {
         verifyTransporter.verify(),
         new Promise((_, reject) =>
           setTimeout(() => reject(new Error(
-            'Connection timed out after 120s. ' +
+            'Connection timed out after 30s. ' +
             'This usually means the SMTP port is blocked by your hosting provider (Render blocks port 25/465). ' +
             'Try port 587 with SMTP_REQUIRE_TLS=true, or switch to an HTTP-based email API (Resend, SendGrid, Brevo).'
-          )), 120000) // Increased from 200s to 120s
+          )), 30000) // 30 seconds total timeout
         ),
       ])
         .then(() => {
@@ -115,9 +115,9 @@ export class EmailsService implements OnModuleInit {
     const smtpSecure = appConfig.smtpSecure;
     const smtpUser = appConfig.smtpUser;
     const smtpPassword = appConfig.smtpPassword;
-    const connectionTimeout = appConfig.smtpConnectionTimeout || 60000; // Default to 60s if not set
-    const greetingTimeout = appConfig.smtpGreetingTimeout || 30000; // Default to 30s if not set
-    const socketTimeout = appConfig.smtpSocketTimeout || 30000; // Default to 30s if not set
+    const connectionTimeout = appConfig.smtpConnectionTimeout || 30000; // Default to 30s
+    const greetingTimeout = appConfig.smtpGreetingTimeout || 15000; // Default to 15s
+    const socketTimeout = appConfig.smtpSocketTimeout || 15000; // Default to 15s
     const smtpRequireTLS = appConfig.smtpRequireTLS;
     const smtpIgnoreTLS = appConfig.smtpIgnoreTLS;
     const smtpDisablePooling = appConfig.smtpDisablePooling;
