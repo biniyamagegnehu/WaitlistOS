@@ -40,27 +40,58 @@ export class EmailsService implements OnModuleInit {
   }
 
   async onModuleInit() {
-    // Test connection on startup after module is initialized
     this.logger.log('onModuleInit called - checking SMTP configuration...');
-    if (this.transporter) {
-      this.logger.log('Starting SMTP connection verification...');
-      try {
-        await Promise.race([
-          this.transporter.verify(),
-          new Promise((_, reject) =>
-            setTimeout(() => reject(new Error('Connection verification timeout')), 30000)
-          ),
-        ]);
-        this.logger.log('SMTP connection verified successfully');
-      } catch (error: any) {
-        this.logger.error(`SMTP connection verification failed: ${error.message}`);
-        this.logger.error(`Connection error code: ${error.code}`);
-        this.logger.error(`Connection error command: ${error.command}`);
-        this.logger.error(`Full error: ${JSON.stringify(error)}`);
-      }
-    } else {
-      this.logger.warn('SMTP transporter not initialized - skipping connection verification');
+    const appConfig = this.configService.get('app');
+
+    if (!appConfig.smtpHost || !appConfig.smtpUser || !appConfig.smtpPassword) {
+      this.logger.warn('SMTP credentials not configured - skipping connection check.');
+      return;
     }
+
+    // Run verification in background - do NOT await, so startup is never blocked
+    this.verifySMTPInBackground();
+  }
+
+  private verifySMTPInBackground() {
+    // Use a dedicated non-pooled transporter just for the verify check
+    // because verify() is unreliable on pooled transporters
+    const appConfig = this.configService.get('app');
+    const verifyTransporter = nodemailer.createTransport({
+      host: appConfig.smtpHost,
+      port: appConfig.smtpPort,
+      secure: appConfig.smtpSecure,
+      auth: { user: appConfig.smtpUser, pass: appConfig.smtpPassword },
+      family: 4, // Force IPv4 - Render may have limited IPv6
+      connectionTimeout: 15000,
+      greetingTimeout: 10000,
+      socketTimeout: 10000,
+      tls: { rejectUnauthorized: false },
+    });
+
+    Promise.race([
+      verifyTransporter.verify(),
+      new Promise((_, reject) =>
+        setTimeout(() => reject(new Error(
+          'Connection timed out after 20s. ' +
+          'This usually means the SMTP port is blocked by your hosting provider (Render blocks port 25/465). ' +
+          'Try port 587 with SMTP_REQUIRE_TLS=true, or switch to an HTTP-based email API (Resend, SendGrid, Brevo).'
+        )), 20000)
+      ),
+    ])
+      .then(() => {
+        this.logger.log('SMTP connection verified successfully');
+      })
+      .catch((error: any) => {
+        this.logger.error(`SMTP connection verification failed: ${error.message}`);
+        if (error.code) this.logger.error(`Error code: ${error.code}`);
+        if (error.command) this.logger.error(`SMTP command: ${error.command}`);
+        this.logger.error(
+          'Troubleshooting: Ensure SMTP_PORT=587, SMTP_SECURE=false, SMTP_REQUIRE_TLS=true, SMTP_DISABLE_POOLING=true in your Render environment variables.'
+        );
+      })
+      .finally(() => {
+        verifyTransporter.close();
+      });
   }
 
   private initializeTransporter() {
