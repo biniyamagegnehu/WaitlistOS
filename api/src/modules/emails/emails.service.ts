@@ -87,7 +87,7 @@ export class EmailsService implements OnModuleInit {
             'Connection timed out after 20s. ' +
             'This usually means the SMTP port is blocked by your hosting provider (Render blocks port 25/465). ' +
             'Try port 587 with SMTP_REQUIRE_TLS=true, or switch to an HTTP-based email API (Resend, SendGrid, Brevo).'
-          )), 100000)
+          )), 200000)
         ),
       ])
         .then(() => {
