@@ -42,13 +42,9 @@ export class ReferralMessagesProcessor {
 
       const { waitlist } = participant;
       
-      // We will generate the referral link exactly as the frontend gets it. 
-      // If the APP_URL isn't easily available, we will just use a generic format, 
-      // but usually waitlists use `/r/code` which gets expanded by the frontend.
-      // We can use a placeholder domain and let the frontend replace it if necessary, 
-      // or we can pass the origin. Actually, it's safer to use a relative link in the prompt 
-      // or a generic "waitlistos.com/r/code". Let's provide a generic absolute URL.
-      const referralLink = `https://getlist.com/r/${participant.referralCode}`;
+      // Build the referral link using the configured frontend URL (matches emails.service.ts pattern)
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3001';
+      const referralLink = `${frontendUrl}/r/${participant.referralCode}`;
 
       const prompt = generateReferralMessagesPrompt(
         waitlist.name,
