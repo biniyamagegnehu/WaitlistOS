@@ -97,7 +97,7 @@ export function AffiliatePayoutsTab({
                 </p>
               </div>
               <a
-                href="/dashboard/settings/payments"
+                href="/dashboard/settings?tab=payments"
                 id="go-to-payment-settings-btn"
                 className="inline-flex items-center gap-2 rounded-md border px-3 py-1.5 text-sm font-medium hover:bg-muted transition-colors"
               >
@@ -132,8 +132,8 @@ export function AffiliatePayoutsTab({
                         </p>
                       </div>
                       {!account.isEligible && (
-                        <a
-                          href="/dashboard/settings/payments"
+                       <a
+                          href="/dashboard/settings?tab=payments"
                           className="text-xs rounded-md border px-2 py-1 hover:bg-muted transition-colors shrink-0"
                         >
                           Fix
@@ -150,7 +150,7 @@ export function AffiliatePayoutsTab({
                   <p className="font-medium text-amber-800 dark:text-amber-300">No eligible payout provider</p>
                   <p className="text-amber-700 dark:text-amber-400 mt-1 text-xs">
                     Your connected provider(s) have a restricted or error status. Please check your{" "}
-                    <a href="/dashboard/settings/payments" className="underline font-medium">Payment Settings</a>.
+                    <a href="/dashboard/settings?tab=payments" className="underline font-medium">Payment Settings</a>.
                   </p>
                 </div>
               ) : eligibleAccounts.length === 1 ? (

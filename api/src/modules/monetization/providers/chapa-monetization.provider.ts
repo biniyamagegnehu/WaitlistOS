@@ -184,33 +184,69 @@ export class ChapaMonetizationProvider implements IMonetizationProvider {
   }
 
   /**
-   * Helper to create a subaccount for a founder on Chapa
+   * Helper to create a subaccount for a founder on Chapa.
+   * Throws BadRequestException with the real Chapa message on failure so the
+   * client receives a descriptive 400 instead of a generic 500.
    */
   async createSubaccount(bankCode: string, accountNumber: string, businessName: string): Promise<string> {
+    const { BadRequestException } = await import('@nestjs/common');
+
     const payload = {
       business_name: businessName,
       account_name: businessName,
       bank_code: bankCode,
       account_number: accountNumber,
       split_type: 'percentage',
-      split_value: 0.1, // WaitlistOS uses exact transaction_charge during checkout, so this is just default
+      split_value: 0.1,
     };
 
-    const response = await fetch(`${this.baseUrl}/subaccount`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${this.secretKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await response.json();
-
-    if (!data.status || data.status !== 'success') {
-      throw new Error(data.message || 'Failed to create Chapa subaccount');
+    let responseText: string;
+    try {
+      const response = await fetch(`${this.baseUrl}/subaccount`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${this.secretKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+      });
+      responseText = await response.text();
+    } catch (networkError) {
+      const msg = networkError instanceof Error ? networkError.message : String(networkError);
+      this.logger.error(`Chapa subaccount network error: ${msg}`);
+      throw new BadRequestException('Could not reach Chapa API. Please check your connection and try again.');
     }
 
-    return data.data.subaccount_id;
+    let data: any;
+    try {
+      data = JSON.parse(responseText);
+    } catch {
+      this.logger.error(`Chapa subaccount non-JSON response: ${responseText}`);
+      throw new BadRequestException('Unexpected response from Chapa. Please try again.');
+    }
+
+    if (!data.status || data.status !== 'success') {
+      // Chapa message can be a string, an array of strings, or an object
+      let chapaMessage: string;
+      if (typeof data.message === 'string') {
+        chapaMessage = data.message;
+      } else if (Array.isArray(data.message)) {
+        chapaMessage = data.message.join('; ');
+      } else if (data.message && typeof data.message === 'object') {
+        chapaMessage = Object.values(data.message).flat().join('; ');
+      } else {
+        chapaMessage = 'Failed to create Chapa subaccount. Please verify your bank code and account number.';
+      }
+      this.logger.error(`Chapa subaccount error: ${chapaMessage} | raw: ${responseText}`);
+      throw new BadRequestException(chapaMessage);
+    }
+
+    const subaccountId = data.data?.subaccount_id;
+    if (!subaccountId) {
+      this.logger.error(`Chapa subaccount response missing subaccount_id: ${responseText}`);
+      throw new BadRequestException('Chapa did not return a subaccount ID. Please try again.');
+    }
+
+    return subaccountId;
   }
 }

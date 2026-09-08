@@ -269,7 +269,15 @@ export class MonetizationService {
       const errorMessage = error instanceof Error ? error.message : String(error);
       this.logger.error(`Chapa connect failed for founder ${founder.id}: ${errorMessage}`);
 
-      // Record error
+      // If it's already an HttpException (e.g. BadRequestException from createSubaccount),
+      // re-throw it directly so the client gets the correct status code and message.
+      const { HttpException } = await import('@nestjs/common');
+      if (error instanceof HttpException) {
+        throw error;
+      }
+
+      // For unexpected errors, record error state and re-throw as BadRequestException
+      const { BadRequestException } = await import('@nestjs/common');
       await this.prisma.paymentAccount.upsert({
         where: { founderId_provider: { founderId: founder.id, provider: PaymentProvider.CHAPA } },
         update: { status: PaymentAccountStatus.ERROR, lastError: errorMessage },
@@ -281,7 +289,7 @@ export class MonetizationService {
         },
       });
 
-      throw error;
+      throw new BadRequestException(errorMessage || 'Failed to connect Chapa account. Please try again.');
     }
   }
 
