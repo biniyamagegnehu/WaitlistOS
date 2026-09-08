@@ -14,18 +14,19 @@ import { SessionsSettingsSection } from "@/components/dashboard/settings/session
 import { routes } from "@/lib/routes";
 import type { SettingsTab } from "@/types/dashboard";
 
-import { CreditCard } from "lucide-react";
-import { PaymentsSettingsSection } from "@/components/dashboard/settings/payments-section";
+// MONETIZATION_DISABLED: Founder payment connection tab
+// import { CreditCard } from "lucide-react";
+// import { PaymentsSettingsSection } from "@/components/dashboard/settings/payments-section";
 
 const tabs: Array<{ value: SettingsTab; label: string; icon: React.ReactNode }> = [
   { value: "profile", label: "Profile", icon: <User className="h-4 w-4" /> },
   { value: "security", label: "Security", icon: <Shield className="h-4 w-4" /> },
   { value: "sessions", label: "Sessions", icon: <Monitor className="h-4 w-4" /> },
-  { value: "payments", label: "Payments", icon: <CreditCard className="h-4 w-4" /> },
+  // { value: "payments", label: "Payments", icon: <CreditCard className="h-4 w-4" /> }, // MONETIZATION_DISABLED
 ];
 
 function isSettingsTab(value: string | null): value is SettingsTab {
-  return value === "profile" || value === "security" || value === "sessions" || value === "payments";
+  return value === "profile" || value === "security" || value === "sessions"; // "payments" disabled - MONETIZATION_DISABLED
 }
 
 function SettingsPageContent() {
@@ -65,9 +66,11 @@ function SettingsPageContent() {
           <TabsContent value="sessions">
             <SessionsSettingsSection />
           </TabsContent>
+          {/* MONETIZATION_DISABLED: Founder payment connection (Stripe/Chapa connect)
           <TabsContent value="payments">
             <PaymentsSettingsSection />
           </TabsContent>
+          */}
         </Tabs>
       </div>
     </PageContainer>
