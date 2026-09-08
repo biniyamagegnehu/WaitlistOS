@@ -66,7 +66,7 @@ export class EmailsService implements OnModuleInit {
       greetingTimeout: 10000,
       socketTimeout: 10000,
       tls: { rejectUnauthorized: false },
-    });
+    } as any);
 
     Promise.race([
       verifyTransporter.verify(),
