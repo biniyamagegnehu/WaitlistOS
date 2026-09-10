@@ -1,3 +1,8 @@
+// MONETIZATION_DISABLED: This entire page is commented out.
+// Founder payment connection (Stripe/Chapa payout setup, Skip the Line, Pre-Order) is temporarily disabled.
+// To re-enable: uncomment everything below and remove the placeholder export.
+
+/*
 "use client";
 
 import * as React from "react";
@@ -82,4 +87,10 @@ export default function MonetizationPage() {
       <MonetizationPageContent />
     </Suspense>
   );
+}
+*/
+
+// Temporary placeholder — MONETIZATION_DISABLED
+export default function MonetizationPage() {
+  return null;
 }
