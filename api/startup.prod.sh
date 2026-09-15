@@ -13,7 +13,7 @@ mkdir -p /usr/src/app/files /usr/src/app/uploads
 # Apply migrations and synchronize schema fields (e.g. billingEmail)
 echo "==> Applying database migrations and schema push..."
 npx prisma migrate deploy || true
-npx prisma db push --skip-generate
+npx prisma db push --accept-data-loss
 
 # Seed initial database records (Subscription plans: Free, Starter, Pro)
 echo "==> Seeding initial database records..."
