@@ -10,9 +10,10 @@ fi
 # Ensure uploads/files directory exists
 mkdir -p /usr/src/app/files /usr/src/app/uploads
 
-# Run prisma migration / db push
-echo "==> Applying database schema..."
-npx prisma migrate deploy || npx prisma db push --skip-generate
+# Apply migrations and synchronize schema fields (e.g. billingEmail)
+echo "==> Applying database migrations and schema push..."
+npx prisma migrate deploy || true
+npx prisma db push --skip-generate
 
 # Seed initial database records (Subscription plans: Free, Starter, Pro)
 echo "==> Seeding initial database records..."
