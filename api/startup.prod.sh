@@ -12,7 +12,7 @@ mkdir -p /usr/src/app/files /usr/src/app/uploads
 
 # Run prisma migration / db push
 echo "==> Applying database schema..."
-npx prisma db push --skip-generate || npx prisma migrate deploy
+npx prisma migrate deploy || npx prisma db push --skip-generate
 
 # Start production server
 echo "==> Starting NestJS API server on port ${PORT:-3000}..."
