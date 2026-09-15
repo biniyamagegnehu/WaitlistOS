@@ -14,6 +14,10 @@ mkdir -p /usr/src/app/files /usr/src/app/uploads
 echo "==> Applying database schema..."
 npx prisma migrate deploy || npx prisma db push --skip-generate
 
+# Seed initial database records (Subscription plans: Free, Starter, Pro)
+echo "==> Seeding initial database records..."
+npm run seed || true
+
 # Start production server
 echo "==> Starting NestJS API server on port ${PORT:-3000}..."
 exec node dist/main.js
