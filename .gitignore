@@ -1,0 +1,36 @@
+# Environment variables
+.env
+.env*.local
+.env.production
+.env.staging
+!.env.example
+!.env.prod.example
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Production builds
+dist/
+*/dist/
+.next/
+*/.next/
+out/
+build/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS & Editor
+.DS_Store
+.vscode/
+.idea/
+
+# Uploads & temporary files
+uploads/
+files/
+*/uploads/
+*/files/

@@ -1,0 +1,189 @@
+name: Deploy WaitlistOS to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      git_ref:
+        description: 'Git Ref (Branch, Tag, or Commit Hash) to deploy'
+        required: true
+        default: 'main'
+      environment:
+        description: 'Target Environment'
+        required: true
+        type: choice
+        options:
+          - production
+          - staging
+        default: production
+      deployment_scope:
+        description: 'Deployment Scope'
+        required: true
+        type: choice
+        options:
+          - full-stack
+          - backend-only
+          - frontend-only
+        default: full-stack
+
+jobs:
+  deploy:
+    name: Deploy to Server
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.git_ref || github.ref }}
+
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          command_timeout: 45m
+          envs: ENV_FILE_CONTENT,DEPLOY_ENV,DEPLOY_REF,DEPLOYMENT_SCOPE
+          script: |
+            set -Eeuo pipefail
+
+            # --- Target Directory ---
+            if [ "$DEPLOY_ENV" = 'production' ]; then
+              DEPLOY_DIR='/var/www/waitlistos'
+            else
+              DEPLOY_DIR='/var/www/waitlistos-stage'
+            fi
+
+            COMPOSE_FILE='docker-compose.prod.yml'
+
+            echo "=========================================================="
+            echo " Deploying WaitlistOS [$DEPLOY_ENV] scope=[$DEPLOYMENT_SCOPE]"
+            echo " Directory: $DEPLOY_DIR"
+            echo "=========================================================="
+
+            # Auto-clone repository on initial setup
+            if [ ! -d "$DEPLOY_DIR" ]; then
+              echo "==> Deployment directory does not exist. Cloning repository..."
+              sudo mkdir -p "$DEPLOY_DIR"
+              sudo chown -R "$USER":"$USER" "$DEPLOY_DIR"
+              git clone https://github.com/${{ github.repository }}.git "$DEPLOY_DIR"
+            fi
+
+            cd "$DEPLOY_DIR"
+
+            # Pull latest changes
+            echo "==> Fetching git ref [$DEPLOY_REF]..."
+            git fetch --all --tags
+            git checkout -f "$DEPLOY_REF"
+            git pull origin "$DEPLOY_REF" || true
+
+            # --- Smart Incremental .env Merge Engine ---
+            # Reads the incoming secret (PROD_ENV_FILE or STAGE_ENV_FILE) and
+            # safely merges variables into server .env:
+            #   - Existing key, same value   -> preserved
+            #   - Existing key, new value    -> updated in-place
+            #   - New key not in file        -> appended at bottom
+            #   - Keys only on the server    -> preserved 100% untouched
+            ENV_FILE="$DEPLOY_DIR/.env"
+            if [ ! -f "$ENV_FILE" ]; then
+              if [ -f "$DEPLOY_DIR/.env.example" ]; then
+                cp "$DEPLOY_DIR/.env.example" "$ENV_FILE"
+              else
+                touch "$ENV_FILE"
+              fi
+            fi
+
+            export DEPLOY_DIR
+            node - <<'NODE_SCRIPT'
+            const fs = require('fs');
+
+            const envFilePath = process.env.DEPLOY_DIR + '/.env';
+            const incoming    = process.env.ENV_FILE_CONTENT || '';
+
+            if (!incoming.trim()) {
+              console.log('[merge] ENV_FILE_CONTENT is empty — preserving server .env as-is.');
+              process.exit(0);
+            }
+
+            function parse(text) {
+              const map = new Map();
+              for (const raw of text.split('\n')) {
+                const line = raw.trim();
+                if (!line || line.startsWith('#')) continue;
+                const eq = line.indexOf('=');
+                if (eq < 1) continue;
+                map.set(line.slice(0, eq).trim(), line.slice(eq + 1));
+              }
+              return map;
+            }
+
+            const serverLines = fs.existsSync(envFilePath)
+              ? fs.readFileSync(envFilePath, 'utf8').split('\n')
+              : [];
+            const incomingMap = parse(incoming);
+            let updated = 0, appended = 0;
+            const seenKeys = new Set();
+
+            const merged = serverLines.map(raw => {
+              const line = raw.trim();
+              if (!line || line.startsWith('#')) return raw;
+              const eq = line.indexOf('=');
+              if (eq < 1) return raw;
+              const key = line.slice(0, eq).trim();
+              seenKeys.add(key);
+              if (incomingMap.has(key)) {
+                const val = incomingMap.get(key);
+                if (line.slice(eq + 1) !== val) {
+                  updated++;
+                  return `${key}=${val}`;
+                }
+              }
+              return raw;
+            });
+
+            for (const [key, val] of incomingMap.entries()) {
+              if (!seenKeys.has(key)) {
+                merged.push(`${key}=${val}`);
+                appended++;
+              }
+            }
+
+            fs.writeFileSync(envFilePath, merged.join('\n'));
+            console.log(`[merge] .env successfully updated: ${updated} modified, ${appended} appended, ${serverLines.length} preserved.`);
+            NODE_SCRIPT
+
+            # --- Build and Start Containers ---
+            echo "==> Building and deploying services with scope [$DEPLOYMENT_SCOPE]..."
+            if [ "$DEPLOYMENT_SCOPE" = 'backend-only' ]; then
+              docker compose -f "$COMPOSE_FILE" build api
+              docker compose -f "$COMPOSE_FILE" up -d postgres redis api
+            elif [ "$DEPLOYMENT_SCOPE" = 'frontend-only' ]; then
+              docker compose -f "$COMPOSE_FILE" build web
+              docker compose -f "$COMPOSE_FILE" up -d web
+            else
+              docker compose -f "$COMPOSE_FILE" build api web
+              docker compose -f "$COMPOSE_FILE" up -d postgres redis api web
+            fi
+
+            # --- Health & Liveness Check ---
+            echo "==> Verifying containers are up..."
+            sleep 10
+            docker compose -f "$COMPOSE_FILE" ps
+
+            # Prune dangling/untagged build images
+            echo "==> Cleaning old images..."
+            docker image prune -f
+
+            echo "=========================================================="
+            echo " Deployment successful! "
+            echo "=========================================================="
+
+        env:
+          ENV_FILE_CONTENT: ${{ (github.event.inputs.environment || 'production') == 'production' && secrets.PROD_ENV_FILE || secrets.STAGE_ENV_FILE }}
+          DEPLOY_ENV: ${{ github.event.inputs.environment || 'production' }}
+          DEPLOY_REF: ${{ github.event.inputs.git_ref || 'main' }}
+          DEPLOYMENT_SCOPE: ${{ github.event.inputs.deployment_scope || 'full-stack' }}

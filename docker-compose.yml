@@ -1,0 +1,4 @@
+# Default compose file points to development setup
+# For production deployment, run: docker compose -f docker-compose.prod.yml up -d --build
+include:
+  - docker-compose.dev.yml

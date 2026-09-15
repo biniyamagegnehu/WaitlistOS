@@ -1,0 +1,108 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: waitlistos-postgres
+    restart: always
+    ports:
+      - "${DATABASE_PORT:-5436}:5432"
+    volumes:
+      - waitlistos_postgres_data_prod:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-waitlistos_secure_password}
+      POSTGRES_DB: ${DATABASE_NAME:-waitlistos}
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DATABASE_USERNAME:-postgres} -d ${DATABASE_NAME:-waitlistos}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - waitlistos-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: waitlistos-redis
+    restart: always
+    ports:
+      - "${REDIS_PORT:-6384}:6379"
+    volumes:
+      - waitlistos_redis_data_prod:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    networks:
+      - waitlistos-network
+
+  api:
+    build:
+      context: ./api
+      dockerfile: Dockerfile.prod
+    image: waitlistos-api:${IMAGE_TAG:-latest}
+    container_name: waitlistos-api
+    restart: always
+    ports:
+      - "${BACKEND_PORT:-4060}:3000"
+    volumes:
+      - waitlistos_files_data_prod:/usr/src/app/files
+      - waitlistos_uploads_data_prod:/usr/src/app/uploads
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://${DATABASE_USERNAME:-postgres}:${DATABASE_PASSWORD:-waitlistos_secure_password}@postgres:5432/${DATABASE_NAME:-waitlistos}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
+      FRONTEND_URL: ${FRONTEND_DOMAIN:-https://getlist.learnica.net}
+      CORS_ORIGINS: ${CORS_ORIGINS:-https://getlist.learnica.net,https://www.getlist.learnica.net}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://getlist.learnica.net}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - waitlistos-network
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile.prod
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://getlist.learnica.net}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://getlist.learnica.net}
+    image: waitlistos-web:${IMAGE_TAG:-latest}
+    container_name: waitlistos-web
+    restart: always
+    ports:
+      - "${FRONTEND_PORT:-3060}:3000"
+    env_file:
+      - .env
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://getlist.learnica.net}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://getlist.learnica.net}
+    depends_on:
+      - api
+    networks:
+      - waitlistos-network
+
+volumes:
+  waitlistos_postgres_data_prod:
+  waitlistos_redis_data_prod:
+  waitlistos_files_data_prod:
+  waitlistos_uploads_data_prod:
+
+networks:
+  waitlistos-network:
+    driver: bridge

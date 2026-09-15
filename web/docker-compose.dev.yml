@@ -1,0 +1,23 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    container_name: waitlistos-web-dev
+    ports:
+      - "${FRONTEND_PORT:-3060}:3000"
+    volumes:
+      - .:/usr/src/app
+      - web_node_modules:/usr/src/app/node_modules
+      - web_next:/usr/src/app/.next
+    env_file:
+      - .env
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:4060}
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3060}
+
+volumes:
+  web_node_modules:
+  web_next:

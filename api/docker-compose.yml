@@ -1,0 +1,65 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: waitlistos-api-postgres
+    ports:
+      - "${DATABASE_PORT:-5436}:5432"
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-waitlistos_secure_password}
+      POSTGRES_DB: ${DATABASE_NAME:-waitlistos}
+    volumes:
+      - waitlistos_api_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          'CMD-SHELL',
+          'pg_isready -U ${DATABASE_USERNAME:-postgres} -d ${DATABASE_NAME:-waitlistos}',
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  redis:
+    image: redis:7-alpine
+    container_name: waitlistos-api-redis
+    ports:
+      - "${REDIS_PORT:-6384}:6379"
+    volumes:
+      - waitlistos_api_redisdata:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: waitlistos-api-standalone
+    ports:
+      - "${BACKEND_PORT:-4060}:3000"
+    volumes:
+      - waitlistos_api_files:/usr/src/app/files
+      - waitlistos_api_uploads:/usr/src/app/uploads
+    environment:
+      PORT: 3000
+      NODE_ENV: development
+      DATABASE_HOST: postgres
+      DATABASE_PORT: 5432
+      DATABASE_URL: postgresql://${DATABASE_USERNAME:-postgres}:${DATABASE_PASSWORD:-waitlistos_secure_password}@postgres:5432/${DATABASE_NAME:-waitlistos}?schema=public
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  waitlistos_api_pgdata:
+  waitlistos_api_redisdata:
+  waitlistos_api_files:
+  waitlistos_api_uploads:
