@@ -53,7 +53,11 @@ jobs:
 
             # --- Target Directory ---
             if [ "$DEPLOY_ENV" = 'production' ]; then
-              DEPLOY_DIR='/var/www/waitlistos'
+              if [ -d '/var/www/waitlistOS' ]; then
+                DEPLOY_DIR='/var/www/waitlistOS'
+              else
+                DEPLOY_DIR='/var/www/waitlistos'
+              fi
             else
               DEPLOY_DIR='/var/www/waitlistos-stage'
             fi
