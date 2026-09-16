@@ -27,7 +27,7 @@ export class StripeAffiliatePayoutProvider implements IAffiliatePayoutProvider {
     const secretKey = this.configService.get<string>('stripe.secretKey');
     if (secretKey) {
       this.stripe = new Stripe(secretKey, {
-        apiVersion: '2026-07-29.dahlia' as any,
+        apiVersion: '2026-08-26.dahlia' as any,
         typescript: true,
       });
     } else {

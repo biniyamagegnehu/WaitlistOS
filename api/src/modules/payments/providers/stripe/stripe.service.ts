@@ -15,7 +15,7 @@ export class StripeService implements IPaymentProvider {
 
     if (secretKey) {
       this.stripe = new Stripe(secretKey, {
-        apiVersion: '2026-07-29.dahlia' as any, // Cast if the exact string literal in DT mismatches but we need to satisfy it
+        apiVersion: '2026-08-26.dahlia' as any,
         typescript: true,
       });
     } else {

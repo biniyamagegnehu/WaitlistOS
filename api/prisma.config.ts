@@ -8,5 +8,6 @@ export default defineConfig({
   schema: path.join('prisma', 'schema.prisma'),
   datasource: {
     url: process.env.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/placeholder',
+    shadowDatabaseUrl: process.env.SHADOW_DATABASE_URL,
   }
 })
