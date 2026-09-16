@@ -12,6 +12,7 @@ mkdir -p /usr/src/app/files /usr/src/app/uploads
 
 # Apply database migrations
 echo "==> Applying database migrations..."
+npx prisma migrate resolve --rolled-back 20260916090000_sync_schema 2>/dev/null || true
 npx prisma migrate deploy
 
 # Seed initial database records (Subscription plans: Free, Starter, Pro)
